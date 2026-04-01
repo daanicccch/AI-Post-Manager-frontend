@@ -1,12 +1,16 @@
 declare global {
-  interface Window {
+      interface Window {
     Telegram?: {
       WebApp?: {
         ready?: () => void;
         expand?: () => void;
+        requestFullscreen?: () => void;
+        disableVerticalSwipes?: () => void;
+        enableVerticalSwipes?: () => void;
         onEvent?: (eventType: string, eventHandler: () => void) => void;
         offEvent?: (eventType: string, eventHandler: () => void) => void;
         colorScheme?: 'light' | 'dark';
+        isFullscreen?: boolean;
         viewportHeight?: number;
         viewportStableHeight?: number;
         initData?: string;
@@ -76,7 +80,11 @@ export function initTelegramWebApp() {
 
   sync();
   webApp.ready?.();
+  webApp.disableVerticalSwipes?.();
   webApp.expand?.();
+  if (!webApp.isFullscreen) {
+    webApp.requestFullscreen?.();
+  }
   sync();
 
   webApp.onEvent?.('safeAreaChanged', sync);
