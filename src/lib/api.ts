@@ -1,0 +1,372 @@
+import { appendTelegramInitData, buildTelegramAuthHeader } from './telegram';
+
+export interface Profile {
+  id: number;
+  slug: string;
+  title: string;
+  telegramChannelId: string | null;
+  writingLanguage: string;
+  editorRoleText: string | null;
+  rulesPath?: string | null;
+  templatesPath?: string | null;
+  humanizerPath?: string | null;
+  personaGuidePath?: string | null;
+  sourceChannelsPath?: string | null;
+  webSourcesPath?: string | null;
+  baseDir?: string | null;
+  updatedAt?: string | null;
+  profileConfig?: Record<string, unknown>;
+  rulesMarkdown?: string | null;
+  templatesMarkdown?: string | null;
+  humanizerMarkdown?: string | null;
+  personaGuideMarkdown?: string | null;
+  sourceChannels?: unknown[];
+  sourceChannelsConfig?: unknown;
+  webSources?: unknown[];
+  webSourcesConfig?: unknown;
+  sourcePostsCount?: number;
+  recentSourcePosts72hCount?: number;
+  sourcePostsWithMediaCount?: number;
+  latestSourceDate?: string | null;
+  editingDraftsCount?: number;
+  scheduledDraftsCount?: number;
+  publishedDraftsCount?: number;
+  cancelledDraftsCount?: number;
+  latestDraftUpdatedAt?: string | null;
+  schedule: {
+    timezone?: string;
+    isEnabled?: boolean;
+    config?: Record<string, unknown>;
+    updatedAt?: string;
+  };
+}
+
+export interface StatusSummary {
+  postsToday: number;
+  postsTotal: number;
+  pendingReview: number;
+  scheduledCount: number;
+  profilesCount: number;
+  aiProvider: string;
+}
+
+export interface PersonaGuideDetail {
+  profileId: string;
+  profileTitle: string;
+  personaGuidePath: string | null;
+  personaGuideMarkdown: string;
+  updatedAt: string | null;
+}
+
+export interface DistillPersonaResult {
+  profileId: string;
+  postsAnalyzed: number;
+  outputPath: string;
+  profile: Profile;
+}
+
+export interface ProfileAssetsUpdateResult {
+  profileId: string;
+  savedFields: string[];
+  profile: Profile;
+}
+
+export interface InboxItem {
+  id: number;
+  profileId: string;
+  profileTitle: string;
+  status: string;
+  title: string | null;
+  excerpt: string;
+  mediaCount?: number;
+  mediaPreviewPath?: string | null;
+  sources: Array<{
+    role?: string;
+    sourceChannel?: string | null;
+    sourceTelegramPostId?: number | null;
+    sourceKey?: string | null;
+  }>;
+  createdAt: string;
+  updatedAt: string;
+  scheduledFor: string | null;
+  publishedAt: string | null;
+  telegramMessageId: number | null;
+  publicationStatus: string | null;
+}
+
+export interface DraftMediaItem {
+  index?: number;
+  path?: string;
+  mediaType?: string | null;
+  kind?: string | null;
+}
+
+export interface DraftSource {
+  id?: number;
+  role?: string;
+  sourceChannel?: string | null;
+  sourceTelegramPostId?: number | null;
+  sourceKey?: string | null;
+  sourcePostId?: number | null;
+  draftVersionId?: number | null;
+  sourceDate?: string | null;
+  views?: number | null;
+  text?: string | null;
+  excerpt?: string | null;
+  mediaCount?: number | null;
+  mediaPreviewPath?: string | null;
+}
+
+export interface DraftVersion {
+  id: number;
+  versionNumber: number;
+  changeType: string;
+  text: string;
+  media: DraftMediaItem[];
+  sourceState: unknown;
+  meta: Record<string, unknown>;
+  createdAt: string;
+}
+
+export interface DraftDetail {
+  id: number;
+  status: string;
+  title: string | null;
+  text: string;
+  media: DraftMediaItem[];
+  sourceState: unknown;
+  profileId: string;
+  profileTitle: string;
+  currentVersionId: number | null;
+  scheduledFor: string | null;
+  publishedAt: string | null;
+  updatedAt: string;
+  telegramMessageId: number | null;
+  sources: DraftSource[];
+  versions: DraftVersion[];
+  publications: Array<{
+    id: number;
+    status: string;
+    telegramMessageId: number | null;
+    targetChannelId: string | null;
+    publishedAt: string | null;
+    text: string;
+    media: DraftMediaItem[];
+    errorText: string | null;
+  }>;
+}
+
+export interface SourcePost {
+  id: number;
+  sourceChannel: string;
+  telegramPostId: number | null;
+  sourceDate: string | null;
+  scrapedAt: string;
+  text: string;
+  excerpt: string;
+  entities: Array<Record<string, unknown>>;
+  mediaPaths: string[];
+  mediaPreviewPath?: string | null;
+  mediaCount: number;
+  views: number;
+  reactions: unknown;
+  usedInPosts: unknown;
+}
+
+export interface GenerateDraftFromPoolInput {
+  type: 'post' | 'alert' | 'weekly';
+  lookbackHours?: number | null;
+  limit?: number | null;
+}
+
+export interface UploadedMediaFile {
+  path: string;
+  filename: string;
+}
+
+export interface GenerateDraftFromManualSourceInput {
+  type: 'post' | 'alert' | 'weekly';
+  text: string;
+  channelTitle?: string;
+  channelKey?: string;
+  sourceTelegramPostId?: number | null;
+  sourceLinks?: Array<{
+    label: string;
+    url: string;
+  }>;
+  mediaPaths?: string[];
+}
+
+export interface HistoryItem {
+  id: number;
+  profileId: string;
+  profileTitle: string;
+  status: string;
+  title: string | null;
+  excerpt: string;
+  mediaCount?: number;
+  mediaPreviewPath?: string | null;
+  versionCount: number;
+  sourceCount: number;
+  createdAt: string;
+  updatedAt: string;
+  scheduledFor: string | null;
+  publishedAt: string | null;
+  publicationStatus: string | null;
+  telegramMessageId: number | null;
+}
+
+export interface ScheduleDetail {
+  profileNumericId: number;
+  profileId: string;
+  profileTitle: string;
+  timezone: string;
+  isEnabled: boolean;
+  config: Record<string, unknown>;
+  updatedAt: string;
+}
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') ?? 'http://localhost:3010/api';
+
+export function getMediaPreviewUrl(mediaPath: string | null | undefined) {
+  const normalizedPath = String(mediaPath || '').trim();
+  if (!normalizedPath) {
+    return null;
+  }
+
+  return appendTelegramInitData(`${API_BASE_URL}/media-file?path=${encodeURIComponent(normalizedPath)}`);
+}
+
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers = {
+    'Content-Type': 'application/json',
+    ...buildTelegramAuthHeader(),
+    ...((init?.headers as Record<string, string> | undefined) || {})
+  };
+
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    ...init,
+    headers,
+  });
+
+  if (!response.ok) {
+    const errorPayload = await response.json().catch(() => null);
+    const message = errorPayload?.error?.message || `Request failed: ${response.status}`;
+    throw new Error(message);
+  }
+
+  const payload = await response.json();
+  return payload.data as T;
+}
+
+export const api = {
+  listProfiles: () => request<Profile[]>('/profiles'),
+  getProfile: (profileId: string) => request<Profile>(`/profiles/${profileId}`),
+  listSourcePosts: (
+    profileId: string,
+    params: {
+      lookbackHours?: number | null;
+      limit?: number;
+      search?: string;
+      mediaOnly?: boolean;
+      refresh?: boolean;
+    } = {}
+  ) => {
+    const search = new URLSearchParams();
+    if (params.lookbackHours) search.set('lookbackHours', String(params.lookbackHours));
+    if (params.limit) search.set('limit', String(params.limit));
+    if (params.search) search.set('search', params.search);
+    if (params.mediaOnly) search.set('mediaOnly', 'true');
+    if (params.refresh) search.set('refresh', 'true');
+    return request<SourcePost[]>(`/profiles/${profileId}/source-posts?${search.toString()}`);
+  },
+  getStatus: () => request<StatusSummary>('/status'),
+  getPersonaGuide: (profileId: string) => request<PersonaGuideDetail>(`/profiles/${profileId}/persona-guide`),
+  generateDraft: (profileId: string, body: GenerateDraftFromPoolInput) =>
+    request<DraftDetail>(`/profiles/${profileId}/generate`, {
+      method: 'POST',
+      body: JSON.stringify(body)
+    }),
+  generateDraftFromSource: (profileId: string, body: GenerateDraftFromManualSourceInput) =>
+    request<DraftDetail>(`/profiles/${profileId}/generate-from-source`, {
+      method: 'POST',
+      body: JSON.stringify(body)
+    }),
+  updateProfileAssets: (
+    profileId: string,
+    body: {
+      personaGuideMarkdown?: string;
+      rulesMarkdown?: string;
+      templatesMarkdown?: string;
+      humanizerMarkdown?: string;
+      sourceChannelsConfig?: unknown;
+      webSourcesConfig?: unknown;
+      profileConfig?: Record<string, unknown>;
+    }
+  ) =>
+    request<ProfileAssetsUpdateResult>(`/profiles/${profileId}/assets`, {
+      method: 'PUT',
+      body: JSON.stringify(body)
+    }),
+  distillPersona: (profileId: string, body: { personaSource: 'sources' | 'target' }) =>
+    request<DistillPersonaResult>(`/profiles/${profileId}/distill-persona`, {
+      method: 'POST',
+      body: JSON.stringify(body)
+    }),
+  listInbox: (params: { status?: string; profileId?: string }) => {
+    const search = new URLSearchParams();
+    if (params.status) search.set('status', params.status);
+    if (params.profileId) search.set('profileId', params.profileId);
+    return request<InboxItem[]>(`/inbox?${search.toString()}`);
+  },
+  getDraft: (draftId: number) => request<DraftDetail>(`/drafts/${draftId}`),
+  getDraftVersions: (draftId: number) => request<DraftVersion[]>(`/drafts/${draftId}/versions`),
+  saveDraft: (draftId: number, body: { text: string; mediaState: unknown[]; sourceState: unknown; meta?: Record<string, unknown> }) =>
+    request(`/drafts/${draftId}/save`, {
+      method: 'POST',
+      body: JSON.stringify(body)
+    }),
+  scheduleDraft: (draftId: number, body: { scheduledFor: string; meta?: Record<string, unknown> }) =>
+    request(`/drafts/${draftId}/schedule`, {
+      method: 'POST',
+      body: JSON.stringify(body)
+    }),
+  publishDraft: (draftId: number, body: { telegramMessageId?: number | null }) =>
+    request(`/drafts/${draftId}/publish`, {
+      method: 'POST',
+      body: JSON.stringify(body)
+    }),
+  regenerateDraft: (draftId: number, body: Record<string, never> = {}) =>
+    request(`/drafts/${draftId}/regenerate`, {
+      method: 'POST',
+      body: JSON.stringify(body)
+    }),
+  replaceDraftSource: (draftId: number, body: { sourcePostId?: number | null } = {}) =>
+    request(`/drafts/${draftId}/replace-source`, {
+      method: 'POST',
+      body: JSON.stringify(body)
+    }),
+  cancelDraft: (draftId: number, body: { meta?: Record<string, unknown> } = {}) =>
+    request(`/drafts/${draftId}/cancel`, {
+      method: 'POST',
+      body: JSON.stringify(body)
+    }),
+  listHistory: (params: { profileId?: string; status?: string }) => {
+    const search = new URLSearchParams();
+    if (params.profileId) search.set('profileId', params.profileId);
+    if (params.status) search.set('status', params.status);
+    return request<HistoryItem[]>(`/history?${search.toString()}`);
+  },
+  getSchedule: (profileId: string) => request<ScheduleDetail>(`/profiles/${profileId}/schedule`),
+  updateSchedule: (profileId: string, body: { timezone: string; isEnabled: boolean; config: Record<string, unknown> }) =>
+    request<ScheduleDetail>(`/profiles/${profileId}/schedule`, {
+      method: 'PUT',
+      body: JSON.stringify(body)
+    }),
+  uploadMedia: (body: { filename: string; mimeType: string; contentBase64: string }) =>
+    request<UploadedMediaFile>('/media-upload', {
+      method: 'POST',
+      body: JSON.stringify(body)
+    })
+};

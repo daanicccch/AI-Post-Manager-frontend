@@ -1,0 +1,8 @@
+.git
+.gitignore
+.env
+dist
+node_modules
+*.tsbuildinfo
+npm-debug.log*
+docker-compose*.yml
