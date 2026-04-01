@@ -10,6 +10,7 @@ declare global {
         onEvent?: (eventType: string, eventHandler: () => void) => void;
         offEvent?: (eventType: string, eventHandler: () => void) => void;
         colorScheme?: 'light' | 'dark';
+        platform?: string;
         isFullscreen?: boolean;
         viewportHeight?: number;
         viewportStableHeight?: number;
@@ -98,6 +99,20 @@ function safelyCallTelegramMethod(methodName: string, action?: () => void) {
   }
 }
 
+function shouldUseTelegramImmersiveMode(webApp: NonNullable<Window['Telegram']>['WebApp']) {
+  const platform = String(webApp?.platform || '').trim().toLowerCase();
+
+  if (platform) {
+    return !['tdesktop', 'macos', 'weba', 'webk', 'web', 'unknown'].includes(platform);
+  }
+
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+    return false;
+  }
+
+  return window.matchMedia('(pointer: coarse)').matches;
+}
+
 export function initTelegramWebApp() {
   const webApp = window.Telegram?.WebApp;
   if (!webApp) {
@@ -105,13 +120,16 @@ export function initTelegramWebApp() {
   }
 
   const sync = () => syncTelegramViewportVars();
+  const shouldUseImmersiveMode = shouldUseTelegramImmersiveMode(webApp);
 
   sync();
   safelyCallTelegramMethod('ready', webApp.ready);
   safelyCallTelegramMethod('disableVerticalSwipes', webApp.disableVerticalSwipes);
-  safelyCallTelegramMethod('expand', webApp.expand);
-  if (!webApp.isFullscreen) {
-    safelyCallTelegramMethod('requestFullscreen', webApp.requestFullscreen);
+  if (shouldUseImmersiveMode) {
+    safelyCallTelegramMethod('expand', webApp.expand);
+    if (!webApp.isFullscreen) {
+      safelyCallTelegramMethod('requestFullscreen', webApp.requestFullscreen);
+    }
   }
   sync();
 

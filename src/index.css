@@ -320,6 +320,7 @@ button:disabled {
 .field-inline {
   display: grid;
   gap: 0.45rem;
+  min-width: 0;
 }
 
 .select-field {
@@ -4609,10 +4610,24 @@ textarea:focus {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.45rem;
+  align-items: start;
 }
 
 .schedule-digest-grid {
   grid-template-columns: minmax(0, 1fr) repeat(2, minmax(0, 0.72fr));
+}
+
+.schedule-slot-card__times > *,
+.schedule-digest-grid > * {
+  min-width: 0;
+}
+
+.schedule-slot-card__times input,
+.schedule-digest-grid input,
+.review-schedule-field input {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .schedule-custom-select {
@@ -5442,6 +5457,10 @@ textarea:focus {
   min-width: 0;
 }
 
+.review-schedule-field {
+  width: 100%;
+}
+
 .review-schedule-field input {
   display: block;
   inline-size: 100%;
@@ -5455,6 +5474,17 @@ textarea:focus {
   border-color: rgba(121, 131, 171, 0.16);
   font-size: 16px;
   overflow: hidden;
+}
+
+@media (max-width: 640px) {
+  .schedule-slot-card__times,
+  .schedule-digest-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .schedule-digest-grid > :first-child {
+    grid-column: auto;
+  }
 }
 
 .sticky-review-bar--editor .secondary-button,

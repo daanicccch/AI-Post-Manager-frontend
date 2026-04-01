@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ChangeEvent, type Dispatch, type SetStateAction } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent, type Dispatch, type DragEvent, type SetStateAction } from 'react';
 import { api, getMediaPreviewUrl, type DraftMediaItem } from '../../lib/api';
 import { useAppLocale } from '../../lib/appLocale';
 import { isImagePath, isVideoPath } from '../../lib/formatters';
@@ -207,12 +207,27 @@ export function CreateMediaManager({
     setOverrideEnabled(false);
   }
 
-  function handleDrop(targetIndex: number) {
-    if (draggedIndex === null) {
+  function handleDragStart(event: DragEvent<HTMLElement>, index: number) {
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', String(index));
+    setDraggedIndex(index);
+  }
+
+  function handleDragOver(event: DragEvent<HTMLElement>) {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+  }
+
+  function handleDropOnCard(event: DragEvent<HTMLElement>, targetIndex: number) {
+    event.preventDefault();
+
+    const fallbackIndex = Number.parseInt(event.dataTransfer.getData('text/plain'), 10);
+    const sourceIndex = draggedIndex ?? (Number.isFinite(fallbackIndex) ? fallbackIndex : null);
+    if (sourceIndex === null) {
       return;
     }
 
-    setItems((currentItems) => normalizeMediaState(reorderMediaItems(currentItems, draggedIndex, targetIndex)));
+    setItems((currentItems) => normalizeMediaState(reorderMediaItems(currentItems, sourceIndex, targetIndex)));
     setDraggedIndex(null);
   }
 
@@ -280,9 +295,9 @@ export function CreateMediaManager({
                 draggable
                 key={`${item.path || 'media'}-${index}`}
                 onDragEnd={() => setDraggedIndex(null)}
-                onDragOver={(event) => event.preventDefault()}
-                onDragStart={() => setDraggedIndex(index)}
-                onDrop={() => handleDrop(index)}
+                onDragOver={handleDragOver}
+                onDragStart={(event) => handleDragStart(event, index)}
+                onDrop={(event) => handleDropOnCard(event, index)}
               >
                 {renderMediaPreview(item.path, item.mediaType, `${getMediaLabel(item, index)} preview`) || (
                   <div className="create-media-placeholder">

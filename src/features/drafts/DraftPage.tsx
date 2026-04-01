@@ -516,38 +516,40 @@ export function DraftPage() {
 
       </section>
 
-      <div className="sticky-review-bar sticky-review-bar--editor">
-        <div className="review-dock">
-          <label className="field-inline field-inline--grow review-schedule-field">
-            <span>{isRu ? 'Время отправки' : 'Schedule'}</span>
-            <input
-              disabled={isLocked}
-              type="datetime-local"
-              value={scheduleValue}
-              onChange={(event) => setScheduleValue(event.target.value)}
-            />
-          </label>
+      {!isLocked && (
+        <div className="sticky-review-bar sticky-review-bar--editor">
+          <div className="review-dock">
+            <label className="field-inline field-inline--grow review-schedule-field">
+              <span>{isRu ? 'Время отправки' : 'Schedule'}</span>
+              <input
+                disabled={isWorking}
+                type="datetime-local"
+                value={scheduleValue}
+                onChange={(event) => setScheduleValue(event.target.value)}
+              />
+            </label>
 
-          <div className="action-cluster">
-            <button
-              className="secondary-button"
-              disabled={isLocked || isWorking}
-              onClick={handleSave}
-              type="button"
-            >
-              {activeAction === 'save' ? (isRu ? 'Сохраняем...' : 'Saving...') : isRu ? 'Сохранить' : 'Save'}
-            </button>
-            <button
-              className="primary-button"
-              disabled={isLocked || isWorking}
-              onClick={handlePublish}
-              type="button"
-            >
-              {activeAction === 'publish' ? (isRu ? 'Отправляем...' : 'Publishing...') : isRu ? 'Опубликовать сейчас' : 'Publish now'}
-            </button>
+            <div className="action-cluster">
+              <button
+                className="secondary-button"
+                disabled={isWorking}
+                onClick={handleSave}
+                type="button"
+              >
+                {activeAction === 'save' ? (isRu ? 'Сохраняем...' : 'Saving...') : isRu ? 'Сохранить' : 'Save'}
+              </button>
+              <button
+                className="primary-button"
+                disabled={isWorking}
+                onClick={handlePublish}
+                type="button"
+              >
+                {activeAction === 'publish' ? (isRu ? 'Отправляем...' : 'Publishing...') : isRu ? 'Опубликовать сейчас' : 'Publish now'}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </section>
   );
 }
