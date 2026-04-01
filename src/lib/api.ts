@@ -226,8 +226,25 @@ export interface ScheduleDetail {
   updatedAt: string;
 }
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') ?? 'http://localhost:3010/api';
+function getDefaultApiBaseUrl() {
+  if (typeof window === 'undefined') {
+    return 'http://localhost:3011/api';
+  }
+
+  const { hostname, protocol } = window.location;
+
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return 'http://localhost:3011/api';
+  }
+
+  const normalizedHost = hostname.startsWith('www.') ? hostname.slice(4) : hostname;
+  return `${protocol}//api.${normalizedHost}/api`;
+}
+
+const rawApiBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
+const API_BASE_URL = rawApiBaseUrl
+  ? rawApiBaseUrl.replace(/\/$/, '')
+  : getDefaultApiBaseUrl();
 
 export function getMediaPreviewUrl(mediaPath: string | null | undefined) {
   const normalizedPath = String(mediaPath || '').trim();
