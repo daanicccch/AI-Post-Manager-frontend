@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAppLocale } from '../lib/appLocale';
+import { useTelegramKeyboard } from '../lib/useTelegramKeyboard';
 
 interface AppShellProps {
   children: ReactNode;
@@ -59,31 +60,32 @@ function NavIcon({ kind }: { kind: string }) {
 export function AppShell({ children }: AppShellProps) {
   const { language } = useAppLocale();
   const location = useLocation();
+  const keyboardOpen = useTelegramKeyboard();
   const isRu = language === 'ru';
   const navigation = [
     {
       to: '/',
-      label: isRu ? 'Активные' : 'Active',
+      label: isRu ? '\u0410\u043a\u0442\u0438\u0432\u043d\u044b\u0435' : 'Active',
       icon: 'queue'
     },
     {
       to: '/create',
-      label: isRu ? 'Создать' : 'Create',
+      label: isRu ? '\u0421\u043e\u0437\u0434\u0430\u0442\u044c' : 'Create',
       icon: 'create'
     },
     {
       to: '/schedule',
-      label: isRu ? 'Расписание' : 'Planner',
+      label: isRu ? '\u041f\u043b\u0430\u043d' : 'Planner',
       icon: 'planner'
     },
     {
       to: '/history',
-      label: isRu ? 'История' : 'History',
+      label: isRu ? '\u0418\u0441\u0442\u043e\u0440\u0438\u044f' : 'History',
       icon: 'history'
     },
     {
       to: '/profiles',
-      label: isRu ? 'Профиль' : 'Profile',
+      label: isRu ? '\u041f\u0440\u043e\u0444\u0438\u043b\u044c' : 'Profile',
       icon: 'profile'
     }
   ];
@@ -91,10 +93,15 @@ export function AppShell({ children }: AppShellProps) {
   const currentSection =
     navigation.find((item) => (item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to))) ??
     null;
-  const title = isEditor ? (isRu ? 'Проверка поста' : 'Draft Review') : currentSection?.label || 'ChannelBot';
+  const title =
+    isEditor
+      ? isRu
+        ? '\u041f\u0440\u043e\u0432\u0435\u0440\u043a\u0430 \u043f\u043e\u0441\u0442\u0430'
+        : 'Draft Review'
+      : currentSection?.label || 'ChannelBot';
 
   return (
-    <div className="workspace-shell">
+    <div className={`workspace-shell${keyboardOpen ? ' workspace-shell--keyboard-open' : ''}`}>
       <div className="workspace-shell__glow workspace-shell__glow--one" aria-hidden="true" />
       <div className="workspace-shell__glow workspace-shell__glow--two" aria-hidden="true" />
 
@@ -109,21 +116,23 @@ export function AppShell({ children }: AppShellProps) {
           <main className="workspace-main">{children}</main>
         </div>
 
-        <nav className="bottom-nav" aria-label={isRu ? 'Навигация' : 'Primary'}>
-          {navigation.map((item) => (
-            <NavLink
-              key={item.to}
-              className={({ isActive }) => `bottom-nav__item${isActive ? ' bottom-nav__item--active' : ''}`}
-              to={item.to}
-              end={item.to === '/'}
-            >
-              <span className="bottom-nav__icon">
-                <NavIcon kind={item.icon} />
-              </span>
-              <span className="bottom-nav__label">{item.label}</span>
-            </NavLink>
-          ))}
-        </nav>
+        {!keyboardOpen ? (
+          <nav className="bottom-nav" aria-label={isRu ? '\u041d\u0430\u0432\u0438\u0433\u0430\u0446\u0438\u044f' : 'Primary'}>
+            {navigation.map((item) => (
+              <NavLink
+                key={item.to}
+                className={({ isActive }) => `bottom-nav__item${isActive ? ' bottom-nav__item--active' : ''}`}
+                to={item.to}
+                end={item.to === '/'}
+              >
+                <span className="bottom-nav__icon">
+                  <NavIcon kind={item.icon} />
+                </span>
+                <span className="bottom-nav__label">{item.label}</span>
+              </NavLink>
+            ))}
+          </nav>
+        ) : null}
       </div>
     </div>
   );
