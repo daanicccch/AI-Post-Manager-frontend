@@ -82,6 +82,7 @@ export interface InboxItem {
   excerpt: string;
   mediaCount?: number;
   mediaPreviewPath?: string | null;
+  mediaPreviewUrl?: string | null;
   sources: Array<{
     role?: string;
     sourceChannel?: string | null;
@@ -99,6 +100,7 @@ export interface InboxItem {
 export interface DraftMediaItem {
   index?: number;
   path?: string;
+  previewUrl?: string | null;
   mediaType?: string | null;
   kind?: string | null;
 }
@@ -117,6 +119,7 @@ export interface DraftSource {
   excerpt?: string | null;
   mediaCount?: number | null;
   mediaPreviewPath?: string | null;
+  mediaPreviewUrl?: string | null;
 }
 
 export interface DraftVersion {
@@ -169,6 +172,7 @@ export interface SourcePost {
   entities: Array<Record<string, unknown>>;
   mediaPaths: string[];
   mediaPreviewPath?: string | null;
+  mediaPreviewUrl?: string | null;
   mediaCount: number;
   views: number;
   reactions: unknown;
@@ -208,6 +212,7 @@ export interface HistoryItem {
   excerpt: string;
   mediaCount?: number;
   mediaPreviewPath?: string | null;
+  mediaPreviewUrl?: string | null;
   versionCount: number;
   sourceCount: number;
   createdAt: string;
@@ -287,7 +292,12 @@ function shouldUseLocalMockApi() {
 
 const USE_LOCAL_MOCK_API = shouldUseLocalMockApi();
 
-export function getMediaPreviewUrl(mediaPath: string | null | undefined) {
+export function getMediaPreviewUrl(mediaPath: string | null | undefined, directUrl?: string | null | undefined) {
+  const normalizedDirectUrl = String(directUrl || '').trim();
+  if (normalizedDirectUrl) {
+    return normalizedDirectUrl;
+  }
+
   const normalizedPath = String(mediaPath || '').trim();
   if (!normalizedPath) {
     return null;

@@ -158,7 +158,7 @@ export function HistoryPage() {
                   type="button"
                   onClick={(event) => {
                     event.stopPropagation();
-                    const previewUrl = getMediaPreviewUrl(item.mediaPreviewPath);
+                    const previewUrl = getMediaPreviewUrl(item.mediaPreviewPath, item.mediaPreviewUrl);
                     if (previewUrl) {
                       setExpandedPreview({
                         src: previewUrl,
@@ -171,7 +171,7 @@ export function HistoryPage() {
                     alt={stripHtml(item.title) || (isRu ? 'Превью черновика' : 'Draft preview')}
                     className="feed-card__image"
                     loading="lazy"
-                    src={getMediaPreviewUrl(item.mediaPreviewPath) || undefined}
+                    src={getMediaPreviewUrl(item.mediaPreviewPath, item.mediaPreviewUrl) || undefined}
                   />
                 </button>
                 <span className={`feed-status-badge feed-status-badge--${item.status}`}>{getStatusLabel(item.status)}</span>

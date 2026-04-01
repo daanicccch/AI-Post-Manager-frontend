@@ -93,8 +93,8 @@ function inferMediaTypeFromPath(filePath: string) {
   return 'file';
 }
 
-function renderMediaPreview(path: string | undefined, mediaType?: string | null, alt = 'Draft media') {
-  const previewUrl = getMediaPreviewUrl(path);
+function renderMediaPreview(path: string | undefined, previewDirectUrl?: string | null, mediaType?: string | null, alt = 'Draft media') {
+  const previewUrl = getMediaPreviewUrl(path, previewDirectUrl);
   if (!previewUrl) {
     return null;
   }
@@ -135,7 +135,7 @@ function renderTelegramMediaGallery(items: DraftMediaItem[], title: string) {
             className={`telegram-media-grid__item${showMoreOverlay ? ' telegram-media-grid__item--more' : ''}`}
             key={`${item.path || 'preview-media'}-${index}`}
           >
-            {renderMediaPreview(item.path, item.mediaType, `${title} media ${index + 1}`)}
+            {renderMediaPreview(item.path, item.previewUrl, item.mediaType, `${title} media ${index + 1}`)}
             {showMoreOverlay && <span className="telegram-media-grid__more">+{extraItemsCount}</span>}
           </div>
         );

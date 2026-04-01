@@ -52,8 +52,8 @@ function getMediaLabel(item: DraftMediaItem, index: number) {
   return fileName || `${item.mediaType || item.kind || 'media'} ${index + 1}`;
 }
 
-function renderMediaPreview(path: string | undefined, mediaType?: string | null, alt = 'Media preview') {
-  const previewUrl = getMediaPreviewUrl(path);
+function renderMediaPreview(path: string | undefined, previewDirectUrl?: string | null, mediaType?: string | null, alt = 'Media preview') {
+  const previewUrl = getMediaPreviewUrl(path, previewDirectUrl);
   if (!previewUrl) {
     return null;
   }
@@ -299,7 +299,7 @@ export function CreateMediaManager({
                 onDragStart={(event) => handleDragStart(event, index)}
                 onDrop={(event) => handleDropOnCard(event, index)}
               >
-                {renderMediaPreview(item.path, item.mediaType, `${getMediaLabel(item, index)} preview`) || (
+                {renderMediaPreview(item.path, item.previewUrl, item.mediaType, `${getMediaLabel(item, index)} preview`) || (
                   <div className="create-media-placeholder">
                     <strong>{getMediaLabel(item, index)}</strong>
                     <span>{item.mediaType || item.kind || 'media'}</span>

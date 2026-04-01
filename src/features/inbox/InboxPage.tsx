@@ -160,7 +160,7 @@ export function InboxPage() {
                   type="button"
                   onClick={(event) => {
                     event.stopPropagation();
-                    const previewUrl = getMediaPreviewUrl(draft.mediaPreviewPath);
+                    const previewUrl = getMediaPreviewUrl(draft.mediaPreviewPath, draft.mediaPreviewUrl);
                     if (previewUrl) {
                       setExpandedPreview({
                         src: previewUrl,
@@ -173,7 +173,7 @@ export function InboxPage() {
                     alt={stripHtml(draft.title) || (isRu ? 'Превью черновика' : 'Draft preview')}
                     className="feed-card__image"
                     loading="lazy"
-                    src={getMediaPreviewUrl(draft.mediaPreviewPath) || undefined}
+                    src={getMediaPreviewUrl(draft.mediaPreviewPath, draft.mediaPreviewUrl) || undefined}
                   />
                 </button>
                 <span className={`feed-status-badge feed-status-badge--${draft.status}`}>{getStatusLabel(draft.status)}</span>

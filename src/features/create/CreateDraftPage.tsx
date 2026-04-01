@@ -176,7 +176,7 @@ function SourceVisual({
   sourcePost: SourcePost;
   onExpand?: (src: string, alt: string) => void;
 }) {
-  const previewUrl = getMediaPreviewUrl(sourcePost.mediaPreviewPath);
+  const previewUrl = getMediaPreviewUrl(sourcePost.mediaPreviewPath, sourcePost.mediaPreviewUrl);
 
   if (previewUrl && sourcePost.mediaPreviewPath && isImagePath(sourcePost.mediaPreviewPath)) {
     return (
