@@ -983,6 +983,25 @@ export async function handleLocalMockRequest<T>(path: string, init?: RequestInit
     return clone({ ok: true }) as T;
   }
 
+  const deleteDraftMatch = pathname.match(/^\/drafts\/(\d+)$/);
+  if (method === 'DELETE' && deleteDraftMatch) {
+    const draftId = Number(deleteDraftMatch[1]);
+    const draftIndex = db.drafts.findIndex((draft) => draft.id === draftId);
+    if (draftIndex < 0) {
+      throw new Error(`Draft ${draftId} not found`);
+    }
+
+    const draft = db.drafts[draftIndex];
+    if (draft.status !== 'published' && draft.status !== 'cancelled') {
+      throw new Error('Only history posts can be deleted');
+    }
+
+    db.drafts.splice(draftIndex, 1);
+    syncProfileStats(db);
+    saveDb(db);
+    return clone({ id: draftId, status: draft.status }) as T;
+  }
+
   if (method === 'GET' && pathname === '/history') {
     const profileId = url.searchParams.get('profileId');
     const status = url.searchParams.get('status');

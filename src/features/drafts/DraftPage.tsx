@@ -1,5 +1,5 @@
 ﻿import { lazy, Suspense, useDeferredValue, useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { DraftPageSkeleton, EditorComposerSkeleton } from '../../components/LoadingSkeleton';
 import { StatusPill } from '../../components/StatusPill';
 import { CreateMediaManager } from '../create/CreateMediaManager';
@@ -154,6 +154,7 @@ function normalizeMediaState(items: DraftMediaItem[]) {
 export function DraftPage() {
   const { language } = useAppLocale();
   const isRu = language === 'ru';
+  const navigate = useNavigate();
   const { draftId } = useParams();
   const numericDraftId = Number(draftId);
   const [draft, setDraft] = useState<DraftDetail | null>(null);
@@ -208,6 +209,7 @@ export function DraftPage() {
     draft?.status === 'published' ||
     draft?.status === 'cancelled' ||
     draft?.status === 'publishing';
+  const canDeleteFromHistory = draft?.status === 'published' || draft?.status === 'cancelled';
   const isDirty = Boolean(draft && (draftText !== normalizedSavedText || mediaDraftSignature !== draftMediaSignature));
   const isWorking = activeAction !== null;
   const previewTimestamp = draft?.publishedAt || draft?.scheduledFor || draft?.updatedAt || null;
@@ -332,6 +334,29 @@ export function DraftPage() {
     }, isRu ? 'Черновик отменён' : 'Draft cancelled');
   }
 
+  async function handleDelete() {
+    if (!draft || !canDeleteFromHistory || isWorking) return;
+    if (!window.confirm(
+      isRu
+        ? 'Удалить этот пост из истории? Это действие нельзя отменить.'
+        : 'Delete this post from history? This action cannot be undone.'
+    )) {
+      return;
+    }
+
+    setActiveAction('delete');
+    setError(null);
+    setNotice(null);
+
+    try {
+      await api.deleteDraft(draft.id);
+      navigate('/history', { replace: true });
+    } catch (actionError) {
+      setError(actionError instanceof Error ? actionError.message : isRu ? 'Не удалось удалить пост' : 'Failed to delete post');
+      setActiveAction(null);
+    }
+  }
+
   async function handleRegenerate() {
     if (!draft || isLocked) return;
     if (isDirty && !window.confirm(isRu ? 'Несохранённые изменения будут заменены новой сгенерированной версией. Продолжить?' : 'Unsaved edits will be replaced by a freshly generated version. Continue?')) {
@@ -370,6 +395,16 @@ export function DraftPage() {
                 type="button"
               >
                 {activeAction === 'cancel' ? (isRu ? 'Отмена...' : 'Cancelling...') : isRu ? 'Отменить' : 'Cancel'}
+              </button>
+            )}
+            {canDeleteFromHistory && (
+              <button
+                className="review-nav-button review-nav-button--danger"
+                disabled={isWorking}
+                onClick={handleDelete}
+                type="button"
+              >
+                {activeAction === 'delete' ? (isRu ? 'Удаляем...' : 'Deleting...') : isRu ? 'Удалить' : 'Delete'}
               </button>
             )}
           </div>

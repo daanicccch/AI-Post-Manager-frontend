@@ -419,6 +419,10 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(body)
     }),
+  deleteDraft: (draftId: number) =>
+    request<{ id: number; status: string }>(`/drafts/${draftId}`, {
+      method: 'DELETE'
+    }),
   listHistory: (params: { profileId?: string; status?: string }) => {
     const search = new URLSearchParams();
     if (params.profileId) search.set('profileId', params.profileId);
