@@ -19,6 +19,10 @@
   --safe-right: env(safe-area-inset-right, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
+  --safe-top-resolved: max(var(--safe-top), var(--tg-safe-area-inset-top, 0px), var(--tg-content-safe-area-inset-top, 0px));
+  --safe-right-resolved: max(var(--safe-right), var(--tg-safe-area-inset-right, 0px), var(--tg-content-safe-area-inset-right, 0px));
+  --safe-bottom-resolved: max(var(--safe-bottom), var(--tg-safe-area-inset-bottom, 0px), var(--tg-content-safe-area-inset-bottom, 0px));
+  --safe-left-resolved: max(var(--safe-left), var(--tg-safe-area-inset-left, 0px), var(--tg-content-safe-area-inset-left, 0px));
   font-family:
     -apple-system,
     BlinkMacSystemFont,
@@ -90,7 +94,11 @@ button:disabled {
 
 .workspace-shell {
   min-height: 100vh;
-  padding: calc(1rem + var(--safe-top)) max(1rem, env(safe-area-inset-right)) 1.5rem max(1rem, env(safe-area-inset-left));
+  padding:
+    calc(1rem + var(--safe-top-resolved))
+    max(1rem, var(--safe-right-resolved))
+    calc(1.5rem + var(--safe-bottom-resolved))
+    max(1rem, var(--safe-left-resolved));
 }
 
 .glass-header {
@@ -2811,10 +2819,10 @@ a {
   position: relative;
   min-height: 100vh;
   padding:
-    calc(1rem + var(--safe-top))
-    max(1rem, calc(1rem + var(--safe-right)))
-    calc(1.15rem + var(--safe-bottom))
-    max(1rem, calc(1rem + var(--safe-left)));
+    calc(1rem + var(--safe-top-resolved))
+    max(1rem, calc(1rem + var(--safe-right-resolved)))
+    calc(1.15rem + var(--safe-bottom-resolved))
+    max(1rem, calc(1rem + var(--safe-left-resolved)));
 }
 
 .workspace-shell__glow {
@@ -2849,7 +2857,7 @@ a {
   grid-template-rows: auto 1fr auto;
   gap: 1rem;
   width: min(100%, 70rem);
-  min-height: calc(100vh - (2.15rem + var(--safe-top) + var(--safe-bottom)));
+  min-height: calc(100vh - (2.15rem + var(--safe-top-resolved) + var(--safe-bottom-resolved)));
   margin: 0 auto;
 }
 
@@ -2962,7 +2970,7 @@ a {
 
 .bottom-nav {
   position: sticky;
-  bottom: max(0.25rem, calc(0.25rem + var(--safe-bottom)));
+  bottom: max(0.25rem, calc(0.25rem + var(--safe-bottom-resolved)));
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0.45rem;
@@ -3462,13 +3470,13 @@ textarea:focus {
 }
 
 .workspace-shell {
-  padding-inline: max(0.55rem, calc(0.55rem + var(--safe-left)));
-  padding-right: max(0.55rem, calc(0.55rem + var(--safe-right)));
+  padding-inline: max(0.55rem, calc(0.55rem + var(--safe-left-resolved)));
+  padding-right: max(0.55rem, calc(0.55rem + var(--safe-right-resolved)));
 }
 
 .app-frame {
   width: 100%;
-  min-height: calc(100vh - (1.7rem + var(--safe-top) + var(--safe-bottom)));
+  min-height: calc(100vh - (1.7rem + var(--safe-top-resolved) + var(--safe-bottom-resolved)));
   margin: 0;
 }
 
@@ -3787,8 +3795,8 @@ textarea:focus {
 
 @media (max-width: 640px) {
   .workspace-shell {
-    padding-inline: max(0.45rem, calc(0.45rem + var(--safe-left)));
-    padding-right: max(0.45rem, calc(0.45rem + var(--safe-right)));
+    padding-inline: max(0.45rem, calc(0.45rem + var(--safe-left-resolved)));
+    padding-right: max(0.45rem, calc(0.45rem + var(--safe-right-resolved)));
   }
 
   .app-topbar {

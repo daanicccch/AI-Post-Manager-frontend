@@ -32,7 +32,7 @@ function DraftDeepLinkRedirect() {
 
 export function App() {
   useEffect(() => {
-    initTelegramWebApp();
+    return initTelegramWebApp();
   }, []);
 
   return (
