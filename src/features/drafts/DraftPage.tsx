@@ -166,7 +166,11 @@ export function DraftPage() {
   const [activeAction, setActiveAction] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const canEditDraft = draft?.status !== 'cancelled';
+  const latestPublicationError = draft?.publications.find((publication) => publication.status === 'failed')?.errorText || null;
+  const canEditDraft =
+    draft?.status !== 'cancelled' &&
+    draft?.status !== 'published' &&
+    draft?.status !== 'publishing';
   const normalizedSavedText = useMemo(() => normalizeRichTextHtml(draft?.text), [draft?.text]);
 
   const reviewSections = useMemo(
@@ -200,7 +204,10 @@ export function DraftPage() {
   const mediaDraftSignature = useMemo(() => JSON.stringify(mediaDraft), [mediaDraft]);
   const draftMediaSignature = useMemo(() => JSON.stringify(draft?.media || []), [draft?.media]);
   const currentSection = reviewSections.find((section) => section.key === activeSection) ?? reviewSections[0];
-  const isLocked = draft?.status === 'published' || draft?.status === 'cancelled';
+  const isLocked =
+    draft?.status === 'published' ||
+    draft?.status === 'cancelled' ||
+    draft?.status === 'publishing';
   const isDirty = Boolean(draft && (draftText !== normalizedSavedText || mediaDraftSignature !== draftMediaSignature));
   const isWorking = activeAction !== null;
   const previewTimestamp = draft?.publishedAt || draft?.scheduledFor || draft?.updatedAt || null;
@@ -210,6 +217,8 @@ export function DraftPage() {
   const previewStatusLabel =
     draft?.publishedAt && draft.telegramMessageId
       ? isRu ? 'Отправлен' : 'Sent'
+      : draft?.status === 'publishing'
+        ? isRu ? 'Отправляется' : 'Publishing'
       : draft?.scheduledFor
         ? isRu ? 'Запланирован' : 'Scheduled'
         : isRu ? 'Черновик' : 'Draft';
@@ -369,6 +378,20 @@ export function DraftPage() {
 
       {notice && <div className="state-banner state-banner--success">{notice}</div>}
       {error && <div className="state-banner state-banner--error">{error}</div>}
+      {draft.status === 'publishing' && latestPublicationError && (
+        <div className="state-banner state-banner--error">
+          {isRu
+            ? `Публикация остановилась после захвата черновика: ${latestPublicationError}`
+            : `Publishing stopped after the draft was claimed: ${latestPublicationError}`}
+        </div>
+      )}
+      {draft.status === 'publishing' && !latestPublicationError && (
+        <div className="state-banner">
+          {isRu
+            ? 'Черновик уже отправляется в Telegram. Повторная отправка заблокирована, чтобы не создать дубль.'
+            : 'This draft is already being sent to Telegram. Repeat publishing is locked to avoid duplicates.'}
+        </div>
+      )}
 
       <section className="editor-tabs editor-tabs--section editor-tabs--review" role="tablist" aria-label={isRu ? 'Разделы черновика' : 'Draft workspace sections'}>
         {reviewSections.map((section) => (

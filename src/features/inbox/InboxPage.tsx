@@ -6,7 +6,7 @@ import { api, getMediaPreviewUrl, type InboxItem, type Profile } from '../../lib
 import { useAppLocale } from '../../lib/appLocale';
 import { formatDate, isImagePath, stripHtml, summarizeRichText } from '../../lib/formatters';
 
-const ACTIVE_INBOX_STATUSES = new Set(['editing', 'scheduled']);
+const ACTIVE_INBOX_STATUSES = new Set(['editing', 'scheduled', 'publishing']);
 
 export function InboxPage() {
   const { language } = useAppLocale();

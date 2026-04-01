@@ -659,6 +659,11 @@ textarea:focus {
   color: var(--warning);
 }
 
+.status-pill--publishing {
+  background: rgba(44, 111, 196, 0.14);
+  color: #2c6fc4;
+}
+
 .status-pill--cancelled {
   background: rgba(180, 62, 62, 0.14);
   color: var(--danger);
@@ -2928,6 +2933,7 @@ a {
   display: grid;
   gap: 0.4rem;
   min-width: 0;
+  width: 100%;
 }
 
 .app-topbar__eyebrow,
@@ -2956,6 +2962,7 @@ a {
 
 .app-topbar h1 {
   font-size: clamp(1.55rem, 2vw, 2rem);
+  line-height: 1.18;
 }
 
 .app-topbar p,
@@ -3341,6 +3348,11 @@ textarea:focus {
 .status-pill--scheduled {
   background: rgba(196, 135, 35, 0.12);
   color: var(--warning);
+}
+
+.status-pill--publishing {
+  background: rgba(44, 111, 196, 0.12);
+  color: #2c6fc4;
 }
 
 .status-pill--cancelled {
@@ -3949,15 +3961,23 @@ textarea:focus {
   gap: 0.35rem;
   padding: 0.62rem 0.78rem;
   border-radius: 1.05rem;
+  min-height: 2.55rem;
 }
 
 .app-topbar__intro {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   gap: 0;
+  min-height: 1.45rem;
 }
 
 .app-topbar h1 {
   font-size: 1.02rem;
-  line-height: 1.1;
+  line-height: 1.22;
+  padding-block: 0.08em;
+  width: 100%;
+  text-align: center;
 }
 
 .app-topbar__status,
@@ -5417,13 +5437,24 @@ textarea:focus {
   padding: 0.78rem 0.82rem;
 }
 
+.review-dock,
+.review-schedule-field {
+  min-width: 0;
+}
+
 .review-schedule-field input {
+  display: block;
+  inline-size: 100%;
+  max-inline-size: 100%;
+  min-inline-size: 0;
   min-height: 2.6rem;
   padding: 0.6rem 0.78rem;
   border-radius: 0.95rem;
   background: rgba(246, 248, 253, 0.96);
   color: #1d2940;
   border-color: rgba(121, 131, 171, 0.16);
+  font-size: 16px;
+  overflow: hidden;
 }
 
 .sticky-review-bar--editor .secondary-button,
