@@ -56,15 +56,29 @@ function syncTelegramViewportVars() {
     return;
   }
 
-  setCssVar('--tg-safe-area-inset-top', webApp.safeAreaInset?.top);
-  setCssVar('--tg-safe-area-inset-bottom', webApp.safeAreaInset?.bottom);
-  setCssVar('--tg-safe-area-inset-left', webApp.safeAreaInset?.left);
-  setCssVar('--tg-safe-area-inset-right', webApp.safeAreaInset?.right);
+  const safeTop = Math.max(0, Number(webApp.safeAreaInset?.top || 0));
+  const safeBottom = Math.max(0, Number(webApp.safeAreaInset?.bottom || 0));
+  const safeLeft = Math.max(0, Number(webApp.safeAreaInset?.left || 0));
+  const safeRight = Math.max(0, Number(webApp.safeAreaInset?.right || 0));
 
-  setCssVar('--tg-content-safe-area-inset-top', webApp.contentSafeAreaInset?.top);
-  setCssVar('--tg-content-safe-area-inset-bottom', webApp.contentSafeAreaInset?.bottom);
-  setCssVar('--tg-content-safe-area-inset-left', webApp.contentSafeAreaInset?.left);
-  setCssVar('--tg-content-safe-area-inset-right', webApp.contentSafeAreaInset?.right);
+  const contentTop = Math.max(0, Number(webApp.contentSafeAreaInset?.top || 0));
+  const contentBottom = Math.max(0, Number(webApp.contentSafeAreaInset?.bottom || 0));
+  const contentLeft = Math.max(0, Number(webApp.contentSafeAreaInset?.left || 0));
+  const contentRight = Math.max(0, Number(webApp.contentSafeAreaInset?.right || 0));
+
+  setCssVar('--tg-safe-area-inset-top', safeTop);
+  setCssVar('--tg-safe-area-inset-bottom', safeBottom);
+  setCssVar('--tg-safe-area-inset-left', safeLeft);
+  setCssVar('--tg-safe-area-inset-right', safeRight);
+
+  setCssVar('--tg-content-safe-area-inset-top', contentTop);
+  setCssVar('--tg-content-safe-area-inset-bottom', contentBottom);
+  setCssVar('--tg-content-safe-area-inset-left', contentLeft);
+  setCssVar('--tg-content-safe-area-inset-right', contentRight);
+  setCssVar('--tg-safe-area-combined-top', webApp.isFullscreen ? safeTop + contentTop : safeTop);
+  setCssVar('--tg-safe-area-combined-bottom', webApp.isFullscreen ? safeBottom + contentBottom : safeBottom);
+  setCssVar('--tg-safe-area-combined-left', webApp.isFullscreen ? safeLeft + contentLeft : safeLeft);
+  setCssVar('--tg-safe-area-combined-right', webApp.isFullscreen ? safeRight + contentRight : safeRight);
 
   setCssVar('--tg-viewport-height', webApp.viewportHeight);
   setCssVar('--tg-viewport-stable-height', webApp.viewportStableHeight);
@@ -90,11 +104,13 @@ export function initTelegramWebApp() {
   webApp.onEvent?.('safeAreaChanged', sync);
   webApp.onEvent?.('contentSafeAreaChanged', sync);
   webApp.onEvent?.('viewportChanged', sync);
+  webApp.onEvent?.('fullscreenChanged', sync);
 
   return () => {
     webApp.offEvent?.('safeAreaChanged', sync);
     webApp.offEvent?.('contentSafeAreaChanged', sync);
     webApp.offEvent?.('viewportChanged', sync);
+    webApp.offEvent?.('fullscreenChanged', sync);
   };
 }
 
