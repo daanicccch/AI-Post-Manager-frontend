@@ -1,4 +1,5 @@
 import { handleLocalMockRequest, isLocalMockMediaPath, resolveLocalMockMediaUrl } from './localMockApi';
+import { normalizeBrokenEncoding } from './encoding';
 import { appendTelegramInitData, buildTelegramAuthHeader, getTelegramInitDataRaw } from './telegram';
 
 export interface Profile {
@@ -301,7 +302,8 @@ export function getMediaPreviewUrl(mediaPath: string | null | undefined) {
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   if (USE_LOCAL_MOCK_API) {
-    return handleLocalMockRequest<T>(path, init);
+    const mockPayload = await handleLocalMockRequest<T>(path, init);
+    return normalizeBrokenEncoding(mockPayload);
   }
 
   const headers = {
@@ -322,7 +324,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   }
 
   const payload = await response.json();
-  return payload.data as T;
+  return normalizeBrokenEncoding(payload.data as T);
 }
 
 export const api = {

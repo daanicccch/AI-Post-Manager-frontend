@@ -1,4 +1,4 @@
-import {
+﻿import {
   startTransition,
   useDeferredValue,
   useEffect,
@@ -22,6 +22,8 @@ import {
   CreateMediaManager,
   normalizeMediaState
 } from './CreateMediaManager';
+import { CreatePageSkeleton, SourceListSkeleton } from '../../components/LoadingSkeleton';
+import { useBusyOverlay } from '../../lib/busyOverlay';
 
 const postTypeOptions = [
   { value: 'post', label: 'Post' },
@@ -240,6 +242,7 @@ export function CreateDraftPage() {
   const { language } = useAppLocale();
   const isRu = language === 'ru';
   const navigate = useNavigate();
+  const { hideBusyOverlay, showBusyOverlay } = useBusyOverlay();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [profileId, setProfileId] = useState('');
   const [mode, setMode] = useState<'source_pool' | 'source_post' | 'manual_source'>('source_pool');
@@ -487,6 +490,13 @@ export function CreateDraftPage() {
     setError(null);
     setNotice(null);
     setIsCreating(true);
+    showBusyOverlay({
+      caption: isRu ? 'Генерация поста' : 'Draft generation',
+      title: isRu ? 'Собираем черновик' : 'Building the draft',
+      message: isRu
+        ? 'Держим экран занятым, пока собираем текст и материалы. Как только всё будет готово, сразу откроем ревью.'
+        : 'Keeping the workspace locked while text and source materials are prepared. Review opens automatically when the draft is ready.'
+    });
 
     void (async () => {
       try {
@@ -517,6 +527,7 @@ export function CreateDraftPage() {
             poolMediaOverrideEnabled
           );
 
+          hideBusyOverlay();
           setNotice(isRu ? 'Черновик создан из пула источников.' : 'Draft created from the source pool.');
           navigate(`/drafts/${draft.id}`);
           return;
@@ -555,7 +566,8 @@ export function CreateDraftPage() {
           manualMediaOverrideEnabled
         );
 
-          setNotice(isRu ? 'Черновик создан из ручного источника.' : 'Draft created from the manual source.');
+        hideBusyOverlay();
+        setNotice(isRu ? 'Черновик создан из ручного источника.' : 'Draft created from the manual source.');
         navigate(`/drafts/${draft.id}`);
       } catch (createError) {
         setError(
@@ -566,6 +578,7 @@ export function CreateDraftPage() {
               : 'Failed to create draft'
         );
       } finally {
+        hideBusyOverlay();
         setIsCreating(false);
       }
     })();
@@ -581,6 +594,13 @@ export function CreateDraftPage() {
     setNotice(null);
     setCreatingSourcePostId(sourcePost.id);
     setIsCreating(true);
+    showBusyOverlay({
+      caption: isRu ? 'Выбранный источник' : 'Selected source',
+      title: isRu ? 'Готовим черновик' : 'Preparing the draft',
+      message: isRu
+        ? 'Собираем пост из выбранного источника и сразу переведём вас в ревью, когда версия будет готова.'
+        : 'Preparing the post from the chosen source and switching to review as soon as the version is ready.'
+    });
 
     void (async () => {
       try {
@@ -603,6 +623,7 @@ export function CreateDraftPage() {
           pickMediaOverrideEnabled
         );
 
+        hideBusyOverlay();
         setNotice(isRu ? 'Черновик создан из выбранного источника.' : 'Draft created from the selected source.');
         navigate(`/drafts/${draft.id}`);
       } catch (createError) {
@@ -614,6 +635,7 @@ export function CreateDraftPage() {
               : 'Failed to create draft from source post'
         );
       } finally {
+        hideBusyOverlay();
         setCreatingSourcePostId(null);
         setIsCreating(false);
       }
@@ -642,6 +664,10 @@ export function CreateDraftPage() {
         setOverrideEnabled={setManualMediaOverrideEnabled}
       />
     );
+  }
+
+  if (isLoading && profiles.length === 0) {
+    return <CreatePageSkeleton />;
   }
 
   return (
@@ -820,13 +846,11 @@ export function CreateDraftPage() {
                   </div>
                 </details>
 
-                {isSourceLoading && <div className="state-banner">{isRu ? 'Загружаем свежие источники...' : 'Loading recent sources...'}</div>}
-
                 {!isSourceLoading && sourcePosts.length > 0 && (
                   <div className="create-list-meta">
                     <p className="editor-help">
                       {isRu
-                        ? `Р В Р’В Р вЂ™Р’В Р В Р Р‹Р РЋРЎСџР В Р’В Р вЂ™Р’В Р В Р Р‹Р Р†Р вЂљРЎС›Р В Р’В Р вЂ™Р’В Р В Р Р‹Р Р†Р вЂљРЎСљР В Р’В Р вЂ™Р’В Р В РІР‚в„ўР вЂ™Р’В°Р В Р’В Р вЂ™Р’В Р В РІР‚в„ўР вЂ™Р’В·Р В Р’В Р вЂ™Р’В Р В РІР‚в„ўР вЂ™Р’В°Р В Р’В Р вЂ™Р’В Р В Р’В Р Р†Р вЂљР’В¦Р В Р’В Р вЂ™Р’В Р В Р Р‹Р Р†Р вЂљРЎС› ${visibleSourcePosts.length} Р В Р’В Р вЂ™Р’В Р В Р Р‹Р Р†Р вЂљР’ВР В Р’В Р вЂ™Р’В Р В РІР‚в„ўР вЂ™Р’В· ${sourcePosts.length} Р В Р’В Р вЂ™Р’В Р В Р Р‹Р Р†Р вЂљР’ВР В Р’В Р В Р вЂ№Р В Р’В Р РЋРІР‚СљР В Р’В Р В Р вЂ№Р В Р вЂ Р В РІР‚С™Р РЋРІвЂћСћР В Р’В Р вЂ™Р’В Р В Р Р‹Р Р†Р вЂљРЎС›Р В Р’В Р В Р вЂ№Р В Р вЂ Р В РІР‚С™Р В Р вЂ№Р В Р’В Р вЂ™Р’В Р В Р’В Р Р†Р вЂљР’В¦Р В Р’В Р вЂ™Р’В Р В Р Р‹Р Р†Р вЂљР’ВР В Р’В Р вЂ™Р’В Р В Р Р‹Р Р†Р вЂљРЎСљР В Р’В Р вЂ™Р’В Р В Р Р‹Р Р†Р вЂљРЎС›Р В Р’В Р вЂ™Р’В Р В Р’В Р Р†Р вЂљР’В .`
+                        ? `Показано ${visibleSourcePosts.length} из ${sourcePosts.length} источников.`
                         : `Showing ${visibleSourcePosts.length} of ${sourcePosts.length} sources.`}
                     </p>
                   </div>
@@ -841,67 +865,71 @@ export function CreateDraftPage() {
                   />
                 </label>
 
-                <div className="source-pick-list source-pick-list--mobile">
-                  {visibleSourcePosts.map((sourcePost) => {
-                    const isSelected = selectedSourcePostId === sourcePost.id;
-                    const sourceDateLabel = sourcePost.sourceDate
-                      ? formatDate(sourcePost.sourceDate, language)
-                      : formatDate(sourcePost.scrapedAt, language);
+                {isSourceLoading ? (
+                  <SourceListSkeleton />
+                ) : (
+                  <div className="source-pick-list source-pick-list--mobile">
+                    {visibleSourcePosts.map((sourcePost) => {
+                      const isSelected = selectedSourcePostId === sourcePost.id;
+                      const sourceDateLabel = sourcePost.sourceDate
+                        ? formatDate(sourcePost.sourceDate, language)
+                        : formatDate(sourcePost.scrapedAt, language);
 
-                    return (
-                      <article
-                        key={sourcePost.id}
-                        className={`create-source-card${isSelected ? ' create-source-card--active' : ''}`}
-                      >
-                        <div className="create-source-card__visual">
-                          <SourceVisual
-                            sourcePost={sourcePost}
-                            onExpand={(src, alt) => setExpandedPreview({ src, alt })}
-                          />
-                          <button
-                            aria-pressed={isSelected}
-                            className={`source-select-badge${isSelected ? ' source-select-badge--active' : ''}`}
-                            type="button"
-                            onClick={() => setSelectedSourcePostId(sourcePost.id)}
-                          >
-                            <span className="source-select-badge__dot" aria-hidden="true" />
-                          </button>
-                        </div>
-
-                        <div className="create-source-card__body">
-                          <div className="create-source-card__header">
-                            <strong>{sourcePost.sourceChannel}</strong>
-                            <span>
-                              {sourceDateLabel}
-                              {sourcePost.mediaCount
-                                ? ` - ${sourcePost.mediaCount} ${isRu ? 'медиа' : 'media'}`
-                                : isRu
-                                  ? ' - только текст'
-                                  : ' - text only'}
-                            </span>
+                      return (
+                        <article
+                          key={sourcePost.id}
+                          className={`create-source-card${isSelected ? ' create-source-card--active' : ''}`}
+                        >
+                          <div className="create-source-card__visual">
+                            <SourceVisual
+                              sourcePost={sourcePost}
+                              onExpand={(src, alt) => setExpandedPreview({ src, alt })}
+                            />
+                            <button
+                              aria-pressed={isSelected}
+                              className={`source-select-badge${isSelected ? ' source-select-badge--active' : ''}`}
+                              type="button"
+                              onClick={() => setSelectedSourcePostId(sourcePost.id)}
+                            >
+                              <span className="source-select-badge__dot" aria-hidden="true" />
+                            </button>
                           </div>
 
-                          <div className="create-source-card__actions">
-                            {getSourcePostUrl(sourcePost) && (
-                              <a
-                                className="source-inline-link source-inline-link--subtle"
-                                href={getSourcePostUrl(sourcePost) || undefined}
-                                rel="noreferrer"
-                                target="_blank"
-                              >
-                                {isRu ? 'Открыть источник' : 'Open source'}
-                              </a>
-                            )}
-                          </div>
+                          <div className="create-source-card__body">
+                            <div className="create-source-card__header">
+                              <strong>{sourcePost.sourceChannel}</strong>
+                              <span>
+                                {sourceDateLabel}
+                                {sourcePost.mediaCount
+                                  ? ` - ${sourcePost.mediaCount} ${isRu ? 'медиа' : 'media'}`
+                                  : isRu
+                                    ? ' - только текст'
+                                    : ' - text only'}
+                              </span>
+                            </div>
 
-                          <p className="create-source-card__excerpt">
-                            {summarizeRichText(sourcePost.excerpt || sourcePost.text, 140) || (isRu ? 'Текст источника не найден.' : 'No source text captured.')}
-                          </p>
-                        </div>
-                      </article>
-                    );
-                  })}
-                </div>
+                            <div className="create-source-card__actions">
+                              {getSourcePostUrl(sourcePost) && (
+                                <a
+                                  className="source-inline-link source-inline-link--subtle"
+                                  href={getSourcePostUrl(sourcePost) || undefined}
+                                  rel="noreferrer"
+                                  target="_blank"
+                                >
+                                  {isRu ? 'Открыть источник' : 'Open source'}
+                                </a>
+                              )}
+                            </div>
+
+                            <p className="create-source-card__excerpt">
+                              {summarizeRichText(sourcePost.excerpt || sourcePost.text, 140) || (isRu ? 'Текст источника не найден.' : 'No source text captured.')}
+                            </p>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                )}
 
                 {canShowMoreSources && (
                   <button

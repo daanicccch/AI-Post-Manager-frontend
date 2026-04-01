@@ -16,6 +16,7 @@ import type {
   StatusSummary,
   UploadedMediaFile
 } from './api';
+import { normalizeBrokenEncoding } from './encoding';
 
 type MockDb = {
   drafts: DraftDetail[];
@@ -532,7 +533,12 @@ function loadDb(): MockDb {
       return seeded;
     }
 
-    return JSON.parse(raw) as MockDb;
+    const parsed = normalizeBrokenEncoding(JSON.parse(raw) as MockDb);
+    if (JSON.stringify(parsed) !== raw) {
+      saveDb(parsed);
+    }
+
+    return parsed;
   } catch {
     const seeded = createInitialDb();
     saveDb(seeded);
@@ -541,7 +547,7 @@ function loadDb(): MockDb {
 }
 
 function saveDb(db: MockDb) {
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizeBrokenEncoding(db)));
 }
 
 function getProfileBySlug(db: MockDb, profileId: string) {

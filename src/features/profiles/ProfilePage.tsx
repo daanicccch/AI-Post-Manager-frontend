@@ -1,4 +1,5 @@
 import { startTransition, useEffect, useMemo, useState, useTransition } from 'react';
+import { ProfilePageSkeleton } from '../../components/LoadingSkeleton';
 import { SelectField } from '../../components/SelectField';
 import { api, type Profile } from '../../lib/api';
 import { useAppLocale } from '../../lib/appLocale';
@@ -273,6 +274,10 @@ export function ProfilePage() {
         setIsSaving(false);
       }
     })();
+  }
+
+  if ((isBootLoading || isProfileLoading) && !activeProfile && !profileDetail) {
+    return <ProfilePageSkeleton />;
   }
 
   return (

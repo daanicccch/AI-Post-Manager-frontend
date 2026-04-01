@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAppLocale } from '../lib/appLocale';
+import { useBusyOverlay } from '../lib/busyOverlay';
 import { useTelegramKeyboard } from '../lib/useTelegramKeyboard';
 
 interface AppShellProps {
@@ -61,6 +62,7 @@ export function AppShell({ children }: AppShellProps) {
   const { language } = useAppLocale();
   const location = useLocation();
   const keyboardOpen = useTelegramKeyboard();
+  const { isBusy } = useBusyOverlay();
   const isRu = language === 'ru';
   const navigation = [
     {
@@ -105,7 +107,7 @@ export function AppShell({ children }: AppShellProps) {
       <div className="workspace-shell__glow workspace-shell__glow--one" aria-hidden="true" />
       <div className="workspace-shell__glow workspace-shell__glow--two" aria-hidden="true" />
 
-      <div className="app-frame">
+      <div className={`app-frame${isBusy ? ' app-frame--busy' : ''}`}>
         <div className="workspace-main-shell">
           <header className="app-topbar">
             <div className="app-topbar__intro">
@@ -117,11 +119,21 @@ export function AppShell({ children }: AppShellProps) {
         </div>
 
         {!keyboardOpen ? (
-          <nav className="bottom-nav" aria-label={isRu ? '\u041d\u0430\u0432\u0438\u0433\u0430\u0446\u0438\u044f' : 'Primary'}>
+          <nav
+            className={`bottom-nav${isBusy ? ' bottom-nav--disabled' : ''}`}
+            aria-label={isRu ? '\u041d\u0430\u0432\u0438\u0433\u0430\u0446\u0438\u044f' : 'Primary'}
+          >
             {navigation.map((item) => (
               <NavLink
                 key={item.to}
+                aria-disabled={isBusy || undefined}
                 className={({ isActive }) => `bottom-nav__item${isActive ? ' bottom-nav__item--active' : ''}`}
+                onClick={(event) => {
+                  if (isBusy) {
+                    event.preventDefault();
+                  }
+                }}
+                tabIndex={isBusy ? -1 : undefined}
                 to={item.to}
                 end={item.to === '/'}
               >

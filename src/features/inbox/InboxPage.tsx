@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, useTransition } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { FeedListSkeleton } from '../../components/LoadingSkeleton';
 import { SelectField } from '../../components/SelectField';
 import { api, getMediaPreviewUrl, type InboxItem, type Profile } from '../../lib/api';
 import { useAppLocale } from '../../lib/appLocale';
@@ -92,6 +93,10 @@ export function InboxPage() {
       isCancelled = true;
     };
   }, [profileId, status]);
+
+  if (isLoading && drafts.length === 0) {
+    return <FeedListSkeleton />;
+  }
 
   return (
     <section className="page-stack page-stack--queue">

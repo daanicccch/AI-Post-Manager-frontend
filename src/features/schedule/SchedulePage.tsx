@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { SchedulePageSkeleton } from '../../components/LoadingSkeleton';
 import { SelectField } from '../../components/SelectField';
 import { api, type Profile, type ScheduleDetail } from '../../lib/api';
 import { useAppLocale } from '../../lib/appLocale';
@@ -395,6 +396,10 @@ export function SchedulePage() {
     setChannelCheckUsernames((current) =>
       current.includes(username) ? current.filter((item) => item !== username) : [...current, username]
     );
+  }
+
+  if (isLoading && !schedule) {
+    return <SchedulePageSkeleton />;
   }
 
   return (

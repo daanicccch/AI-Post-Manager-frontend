@@ -7,6 +7,7 @@ import { HistoryPage } from '../features/history/HistoryPage';
 import { InboxPage } from '../features/inbox/InboxPage';
 import { ProfilePage } from '../features/profiles/ProfilePage';
 import { SchedulePage } from '../features/schedule/SchedulePage';
+import { BusyOverlayProvider } from '../lib/busyOverlay';
 import { initTelegramWebApp } from '../lib/telegram';
 
 function DraftDeepLinkRedirect() {
@@ -36,17 +37,19 @@ export function App() {
   }, []);
 
   return (
-    <AppShell>
-      <DraftDeepLinkRedirect />
-      <Routes>
-        <Route path="/" element={<InboxPage />} />
-        <Route path="/create" element={<CreateDraftPage />} />
-        <Route path="/drafts/:draftId" element={<DraftPage />} />
-        <Route path="/history" element={<HistoryPage />} />
-        <Route path="/schedule" element={<SchedulePage />} />
-        <Route path="/profiles" element={<ProfilePage />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </AppShell>
+    <BusyOverlayProvider>
+      <AppShell>
+        <DraftDeepLinkRedirect />
+        <Routes>
+          <Route path="/" element={<InboxPage />} />
+          <Route path="/create" element={<CreateDraftPage />} />
+          <Route path="/drafts/:draftId" element={<DraftPage />} />
+          <Route path="/history" element={<HistoryPage />} />
+          <Route path="/schedule" element={<SchedulePage />} />
+          <Route path="/profiles" element={<ProfilePage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </AppShell>
+    </BusyOverlayProvider>
   );
 }

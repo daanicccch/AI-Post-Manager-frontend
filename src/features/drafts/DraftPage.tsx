@@ -1,5 +1,6 @@
-import { lazy, Suspense, useDeferredValue, useEffect, useMemo, useState } from 'react';
+﻿import { lazy, Suspense, useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { DraftPageSkeleton, EditorComposerSkeleton } from '../../components/LoadingSkeleton';
 import { StatusPill } from '../../components/StatusPill';
 import { CreateMediaManager } from '../create/CreateMediaManager';
 import {
@@ -332,10 +333,10 @@ export function DraftPage() {
       await api.regenerateDraft(draft.id);
     }, isRu ? 'Новая версия сгенерирована' : 'New version generated');
   }
-
   if (isLoading) {
-    return <div className="state-banner">{isRu ? 'Загружаем редактор черновика...' : 'Loading draft editor...'}</div>;
+    return <DraftPageSkeleton />;
   }
+
 
   if (!draft) {
     return <div className="state-banner state-banner--error">{error || (isRu ? 'Черновик не найден' : 'Draft not found')}</div>;
@@ -430,7 +431,7 @@ export function DraftPage() {
                   </button>
                 )}
               </div>
-              <Suspense fallback={<div className="state-banner">{isRu ? 'Загружаем редактор...' : 'Loading editor...'}</div>}>
+              <Suspense fallback={<EditorComposerSkeleton />}>
                 <RichTextEditor
                   ariaLabel={isRu ? 'Текст поста' : 'Draft text'}
                   isRu={isRu}
@@ -453,7 +454,7 @@ export function DraftPage() {
                 </div>
                 <div className="telegram-phone__channel">
                   <strong>{draft.profileTitle}</strong>
-                  <span>{isRu ? 'канал · превью' : 'channel · preview'}</span>
+                  <span>{isRu ? 'канал · превью' : 'channel В· preview'}</span>
                 </div>
                 <div className="telegram-phone__icons" aria-hidden="true">
                   <span className="telegram-phone__icon telegram-phone__icon--search" />
