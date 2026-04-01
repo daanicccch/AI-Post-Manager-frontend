@@ -84,6 +84,20 @@ function syncTelegramViewportVars() {
   setCssVar('--tg-viewport-stable-height', webApp.viewportStableHeight);
 }
 
+function safelyCallTelegramMethod(methodName: string, action?: () => void) {
+  if (typeof action !== 'function') {
+    return;
+  }
+
+  try {
+    action();
+  } catch (error) {
+    if (import.meta.env.DEV) {
+      console.warn(`[telegram] ${methodName} is unavailable in this environment`, error);
+    }
+  }
+}
+
 export function initTelegramWebApp() {
   const webApp = window.Telegram?.WebApp;
   if (!webApp) {
@@ -93,11 +107,11 @@ export function initTelegramWebApp() {
   const sync = () => syncTelegramViewportVars();
 
   sync();
-  webApp.ready?.();
-  webApp.disableVerticalSwipes?.();
-  webApp.expand?.();
+  safelyCallTelegramMethod('ready', webApp.ready);
+  safelyCallTelegramMethod('disableVerticalSwipes', webApp.disableVerticalSwipes);
+  safelyCallTelegramMethod('expand', webApp.expand);
   if (!webApp.isFullscreen) {
-    webApp.requestFullscreen?.();
+    safelyCallTelegramMethod('requestFullscreen', webApp.requestFullscreen);
   }
   sync();
 

@@ -1,4 +1,5 @@
-import { appendTelegramInitData, buildTelegramAuthHeader } from './telegram';
+import { handleLocalMockRequest, isLocalMockMediaPath, resolveLocalMockMediaUrl } from './localMockApi';
+import { appendTelegramInitData, buildTelegramAuthHeader, getTelegramInitDataRaw } from './telegram';
 
 export interface Profile {
   id: number;
@@ -246,16 +247,63 @@ const API_BASE_URL = rawApiBaseUrl
   ? rawApiBaseUrl.replace(/\/$/, '')
   : getDefaultApiBaseUrl();
 
+function shouldUseLocalMockApi() {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  const flag = String(import.meta.env.VITE_LOCAL_MOCK_API || '').trim().toLowerCase();
+  if (flag === 'true') {
+    return true;
+  }
+  if (flag === 'false') {
+    return false;
+  }
+
+  const search = new URLSearchParams(window.location.search);
+  const queryValue = search.get('mock');
+  if (queryValue === '1' || queryValue === 'true') {
+    window.localStorage.setItem('channelbot.local.mock-api', '1');
+    return true;
+  }
+  if (queryValue === '0' || queryValue === 'false') {
+    window.localStorage.setItem('channelbot.local.mock-api', '0');
+    return false;
+  }
+
+  const persisted = window.localStorage.getItem('channelbot.local.mock-api');
+  if (persisted === '1') {
+    return true;
+  }
+  if (persisted === '0') {
+    return false;
+  }
+
+  const host = window.location.hostname;
+  const isLocalHost = host === 'localhost' || host === '127.0.0.1';
+  return isLocalHost && !getTelegramInitDataRaw();
+}
+
+const USE_LOCAL_MOCK_API = shouldUseLocalMockApi();
+
 export function getMediaPreviewUrl(mediaPath: string | null | undefined) {
   const normalizedPath = String(mediaPath || '').trim();
   if (!normalizedPath) {
     return null;
   }
 
+  if (USE_LOCAL_MOCK_API && isLocalMockMediaPath(normalizedPath)) {
+    return resolveLocalMockMediaUrl(normalizedPath);
+  }
+
   return appendTelegramInitData(`${API_BASE_URL}/media-file?path=${encodeURIComponent(normalizedPath)}`);
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  if (USE_LOCAL_MOCK_API) {
+    return handleLocalMockRequest<T>(path, init);
+  }
+
   const headers = {
     'Content-Type': 'application/json',
     ...buildTelegramAuthHeader(),

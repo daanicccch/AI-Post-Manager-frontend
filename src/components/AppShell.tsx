@@ -106,13 +106,13 @@ export function AppShell({ children }: AppShellProps) {
       <div className="workspace-shell__glow workspace-shell__glow--two" aria-hidden="true" />
 
       <div className="app-frame">
-        <header className="app-topbar">
-          <div className="app-topbar__intro">
-            <h1>{title}</h1>
-          </div>
-        </header>
-
         <div className="workspace-main-shell">
+          <header className="app-topbar">
+            <div className="app-topbar__intro">
+              <h1>{title}</h1>
+            </div>
+          </header>
+
           <main className="workspace-main">{children}</main>
         </div>
 
