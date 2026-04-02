@@ -358,6 +358,21 @@ button:disabled {
   transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
 }
 
+.field-block input[type='time'],
+.field-block input[type='datetime-local'],
+.field-inline input[type='time'],
+.field-inline input[type='datetime-local'] {
+  display: block;
+  inline-size: 100%;
+  max-inline-size: 100%;
+  min-inline-size: 0;
+  -webkit-min-logical-width: 0;
+  font-size: 16px;
+  line-height: 1.2;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
 .select-field select,
 .field-block input,
 .field-inline input,
