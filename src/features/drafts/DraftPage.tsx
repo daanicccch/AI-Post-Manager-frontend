@@ -259,6 +259,17 @@ export function DraftPage() {
     }
   }, [activeSection, canEditDraft]);
 
+  useEffect(() => {
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    document.body.classList.toggle('app-lightbox-open', Boolean(expandedPreview));
+    return () => {
+      document.body.classList.remove('app-lightbox-open');
+    };
+  }, [expandedPreview]);
+
   async function loadDraft() {
     setIsLoading(true);
     setError(null);

@@ -4216,7 +4216,7 @@ textarea:focus {
 .image-lightbox {
   position: fixed;
   inset: 0;
-  z-index: 70;
+  z-index: 9999;
   display: grid;
   place-items: center;
   padding: 0;
@@ -4242,6 +4242,24 @@ textarea:focus {
   border-radius: 999px;
   background: rgba(12, 16, 24, 0.72);
   color: #ffffff;
+}
+
+body.app-lightbox-open {
+  overflow: hidden;
+  background: #05070d;
+}
+
+body.app-lightbox-open .bottom-nav {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(140%);
+}
+
+body.app-lightbox-open .workspace-shell,
+body.app-lightbox-open .app-frame,
+body.app-lightbox-open .workspace-main-shell,
+body.app-lightbox-open .workspace-main {
+  background: #05070d;
 }
 
 @media (max-width: 640px) {
