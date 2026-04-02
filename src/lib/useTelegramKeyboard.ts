@@ -106,8 +106,17 @@ function scrollEditableIntoView(target: HTMLElement) {
       const caretRect = getCaretRect(target) || targetRect;
       const topPadding = 20;
       const bottomPadding = 28;
-      const visibleTop = (viewport?.offsetTop || 0) + topPadding;
-      const visibleBottom = (viewport?.offsetTop || 0) + (viewport?.height || window.innerHeight) - bottomPadding;
+      const viewportTop = (viewport?.offsetTop || 0) + topPadding;
+      const viewportBottom = (viewport?.offsetTop || 0) + (viewport?.height || window.innerHeight) - bottomPadding;
+
+      let visibleTop = viewportTop;
+      let visibleBottom = viewportBottom;
+
+      if (scrollContainer instanceof HTMLElement) {
+        const containerRect = scrollContainer.getBoundingClientRect();
+        visibleTop = Math.max(containerRect.top + topPadding, viewportTop);
+        visibleBottom = Math.min(containerRect.bottom - bottomPadding, viewportBottom);
+      }
 
       let delta = 0;
       if (caretRect.bottom > visibleBottom) {
@@ -127,14 +136,14 @@ function scrollEditableIntoView(target: HTMLElement) {
       if (scrollContainer instanceof HTMLElement) {
         scrollContainer.scrollBy({
           top: delta,
-          behavior: 'smooth'
+          behavior: 'auto'
         });
         return;
       }
 
       window.scrollBy({
         top: delta,
-        behavior: 'smooth'
+        behavior: 'auto'
       });
     });
   };
