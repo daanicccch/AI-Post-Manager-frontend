@@ -67,24 +67,6 @@ function getCaretRect(target: HTMLElement) {
     return rangeRect;
   }
 
-  const marker = document.createElement('span');
-  marker.textContent = '\u200b';
-  marker.style.position = 'relative';
-  marker.style.display = 'inline-block';
-  marker.style.width = '1px';
-  marker.style.height = '1em';
-  marker.style.padding = '0';
-  marker.style.margin = '0';
-  marker.style.opacity = '0';
-  range.insertNode(marker);
-  const markerRect = marker.getBoundingClientRect();
-  marker.remove();
-  selection.removeAllRanges();
-  selection.addRange(range);
-  if (markerRect.width > 0 || markerRect.height > 0) {
-    return markerRect;
-  }
-
   const fallbackRect = range.getBoundingClientRect();
   if (fallbackRect.width > 0 || fallbackRect.height > 0) {
     return fallbackRect;
@@ -136,14 +118,14 @@ function scrollEditableIntoView(target: HTMLElement) {
       if (scrollContainer instanceof HTMLElement) {
         scrollContainer.scrollBy({
           top: delta,
-          behavior: 'auto'
+          behavior: 'smooth'
         });
         return;
       }
 
       window.scrollBy({
         top: delta,
-        behavior: 'auto'
+        behavior: 'smooth'
       });
     });
   };
