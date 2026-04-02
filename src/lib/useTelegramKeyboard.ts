@@ -9,6 +9,43 @@ const EDITABLE_SELECTOR = [
   '.rich-text-editor__content'
 ].join(', ');
 
+const TEXT_CARET_MIRROR_PROPERTIES = [
+  'box-sizing',
+  'width',
+  'height',
+  'padding-top',
+  'padding-right',
+  'padding-bottom',
+  'padding-left',
+  'border-top-width',
+  'border-right-width',
+  'border-bottom-width',
+  'border-left-width',
+  'border-top-style',
+  'border-right-style',
+  'border-bottom-style',
+  'border-left-style',
+  'border-top-color',
+  'border-right-color',
+  'border-bottom-color',
+  'border-left-color',
+  'font-family',
+  'font-size',
+  'font-style',
+  'font-variant',
+  'font-weight',
+  'font-stretch',
+  'line-height',
+  'letter-spacing',
+  'text-align',
+  'text-transform',
+  'text-indent',
+  'text-rendering',
+  'text-decoration',
+  'direction',
+  'tab-size'
+];
+
 function getEditableTarget(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) {
     return null;
@@ -39,14 +76,50 @@ function getScrollContainer(target: HTMLElement) {
   return target.closest<HTMLElement>('.workspace-main-shell') || document.scrollingElement;
 }
 
+function getTextEntryCaretRect(target: HTMLInputElement | HTMLTextAreaElement) {
+  const computedStyle = window.getComputedStyle(target);
+  const targetRect = target.getBoundingClientRect();
+  const mirror = document.createElement('div');
+
+  mirror.setAttribute('aria-hidden', 'true');
+  mirror.style.position = 'fixed';
+  mirror.style.top = `${targetRect.top}px`;
+  mirror.style.left = `${targetRect.left}px`;
+  mirror.style.visibility = 'hidden';
+  mirror.style.pointerEvents = 'none';
+  mirror.style.overflow = 'auto';
+  mirror.style.whiteSpace = target instanceof HTMLTextAreaElement ? 'pre-wrap' : 'pre';
+  mirror.style.overflowWrap = target instanceof HTMLTextAreaElement ? 'break-word' : 'normal';
+  mirror.style.wordBreak = 'normal';
+
+  TEXT_CARET_MIRROR_PROPERTIES.forEach((property) => {
+    mirror.style.setProperty(property, computedStyle.getPropertyValue(property));
+  });
+
+  const caretIndex = target.selectionEnd ?? target.selectionStart ?? target.value.length;
+  const marker = document.createElement('span');
+  const nextCharacter = target.value.slice(caretIndex, caretIndex + 1);
+
+  mirror.textContent = target.value.slice(0, caretIndex);
+  marker.textContent = nextCharacter || '.';
+  mirror.append(marker);
+  document.body.append(mirror);
+
+  mirror.scrollTop = target.scrollTop;
+  mirror.scrollLeft = target.scrollLeft;
+
+  const markerRect = marker.getBoundingClientRect();
+  const lineHeight = Number.parseFloat(computedStyle.lineHeight);
+  const caretHeight = Number.isFinite(lineHeight) ? Math.min(lineHeight, targetRect.height) : markerRect.height || targetRect.height;
+
+  mirror.remove();
+
+  return new DOMRect(markerRect.left, markerRect.top, Math.max(1, markerRect.width), caretHeight);
+}
+
 function getCaretRect(target: HTMLElement) {
   if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
-    const rect = target.getBoundingClientRect();
-    const computedStyle = window.getComputedStyle(target);
-    const lineHeight = Number.parseFloat(computedStyle.lineHeight);
-    const caretHeight = Number.isFinite(lineHeight) ? Math.min(lineHeight, rect.height) : rect.height;
-
-    return new DOMRect(rect.left, rect.top, rect.width, caretHeight);
+    return getTextEntryCaretRect(target);
   }
 
   const selection = window.getSelection();
@@ -184,6 +257,19 @@ export function useTelegramKeyboard() {
       setKeyboardOpen(measureKeyboardOpen());
     };
 
+    let scrollFrame = 0;
+
+    const scheduleScrollIntoView = (target: HTMLElement) => {
+      if (scrollFrame) {
+        window.cancelAnimationFrame(scrollFrame);
+      }
+
+      scrollFrame = window.requestAnimationFrame(() => {
+        scrollFrame = 0;
+        scrollEditableIntoView(target);
+      });
+    };
+
     const handleFocusIn = (event: FocusEvent) => {
       const target = getEditableTarget(event.target);
       if (!target) {
@@ -192,7 +278,7 @@ export function useTelegramKeyboard() {
       }
 
       setTextEntryActive(true);
-      scrollEditableIntoView(target);
+      scheduleScrollIntoView(target);
       window.setTimeout(syncKeyboardState, 50);
     };
 
@@ -218,11 +304,31 @@ export function useTelegramKeyboard() {
       window.setTimeout(syncKeyboardState, 0);
     };
 
+    const handleSelectionChange = () => {
+      const activeEditable = getEditableTarget(document.activeElement);
+      if (!activeEditable) {
+        return;
+      }
+
+      scheduleScrollIntoView(activeEditable);
+    };
+
+    const handleInput = (event: Event) => {
+      const target = getEditableTarget(event.target);
+      if (!target) {
+        return;
+      }
+
+      scheduleScrollIntoView(target);
+    };
+
     const viewport = window.visualViewport;
 
     document.addEventListener('focusin', handleFocusIn, true);
     document.addEventListener('focusout', handleFocusOut, true);
     document.addEventListener('pointerdown', handlePointerDown, true);
+    document.addEventListener('selectionchange', handleSelectionChange);
+    document.addEventListener('input', handleInput, true);
     window.addEventListener('resize', syncKeyboardState);
     viewport?.addEventListener('resize', syncKeyboardState);
     viewport?.addEventListener('scroll', syncKeyboardState);
@@ -233,9 +339,14 @@ export function useTelegramKeyboard() {
       document.removeEventListener('focusin', handleFocusIn, true);
       document.removeEventListener('focusout', handleFocusOut, true);
       document.removeEventListener('pointerdown', handlePointerDown, true);
+      document.removeEventListener('selectionchange', handleSelectionChange);
+      document.removeEventListener('input', handleInput, true);
       window.removeEventListener('resize', syncKeyboardState);
       viewport?.removeEventListener('resize', syncKeyboardState);
       viewport?.removeEventListener('scroll', syncKeyboardState);
+      if (scrollFrame) {
+        window.cancelAnimationFrame(scrollFrame);
+      }
     };
   }, []);
 

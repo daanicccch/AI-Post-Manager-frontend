@@ -5619,6 +5619,10 @@ body.app-lightbox-open .workspace-main {
     padding-bottom: calc(var(--floating-action-content-clearance) + var(--safe-bottom-resolved));
   }
 
+  .page-stack--profile {
+    padding-bottom: calc(var(--bottom-nav-overlay-height) - 1rem + var(--safe-bottom-resolved));
+  }
+
   .page-stack--editor {
     padding-bottom: calc(var(--floating-editor-content-clearance) + var(--safe-bottom-resolved));
   }
