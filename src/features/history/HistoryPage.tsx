@@ -4,7 +4,7 @@ import { FeedListSkeleton } from '../../components/LoadingSkeleton';
 import { SelectField } from '../../components/SelectField';
 import { api, getMediaPreviewUrl, type HistoryItem, type Profile } from '../../lib/api';
 import { useAppLocale } from '../../lib/appLocale';
-import { formatDate, isImagePath, stripHtml, summarizeRichText } from '../../lib/formatters';
+import { formatCompactPostMeta, isImagePath, stripHtml, summarizeRichText } from '../../lib/formatters';
 
 const HISTORY_STATUSES = new Set(['published', 'cancelled']);
 
@@ -196,25 +196,12 @@ export function HistoryPage() {
             <div className="feed-card__body">
               <div className="feed-card__head">
                 <div>
-                  <strong>{stripHtml(item.title) || (isRu ? 'Без названия' : 'Untitled draft')}</strong>
-                  <span>{item.profileTitle}</span>
+                  <strong>{item.profileTitle}</strong>
                 </div>
               </div>
 
               <div className="feed-card__meta">
-                <span>
-                  {item.versionCount > 1
-                    ? `${item.versionCount} ${isRu ? 'версий' : 'versions'}`
-                    : isRu
-                      ? '1 версия'
-                      : '1 version'}
-                </span>
-                <span>
-                  {item.publishedAt
-                    ? `${isRu ? 'опубликовано' : 'published'} ${formatDate(item.publishedAt, language)}`
-                    : `${isRu ? 'обновлено' : 'updated'} ${formatDate(item.updatedAt, language)}`}
-                </span>
-                {item.mediaCount ? <span>{`${item.mediaCount} ${isRu ? 'медиа' : 'media'}`}</span> : null}
+                <span>{formatCompactPostMeta(item.publishedAt || item.updatedAt, item.mediaCount, language)}</span>
               </div>
 
               <p className="feed-card__excerpt">{summarizeRichText(item.excerpt)}</p>

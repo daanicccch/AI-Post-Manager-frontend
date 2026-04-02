@@ -16,7 +16,7 @@ import {
 } from '../../lib/api';
 import { SelectField } from '../../components/SelectField';
 import { useAppLocale } from '../../lib/appLocale';
-import { formatDate, isImagePath, summarizeRichText } from '../../lib/formatters';
+import { formatCompactPostMeta, isImagePath, summarizeRichText } from '../../lib/formatters';
 import {
   buildDraftMediaFromPaths,
   CreateMediaManager,
@@ -871,9 +871,11 @@ export function CreateDraftPage() {
                   <div className="source-pick-list source-pick-list--mobile">
                     {visibleSourcePosts.map((sourcePost) => {
                       const isSelected = selectedSourcePostId === sourcePost.id;
-                      const sourceDateLabel = sourcePost.sourceDate
-                        ? formatDate(sourcePost.sourceDate, language)
-                        : formatDate(sourcePost.scrapedAt, language);
+                      const sourceDateLabel = formatCompactPostMeta(
+                        sourcePost.sourceDate || sourcePost.scrapedAt,
+                        sourcePost.mediaCount,
+                        language
+                      );
 
                       return (
                         <article
@@ -898,14 +900,7 @@ export function CreateDraftPage() {
                           <div className="create-source-card__body">
                             <div className="create-source-card__header">
                               <strong>{sourcePost.sourceChannel}</strong>
-                              <span>
-                                {sourceDateLabel}
-                                {sourcePost.mediaCount
-                                  ? ` - ${sourcePost.mediaCount} ${isRu ? 'медиа' : 'media'}`
-                                  : isRu
-                                    ? ' - только текст'
-                                    : ' - text only'}
-                              </span>
+                              <span>{sourceDateLabel}</span>
                             </div>
 
                             <div className="create-source-card__actions">

@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useLayoutEffect, useRef, type ReactNode } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAppLocale } from '../lib/appLocale';
 import { useBusyOverlay } from '../lib/busyOverlay';
@@ -61,6 +61,7 @@ function NavIcon({ kind }: { kind: string }) {
 export function AppShell({ children }: AppShellProps) {
   const { language } = useAppLocale();
   const location = useLocation();
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const keyboardOpen = useTelegramKeyboard();
   const { isBusy } = useBusyOverlay();
   const isRu = language === 'ru';
@@ -102,13 +103,18 @@ export function AppShell({ children }: AppShellProps) {
         : 'Draft Review'
       : currentSection?.label || 'ChannelBot';
 
+  useLayoutEffect(() => {
+    scrollContainerRef.current?.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [location.key]);
+
   return (
     <div className={`workspace-shell${keyboardOpen ? ' workspace-shell--keyboard-open' : ''}`}>
       <div className="workspace-shell__glow workspace-shell__glow--one" aria-hidden="true" />
       <div className="workspace-shell__glow workspace-shell__glow--two" aria-hidden="true" />
 
       <div className={`app-frame${isBusy ? ' app-frame--busy' : ''}`}>
-        <div className="workspace-main-shell">
+        <div ref={scrollContainerRef} className="workspace-main-shell">
           <header className="app-topbar">
             <div className="app-topbar__intro">
               <h1>{title}</h1>

@@ -4,7 +4,7 @@ import { FeedListSkeleton } from '../../components/LoadingSkeleton';
 import { SelectField } from '../../components/SelectField';
 import { api, getMediaPreviewUrl, type InboxItem, type Profile } from '../../lib/api';
 import { useAppLocale } from '../../lib/appLocale';
-import { formatDate, isImagePath, stripHtml, summarizeRichText } from '../../lib/formatters';
+import { formatCompactPostMeta, isImagePath, stripHtml, summarizeRichText } from '../../lib/formatters';
 
 const ACTIVE_INBOX_STATUSES = new Set(['editing', 'scheduled', 'publishing']);
 
@@ -198,21 +198,12 @@ export function InboxPage() {
             <div className="feed-card__body">
               <div className="feed-card__head">
                 <div>
-                  <strong>{stripHtml(draft.title) || (isRu ? 'Без названия' : 'Untitled draft')}</strong>
-                  <span>{draft.profileTitle}</span>
+                  <strong>{draft.profileTitle}</strong>
                 </div>
               </div>
 
               <div className="feed-card__meta">
-                <span>{`${isRu ? 'обновлено' : 'updated'} ${formatDate(draft.updatedAt, language)}`}</span>
-                <span>
-                  {draft.scheduledFor
-                    ? `${isRu ? 'слот' : 'slot'} ${formatDate(draft.scheduledFor, language)}`
-                    : isRu
-                      ? 'готово к проверке'
-                      : 'ready to review'}
-                </span>
-                {draft.mediaCount ? <span>{`${draft.mediaCount} ${isRu ? 'медиа' : 'media'}`}</span> : null}
+                <span>{formatCompactPostMeta(draft.scheduledFor || draft.updatedAt, draft.mediaCount, language)}</span>
               </div>
 
               <p className="feed-card__excerpt">{summarizeRichText(draft.excerpt)}</p>

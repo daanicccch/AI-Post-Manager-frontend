@@ -8,6 +8,16 @@ export function formatDate(value: string | null | undefined, language: 'ru' | 'e
   }).format(new Date(value));
 }
 
+export function formatCompactPostMeta(
+  value: string | null | undefined,
+  mediaCount: number | null | undefined,
+  language: 'ru' | 'en' = 'ru'
+) {
+  const normalizedMediaCount = Number.isFinite(mediaCount) ? Number(mediaCount) : 0;
+  const mediaLabel = language === 'ru' ? 'медиа' : 'media';
+  return `${formatDate(value, language)} ${normalizedMediaCount} ${mediaLabel}`;
+}
+
 export function toDateTimeLocalInput(value: string | null | undefined) {
   if (!value) return '';
   const date = new Date(value);
