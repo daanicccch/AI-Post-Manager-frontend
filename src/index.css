@@ -5620,7 +5620,7 @@ body.app-lightbox-open .workspace-main {
   }
 
   .page-stack--profile {
-    padding-bottom: calc(var(--bottom-nav-overlay-height) - 1rem + var(--safe-bottom-resolved));
+    padding-bottom: calc(var(--bottom-nav-overlay-height) - 1.2rem + var(--safe-bottom-resolved));
   }
 
   .page-stack--editor {
