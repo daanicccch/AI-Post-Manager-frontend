@@ -18,6 +18,11 @@
   --light-field-caret: #3556ee;
   --light-field-selection-bg: rgba(91, 99, 246, 0.22);
   --light-field-selection-text: #14213d;
+  --bottom-nav-overlay-height: 5.9rem;
+  --page-bottom-bleed: 0.45rem;
+  --floating-action-gap: 0.05rem;
+  --floating-action-content-clearance: 4.6rem;
+  --floating-editor-content-clearance: 7rem;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -214,11 +219,12 @@ button:disabled {
   flex-direction: column;
   gap: 1.25rem;
   min-width: 0;
+  padding-bottom: calc(var(--page-bottom-bleed) + var(--safe-bottom-resolved));
   animation: page-enter 320ms ease;
 }
 
 .page-stack--editor {
-  padding-bottom: 0.5rem;
+  padding-bottom: calc(var(--page-bottom-bleed) + var(--safe-bottom-resolved));
 }
 
 @keyframes page-enter {
@@ -1108,6 +1114,7 @@ textarea:focus {
   bottom: 0;
   display: grid;
   gap: 0.85rem;
+  z-index: 1;
   padding: 1rem;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 1.3rem;
@@ -1115,6 +1122,10 @@ textarea:focus {
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.24);
+}
+
+.workspace-shell--keyboard-open .sticky-review-bar {
+  bottom: 0;
 }
 
 .review-inline-details {
@@ -2519,6 +2530,7 @@ textarea:focus {
 
 .sticky-review-bar--create {
   margin-top: 1rem;
+  margin-bottom: 0;
 }
 
 @media (min-width: 901px) {
@@ -3103,8 +3115,14 @@ body.app-busy {
   padding-bottom: 0;
 }
 
+.workspace-shell--keyboard-open .page-stack {
+  padding-bottom: 0;
+}
+
 .bottom-nav {
-  position: sticky;
+  position: absolute;
+  left: 0;
+  right: 0;
   bottom: 0;
   overflow: hidden;
   display: grid;
@@ -3117,6 +3135,7 @@ body.app-busy {
   border-radius: 1.7rem;
   isolation: isolate;
   z-index: 2;
+  pointer-events: none;
 }
 
 .bottom-nav--disabled {
@@ -3150,6 +3169,7 @@ body.app-busy {
   text-align: center;
   min-width: 0;
   isolation: isolate;
+  pointer-events: auto;
 }
 
 .bottom-nav__item--active {
@@ -5523,6 +5543,7 @@ body.app-lightbox-open .workspace-main {
   position: static;
   bottom: auto;
   padding: 0.78rem 0.82rem;
+  margin-bottom: 0;
 }
 
 .review-dock,
@@ -5585,6 +5606,27 @@ body.app-lightbox-open .workspace-main {
 
   .sticky-review-bar--editor {
     padding: 0.72rem;
+  }
+}
+
+@media (max-width: 900px) {
+  .page-stack--create,
+  .page-stack--schedule {
+    padding-bottom: calc(var(--floating-action-content-clearance) + var(--safe-bottom-resolved));
+  }
+
+  .page-stack--editor {
+    padding-bottom: calc(var(--floating-editor-content-clearance) + var(--safe-bottom-resolved));
+  }
+
+  .sticky-review-bar {
+    bottom: calc(var(--bottom-nav-overlay-height) - 1.6rem + var(--floating-action-gap));
+  }
+
+  .editor-panel--schedule > .primary-button--create {
+    position: sticky;
+    bottom: calc(var(--bottom-nav-overlay-height) - 1.6rem + var(--floating-action-gap));
+    z-index: 1;
   }
 }
 
