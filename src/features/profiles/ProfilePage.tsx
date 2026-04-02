@@ -1,8 +1,33 @@
 import { startTransition, useEffect, useMemo, useState, useTransition } from 'react';
 import { ProfilePageSkeleton } from '../../components/LoadingSkeleton';
 import { SelectField } from '../../components/SelectField';
-import { api, type Profile } from '../../lib/api';
+import { api, type DistillPersonaResult, type Profile } from '../../lib/api';
 import { useAppLocale } from '../../lib/appLocale';
+import { ensureProfileRegeneration, getPendingProfileRegeneration } from './profileRegenerationTracker';
+
+const PROFILE_STORAGE_KEY = 'channelbot.selected-profile-id';
+
+function getStoredProfileId() {
+  if (typeof window === 'undefined') {
+    return '';
+  }
+
+  return String(window.localStorage.getItem(PROFILE_STORAGE_KEY) || '').trim();
+}
+
+function storeProfileId(profileId: string) {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  const normalizedProfileId = String(profileId || '').trim();
+  if (!normalizedProfileId) {
+    window.localStorage.removeItem(PROFILE_STORAGE_KEY);
+    return;
+  }
+
+  window.localStorage.setItem(PROFILE_STORAGE_KEY, normalizedProfileId);
+}
 
 function normalizeStyleValue(rawValue: string | null | undefined) {
   const nextValue = String(rawValue || '');
@@ -20,7 +45,7 @@ export function ProfilePage() {
   const { language, setLanguage } = useAppLocale();
   const isRu = language === 'ru';
   const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [profileId, setProfileId] = useState('');
+  const [profileId, setProfileId] = useState(() => getStoredProfileId());
   const [profileDetail, setProfileDetail] = useState<Profile | null>(null);
   const [styleDraft, setStyleDraft] = useState('');
   const [isStyleCorrupted, setIsStyleCorrupted] = useState(false);
@@ -29,6 +54,8 @@ export function ProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [regenProgress, setRegenProgress] = useState(0);
+  const [regenStartedAt, setRegenStartedAt] = useState<number | null>(null);
+  const [regenSyncNonce, setRegenSyncNonce] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [isProfilePending, startProfileTransition] = useTransition();
@@ -64,6 +91,34 @@ export function ProfilePage() {
     []
   );
 
+  function applyProfileDetail(nextProfile: Profile) {
+    const normalizedStyle = normalizeStyleValue(nextProfile.personaGuideMarkdown);
+    setProfileDetail(nextProfile);
+    setStyleDraft(normalizedStyle.value);
+    setIsStyleCorrupted(normalizedStyle.isLikelyCorrupted);
+    setProfiles((currentProfiles) =>
+      currentProfiles.map((currentProfile) =>
+        currentProfile.slug === nextProfile.slug ? { ...currentProfile, ...nextProfile } : currentProfile
+      )
+    );
+  }
+
+  function applyDistillResult(result: DistillPersonaResult) {
+    applyProfileDetail(result.profile);
+    setRegenProgress(100);
+    setFeedback(isRu ? 'Стиль перегенерирован.' : 'Channel style regenerated from source channels.');
+  }
+
+  function getRegenerationErrorMessage(regenerateError: unknown) {
+    if (regenerateError instanceof Error) {
+      return regenerateError.message;
+    }
+
+    return isRu
+      ? 'Не удалось перегенерировать стиль'
+      : 'Failed to regenerate channel style';
+  }
+
   useEffect(() => {
     let cancelled = false;
     setIsBootLoading(true);
@@ -78,8 +133,15 @@ export function ProfilePage() {
 
         setProfiles(profileItems);
 
-        if (!profileId && profileItems[0]?.slug) {
-          startTransition(() => setProfileId(profileItems[0].slug));
+        const storedProfileId = getStoredProfileId();
+        const preferredProfileId =
+          (storedProfileId && profileItems.some((profile) => profile.slug === storedProfileId) && storedProfileId)
+          || (profileId && profileItems.some((profile) => profile.slug === profileId) && profileId)
+          || profileItems[0]?.slug
+          || '';
+
+        if (preferredProfileId && preferredProfileId !== profileId) {
+          startTransition(() => setProfileId(preferredProfileId));
         }
       })
       .catch((loadError: Error) => {
@@ -99,6 +161,10 @@ export function ProfilePage() {
   }, []);
 
   useEffect(() => {
+    storeProfileId(profileId);
+  }, [profileId]);
+
+  useEffect(() => {
     if (!profileId) {
       return;
     }
@@ -114,15 +180,7 @@ export function ProfilePage() {
           return;
         }
 
-        const normalizedStyle = normalizeStyleValue(profile.personaGuideMarkdown);
-        setProfileDetail(profile);
-        setStyleDraft(normalizedStyle.value);
-        setIsStyleCorrupted(normalizedStyle.isLikelyCorrupted);
-        setProfiles((currentProfiles) =>
-          currentProfiles.map((currentProfile) =>
-            currentProfile.slug === profile.slug ? { ...currentProfile, ...profile } : currentProfile
-          )
-        );
+        applyProfileDetail(profile);
       })
       .catch((loadError: Error) => {
         if (!cancelled) {
@@ -141,25 +199,71 @@ export function ProfilePage() {
   }, [profileId]);
 
   useEffect(() => {
-    if (!isRegenerating) {
+    if (!isRegenerating || !regenStartedAt) {
       setRegenProgress(0);
       return;
     }
 
-    setRegenProgress(6);
-
-    const startedAt = Date.now();
     const durationMs = 240000;
+    const getProgress = () => {
+      const elapsed = Date.now() - regenStartedAt;
+      return Math.min(92, 6 + (elapsed / durationMs) * 86);
+    };
+
+    setRegenProgress(getProgress());
+
     const intervalId = window.setInterval(() => {
-      const elapsed = Date.now() - startedAt;
-      const nextProgress = Math.min(92, 6 + (elapsed / durationMs) * 86);
-      setRegenProgress(nextProgress);
+      setRegenProgress(getProgress());
     }, 400);
 
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [isRegenerating]);
+  }, [isRegenerating, regenStartedAt]);
+
+  useEffect(() => {
+    if (!profileId) {
+      setIsRegenerating(false);
+      setRegenStartedAt(null);
+      return;
+    }
+
+    const pendingJob = getPendingProfileRegeneration(profileId);
+    if (!pendingJob) {
+      setIsRegenerating(false);
+      setRegenStartedAt(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    setIsRegenerating(true);
+    setRegenStartedAt(pendingJob.startedAt);
+
+    pendingJob.promise
+      .then((result) => {
+        if (cancelled || result.profile.slug !== profileId) {
+          return;
+        }
+
+        applyDistillResult(result);
+      })
+      .catch((regenerateError) => {
+        if (!cancelled) {
+          setError(getRegenerationErrorMessage(regenerateError));
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsRegenerating(false);
+          setRegenStartedAt(null);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isRu, profileId, regenSyncNonce]);
 
   async function refreshProfile() {
     if (!profileId) {
@@ -172,15 +276,7 @@ export function ProfilePage() {
 
     try {
       const profile = await api.getProfile(profileId);
-      const normalizedStyle = normalizeStyleValue(profile.personaGuideMarkdown);
-      setProfileDetail(profile);
-      setStyleDraft(normalizedStyle.value);
-      setIsStyleCorrupted(normalizedStyle.isLikelyCorrupted);
-      setProfiles((currentProfiles) =>
-        currentProfiles.map((currentProfile) =>
-          currentProfile.slug === profile.slug ? { ...currentProfile, ...profile } : currentProfile
-        )
-      );
+      applyProfileDetail(profile);
       setFeedback(isRu ? 'Стиль загружен.' : 'Saved channel style reloaded.');
     } catch (refreshError) {
       setError(
@@ -202,23 +298,16 @@ export function ProfilePage() {
 
     setFeedback(null);
     setError(null);
+    const pendingJob = ensureProfileRegeneration(profileId, 'sources');
     setIsRegenerating(true);
+    setRegenStartedAt(pendingJob.startedAt);
+    setRegenSyncNonce((currentNonce) => currentNonce + 1);
+    return;
 
     void (async () => {
       try {
         const result = await api.distillPersona(profileId, { personaSource: 'sources' });
-        const normalizedStyle = normalizeStyleValue(result.profile.personaGuideMarkdown);
-
-        setProfileDetail(result.profile);
-        setStyleDraft(normalizedStyle.value);
-        setIsStyleCorrupted(normalizedStyle.isLikelyCorrupted);
-        setProfiles((currentProfiles) =>
-          currentProfiles.map((currentProfile) =>
-            currentProfile.slug === result.profile.slug
-              ? { ...currentProfile, ...result.profile }
-              : currentProfile
-          )
-        );
+        applyProfileDetail(result.profile);
         setRegenProgress(100);
         setFeedback(isRu ? 'Стиль перегенерирован.' : 'Channel style regenerated from source channels.');
       } catch (regenerateError) {
