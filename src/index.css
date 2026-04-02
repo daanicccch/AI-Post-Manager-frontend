@@ -5610,6 +5610,10 @@ body.app-lightbox-open .workspace-main {
 }
 
 @media (max-width: 900px) {
+  .page-stack--queue {
+    padding-bottom: calc(var(--bottom-nav-overlay-height) - 1.4rem + var(--safe-bottom-resolved));
+  }
+
   .page-stack--create,
   .page-stack--schedule {
     padding-bottom: calc(var(--floating-action-content-clearance) + var(--safe-bottom-resolved));
