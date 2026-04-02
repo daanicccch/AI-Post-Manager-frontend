@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Mark, Node, mergeAttributes } from '@tiptap/core';
+import HardBreak from '@tiptap/extension-hard-break';
 import Placeholder from '@tiptap/extension-placeholder';
 import Link from '@tiptap/extension-link';
 import Underline from '@tiptap/extension-underline';
@@ -95,6 +96,21 @@ const TelegramTime = Node.create({
   }
 });
 
+const TelegramHardBreak = HardBreak.extend({
+  addKeyboardShortcuts() {
+    return {
+      Enter: () => {
+        if (this.editor.isActive('codeBlock')) {
+          return false;
+        }
+
+        return this.editor.commands.setHardBreak();
+      },
+      'Shift-Enter': () => this.editor.commands.setHardBreak()
+    };
+  }
+});
+
 function ToolbarButton({
   active = false,
   ariaLabel,
@@ -113,6 +129,7 @@ function ToolbarButton({
       aria-label={ariaLabel}
       className={`secondary-button secondary-button--small rich-text-tool${active ? ' rich-text-tool--active' : ''}`}
       disabled={disabled}
+      onMouseDown={(event) => event.preventDefault()}
       onClick={onClick}
       type="button"
     >
@@ -144,9 +161,11 @@ export function RichTextEditor({
         dropcursor: false,
         gapcursor: false,
         heading: false,
+        hardBreak: false,
         horizontalRule: false,
         orderedList: false
       }),
+      TelegramHardBreak,
       Underline,
       Link.configure({
         autolink: false,
@@ -202,8 +221,10 @@ export function RichTextEditor({
       return;
     }
 
-    linkInputRef.current?.focus();
-    linkInputRef.current?.select();
+    window.requestAnimationFrame(() => {
+      linkInputRef.current?.focus({ preventScroll: true });
+      linkInputRef.current?.select();
+    });
   }, [linkDialog]);
 
   if (!editor) {
@@ -275,6 +296,18 @@ export function RichTextEditor({
                 placeholder="https://"
                 type="text"
                 value={linkValue}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault();
+                    applyLink(linkValue.trim());
+                    return;
+                  }
+
+                  if (event.key === 'Escape') {
+                    event.preventDefault();
+                    closeLinkDialog();
+                  }
+                }}
                 onChange={(event) => setLinkValue(event.target.value)}
               />
             </label>

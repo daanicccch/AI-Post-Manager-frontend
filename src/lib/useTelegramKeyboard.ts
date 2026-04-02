@@ -26,7 +26,12 @@ function shouldKeepFocus(activeElement: HTMLElement, interactionTarget: HTMLElem
     return true;
   }
 
-  const activeRegion = activeElement.closest('label, .field-block, .field-inline, .rich-text-editor-shell, .rich-text-dialog');
+  const richTextRegion = activeElement.closest('.rich-text-dialog, .rich-text-editor-shell');
+  if (richTextRegion?.contains(interactionTarget)) {
+    return true;
+  }
+
+  const activeRegion = activeElement.closest('label, .field-block, .field-inline');
   return Boolean(activeRegion?.contains(interactionTarget));
 }
 
