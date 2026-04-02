@@ -19,6 +19,10 @@ const RichTextEditor = lazy(() =>
 );
 
 type ReviewSectionKey = (typeof reviewSectionKeys)[number];
+type ExpandedPreview = {
+  alt: string;
+  src: string;
+} | null;
 
 function formatTelegramClock(value?: string | null, isRu = false) {
   if (!value) {
@@ -115,7 +119,15 @@ function renderMediaPreview(path: string | undefined, previewDirectUrl?: string 
   return null;
 }
 
-function renderTelegramMediaGallery(items: DraftMediaItem[], title: string) {
+function getMediaPreviewSource(path: string | undefined, previewDirectUrl?: string | null) {
+  return getMediaPreviewUrl(path, previewDirectUrl);
+}
+
+function renderTelegramMediaGallery(
+  items: DraftMediaItem[],
+  title: string,
+  onExpandPreview?: (preview: { alt: string; src: string }) => void
+) {
   if (items.length === 0) {
     return null;
   }
@@ -129,13 +141,28 @@ function renderTelegramMediaGallery(items: DraftMediaItem[], title: string) {
     >
       {visibleItems.map((item, index) => {
         const showMoreOverlay = extraItemsCount > 0 && index === visibleItems.length - 1;
+        const previewAlt = `${title} media ${index + 1}`;
+        const previewSrc = getMediaPreviewSource(item.path, item.previewUrl);
+        const canExpand = Boolean(previewSrc) && (String(item.mediaType || '').toLowerCase() === 'photo' || isImagePath(item.path));
+        const previewContent = renderMediaPreview(item.path, item.previewUrl, item.mediaType, previewAlt);
 
         return (
           <div
             className={`telegram-media-grid__item${showMoreOverlay ? ' telegram-media-grid__item--more' : ''}`}
             key={`${item.path || 'preview-media'}-${index}`}
           >
-            {renderMediaPreview(item.path, item.previewUrl, item.mediaType, `${title} media ${index + 1}`)}
+            {canExpand && previewContent ? (
+              <button
+                aria-label={`Open ${previewAlt}`}
+                className="telegram-media-grid__button"
+                type="button"
+                onClick={() => previewSrc && onExpandPreview?.({ alt: previewAlt, src: previewSrc })}
+              >
+                {previewContent}
+              </button>
+            ) : (
+              previewContent
+            )}
             {showMoreOverlay && <span className="telegram-media-grid__more">+{extraItemsCount}</span>}
           </div>
         );
@@ -167,6 +194,7 @@ export function DraftPage() {
   const [activeAction, setActiveAction] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [expandedPreview, setExpandedPreview] = useState<ExpandedPreview>(null);
   const latestPublicationError = draft?.publications.find((publication) => publication.status === 'failed')?.errorText || null;
   const canEditDraft =
     draft?.status !== 'cancelled' &&
@@ -532,7 +560,7 @@ export function DraftPage() {
                     </div>
                   </div>
 
-                  {renderTelegramMediaGallery(mediaDraft, draft.profileTitle)}
+                  {renderTelegramMediaGallery(mediaDraft, draft.profileTitle, setExpandedPreview)}
 
                   <div className="telegram-post__body">
                     <div className="telegram-render" dangerouslySetInnerHTML={{ __html: previewHtml }} />
@@ -583,6 +611,24 @@ export function DraftPage() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {expandedPreview && (
+        <div className="image-lightbox" role="dialog" aria-modal="true" onClick={() => setExpandedPreview(null)}>
+          <button
+            className="image-lightbox__close"
+            type="button"
+            onClick={() => setExpandedPreview(null)}
+          >
+            {isRu ? 'Закрыть' : 'Close'}
+          </button>
+          <img
+            alt={expandedPreview.alt}
+            className="image-lightbox__image"
+            src={expandedPreview.src}
+            onClick={(event) => event.stopPropagation()}
+          />
         </div>
       )}
     </section>
