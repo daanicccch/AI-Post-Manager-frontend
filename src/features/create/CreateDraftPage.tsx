@@ -183,7 +183,10 @@ function SourceVisual({
       <button
         className="source-visual-button"
         type="button"
-        onClick={() => onExpand?.(previewUrl, sourcePost.sourceChannel || 'Source preview')}
+        onClick={(event) => {
+          event.stopPropagation();
+          onExpand?.(previewUrl, sourcePost.sourceChannel || 'Source preview');
+        }}
       >
         <img
           alt={sourcePost.sourceChannel}
@@ -449,6 +452,17 @@ export function CreateDraftPage() {
     setPickMediaDraft(buildDraftMediaFromPaths(selectedSourcePost.mediaPaths || []));
     setPickMediaOverrideEnabled((selectedSourcePost.mediaPaths || []).length > 0);
   }, [selectedSourcePost]);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    document.body.classList.toggle('app-lightbox-open', Boolean(expandedPreview));
+    return () => {
+      document.body.classList.remove('app-lightbox-open');
+    };
+  }, [expandedPreview]);
 
   function getCurrentMediaPaths() {
     return normalizeMediaState(currentMediaDraft)
@@ -1013,24 +1027,25 @@ export function CreateDraftPage() {
           </div>
         </div>
 
-        {expandedPreview && (
-          <div className="image-lightbox" role="dialog" aria-modal="true" onClick={() => setExpandedPreview(null)}>
-            <button
-              className="image-lightbox__close"
-              type="button"
-              onClick={() => setExpandedPreview(null)}
-            >
-              {isRu ? 'Закрыть' : 'Close'}
-            </button>
-            <img
-              alt={expandedPreview.alt}
-              className="image-lightbox__image"
-              src={expandedPreview.src}
-              onClick={(event) => event.stopPropagation()}
-            />
-          </div>
-        )}
       </section>
+
+      {expandedPreview && (
+        <div className="image-lightbox" role="dialog" aria-modal="true" onClick={() => setExpandedPreview(null)}>
+          <button
+            className="image-lightbox__close"
+            type="button"
+            onClick={() => setExpandedPreview(null)}
+          >
+            {isRu ? 'Закрыть' : 'Close'}
+          </button>
+          <img
+            alt={expandedPreview.alt}
+            className="image-lightbox__image"
+            src={expandedPreview.src}
+            onClick={(event) => event.stopPropagation()}
+          />
+        </div>
+      )}
     </section>
   );
 }
