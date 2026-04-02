@@ -35,24 +35,95 @@ function shouldKeepFocus(activeElement: HTMLElement, interactionTarget: HTMLElem
   return Boolean(activeRegion?.contains(interactionTarget));
 }
 
+function getScrollContainer(target: HTMLElement) {
+  return target.closest<HTMLElement>('.workspace-main-shell') || document.scrollingElement;
+}
+
+function getCaretRect(target: HTMLElement) {
+  if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
+    const rect = target.getBoundingClientRect();
+    const computedStyle = window.getComputedStyle(target);
+    const lineHeight = Number.parseFloat(computedStyle.lineHeight);
+    const caretHeight = Number.isFinite(lineHeight) ? Math.min(lineHeight, rect.height) : rect.height;
+
+    return new DOMRect(rect.left, rect.top, rect.width, caretHeight);
+  }
+
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0) {
+    return null;
+  }
+
+  const anchorNode = selection.anchorNode;
+  if (anchorNode && !target.contains(anchorNode)) {
+    return null;
+  }
+
+  const range = selection.getRangeAt(0).cloneRange();
+  range.collapse(true);
+
+  const rangeRect = Array.from(range.getClientRects()).find((rect) => rect.width > 0 || rect.height > 0);
+  if (rangeRect) {
+    return rangeRect;
+  }
+
+  const fallbackRect = range.getBoundingClientRect();
+  if (fallbackRect.width > 0 || fallbackRect.height > 0) {
+    return fallbackRect;
+  }
+
+  return null;
+}
+
 function scrollEditableIntoView(target: HTMLElement) {
-  if (typeof target.scrollIntoView !== 'function') {
+  const scrollContainer = getScrollContainer(target);
+  if (typeof target.scrollIntoView !== 'function' || !scrollContainer) {
     return;
   }
 
-  const scrollToTarget = () => {
+  const scrollToCaret = () => {
     window.requestAnimationFrame(() => {
-      target.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center',
-        inline: 'nearest'
+      const viewport = window.visualViewport;
+      const targetRect = target.getBoundingClientRect();
+      const caretRect = getCaretRect(target) || targetRect;
+      const topPadding = 20;
+      const bottomPadding = 28;
+      const visibleTop = (viewport?.offsetTop || 0) + topPadding;
+      const visibleBottom = (viewport?.offsetTop || 0) + (viewport?.height || window.innerHeight) - bottomPadding;
+
+      let delta = 0;
+      if (caretRect.bottom > visibleBottom) {
+        delta = caretRect.bottom - visibleBottom;
+      } else if (caretRect.top < visibleTop) {
+        delta = caretRect.top - visibleTop;
+      } else if (targetRect.bottom > visibleBottom) {
+        delta = targetRect.bottom - visibleBottom;
+      } else if (targetRect.top < visibleTop) {
+        delta = targetRect.top - visibleTop;
+      }
+
+      if (Math.abs(delta) < 1) {
+        return;
+      }
+
+      if (scrollContainer instanceof HTMLElement) {
+        scrollContainer.scrollBy({
+          top: delta,
+          behavior: 'smooth'
+        });
+        return;
+      }
+
+      window.scrollBy({
+        top: delta,
+        behavior: 'smooth'
       });
     });
   };
 
   const viewport = window.visualViewport;
   if (!viewport) {
-    window.setTimeout(scrollToTarget, 140);
+    window.setTimeout(scrollToCaret, 140);
     return;
   }
 
@@ -68,7 +139,7 @@ function scrollEditableIntoView(target: HTMLElement) {
     viewport.removeEventListener('resize', complete);
     viewport.removeEventListener('scroll', complete);
     window.clearTimeout(fallbackTimer);
-    window.setTimeout(scrollToTarget, 40);
+    window.setTimeout(scrollToCaret, 40);
   };
 
   viewport.addEventListener('resize', complete);
