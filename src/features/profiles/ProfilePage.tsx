@@ -3,9 +3,16 @@ import { ProfilePageSkeleton } from '../../components/LoadingSkeleton';
 import { SelectField } from '../../components/SelectField';
 import { api, type DistillPersonaResult, type Profile } from '../../lib/api';
 import { useAppLocale } from '../../lib/appLocale';
-import { ensureProfileRegeneration, getPendingProfileRegeneration } from './profileRegenerationTracker';
+import {
+  clearStoredProfileRegeneration,
+  ensureProfileRegeneration,
+  getPendingProfileRegeneration,
+  getStoredProfileRegeneration,
+  storeProfileRegeneration,
+} from './profileRegenerationTracker';
 
 const PROFILE_STORAGE_KEY = 'channelbot.selected-profile-id';
+const PROFILE_REGENERATION_TIMEOUT_MS = 10 * 60 * 1000;
 
 function getStoredProfileId() {
   if (typeof window === 'undefined') {
@@ -229,39 +236,103 @@ export function ProfilePage() {
     }
 
     const pendingJob = getPendingProfileRegeneration(profileId);
-    if (!pendingJob) {
+    let cancelled = false;
+    let pollTimer = 0;
+
+    if (pendingJob) {
+      setIsRegenerating(true);
+      setRegenStartedAt(pendingJob.startedAt);
+
+      pendingJob.promise
+        .then((result) => {
+          if (cancelled || result.profile.slug !== profileId) {
+            return;
+          }
+
+          clearStoredProfileRegeneration(profileId);
+          applyDistillResult(result);
+        })
+        .catch((regenerateError) => {
+          if (!cancelled) {
+            clearStoredProfileRegeneration(profileId);
+            setError(getRegenerationErrorMessage(regenerateError));
+          }
+        })
+        .finally(() => {
+          if (!cancelled) {
+            setIsRegenerating(false);
+            setRegenStartedAt(null);
+          }
+        });
+
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const storedRegeneration = getStoredProfileRegeneration(profileId);
+    if (!storedRegeneration) {
       setIsRegenerating(false);
       setRegenStartedAt(null);
       return;
     }
 
-    let cancelled = false;
+    if (Date.now() - storedRegeneration.startedAt > PROFILE_REGENERATION_TIMEOUT_MS) {
+      clearStoredProfileRegeneration(profileId);
+      setIsRegenerating(false);
+      setRegenStartedAt(null);
+      return;
+    }
 
     setIsRegenerating(true);
-    setRegenStartedAt(pendingJob.startedAt);
+    setRegenStartedAt(storedRegeneration.startedAt);
 
-    pendingJob.promise
-      .then((result) => {
-        if (cancelled || result.profile.slug !== profileId) {
+    const pollProfile = async () => {
+      try {
+        const profile = await api.getProfile(profileId);
+        if (cancelled) {
           return;
         }
 
-        applyDistillResult(result);
-      })
-      .catch((regenerateError) => {
-        if (!cancelled) {
-          setError(getRegenerationErrorMessage(regenerateError));
+        const baselineUpdatedAt = storedRegeneration.baselineUpdatedAt;
+        const isCompleted = baselineUpdatedAt
+          ? profile.updatedAt !== baselineUpdatedAt
+          : Boolean(String(profile.personaGuideMarkdown || '').trim());
+
+        if (isCompleted) {
+          clearStoredProfileRegeneration(profileId);
+          applyProfileDetail(profile);
+          setRegenProgress(100);
+          setFeedback(isRu ? 'Стиль перегенерирован.' : 'Channel style regenerated from source channels.');
+          setIsRegenerating(false);
+          setRegenStartedAt(null);
+          return;
         }
-      })
-      .finally(() => {
-        if (!cancelled) {
+
+        if (Date.now() - storedRegeneration.startedAt > PROFILE_REGENERATION_TIMEOUT_MS) {
+          clearStoredProfileRegeneration(profileId);
           setIsRegenerating(false);
           setRegenStartedAt(null);
         }
-      });
+      } catch {
+        if (!cancelled && Date.now() - storedRegeneration.startedAt > PROFILE_REGENERATION_TIMEOUT_MS) {
+          clearStoredProfileRegeneration(profileId);
+          setIsRegenerating(false);
+          setRegenStartedAt(null);
+        }
+      }
+    };
+
+    void pollProfile();
+    pollTimer = window.setInterval(() => {
+      void pollProfile();
+    }, 3000);
 
     return () => {
       cancelled = true;
+      if (pollTimer) {
+        window.clearInterval(pollTimer);
+      }
     };
   }, [isRu, profileId, regenSyncNonce]);
 
@@ -299,29 +370,10 @@ export function ProfilePage() {
     setFeedback(null);
     setError(null);
     const pendingJob = ensureProfileRegeneration(profileId, 'sources');
+    storeProfileRegeneration(profileId, pendingJob.startedAt, profileDetail?.updatedAt ?? null);
     setIsRegenerating(true);
     setRegenStartedAt(pendingJob.startedAt);
     setRegenSyncNonce((currentNonce) => currentNonce + 1);
-    return;
-
-    void (async () => {
-      try {
-        const result = await api.distillPersona(profileId, { personaSource: 'sources' });
-        applyProfileDetail(result.profile);
-        setRegenProgress(100);
-        setFeedback(isRu ? 'Стиль перегенерирован.' : 'Channel style regenerated from source channels.');
-      } catch (regenerateError) {
-        setError(
-          regenerateError instanceof Error
-            ? regenerateError.message
-            : isRu
-              ? 'Не удалось перегенерировать стиль'
-              : 'Failed to regenerate channel style'
-        );
-      } finally {
-        setIsRegenerating(false);
-      }
-    })();
   }
 
   function handleSave() {
@@ -338,18 +390,7 @@ export function ProfilePage() {
         const result = await api.updateProfileAssets(profileId, {
           personaGuideMarkdown: styleDraft
         });
-        const normalizedStyle = normalizeStyleValue(result.profile.personaGuideMarkdown);
-
-        setProfileDetail(result.profile);
-        setStyleDraft(normalizedStyle.value);
-        setIsStyleCorrupted(normalizedStyle.isLikelyCorrupted);
-        setProfiles((currentProfiles) =>
-          currentProfiles.map((currentProfile) =>
-            currentProfile.slug === result.profile.slug
-              ? { ...currentProfile, ...result.profile }
-              : currentProfile
-          )
-        );
+        applyProfileDetail(result.profile);
         setFeedback(isRu ? 'Стиль сохранён.' : 'Channel style saved.');
       } catch (saveError) {
         setError(
