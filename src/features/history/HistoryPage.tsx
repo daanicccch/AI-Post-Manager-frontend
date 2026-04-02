@@ -64,6 +64,17 @@ export function HistoryPage() {
   }, []);
 
   useEffect(() => {
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    document.body.classList.toggle('app-lightbox-open', Boolean(expandedPreview));
+    return () => {
+      document.body.classList.remove('app-lightbox-open');
+    };
+  }, [expandedPreview]);
+
+  useEffect(() => {
     let cancelled = false;
     setIsLoading(true);
     setError(null);
