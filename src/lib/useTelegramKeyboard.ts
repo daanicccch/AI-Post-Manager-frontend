@@ -67,6 +67,24 @@ function getCaretRect(target: HTMLElement) {
     return rangeRect;
   }
 
+  const marker = document.createElement('span');
+  marker.textContent = '\u200b';
+  marker.style.position = 'relative';
+  marker.style.display = 'inline-block';
+  marker.style.width = '1px';
+  marker.style.height = '1em';
+  marker.style.padding = '0';
+  marker.style.margin = '0';
+  marker.style.opacity = '0';
+  range.insertNode(marker);
+  const markerRect = marker.getBoundingClientRect();
+  marker.remove();
+  selection.removeAllRanges();
+  selection.addRange(range);
+  if (markerRect.width > 0 || markerRect.height > 0) {
+    return markerRect;
+  }
+
   const fallbackRect = range.getBoundingClientRect();
   if (fallbackRect.width > 0 || fallbackRect.height > 0) {
     return fallbackRect;
@@ -175,6 +193,19 @@ export function useTelegramKeyboard() {
       setKeyboardOpen(measureKeyboardOpen());
     };
 
+    let scrollRaf = 0;
+    const scheduleScrollToActiveEditable = () => {
+      window.cancelAnimationFrame(scrollRaf);
+      scrollRaf = window.requestAnimationFrame(() => {
+        const activeEditable = getEditableTarget(document.activeElement);
+        if (!activeEditable) {
+          return;
+        }
+
+        scrollEditableIntoView(activeEditable);
+      });
+    };
+
     const handleFocusIn = (event: FocusEvent) => {
       const target = getEditableTarget(event.target);
       if (!target) {
@@ -209,11 +240,26 @@ export function useTelegramKeyboard() {
       window.setTimeout(syncKeyboardState, 0);
     };
 
+    const handleSelectionChange = () => {
+      if (!getEditableTarget(document.activeElement)) {
+        return;
+      }
+
+      scheduleScrollToActiveEditable();
+    };
+
+    const handleEditableUpdate = () => {
+      scheduleScrollToActiveEditable();
+    };
+
     const viewport = window.visualViewport;
 
     document.addEventListener('focusin', handleFocusIn, true);
     document.addEventListener('focusout', handleFocusOut, true);
     document.addEventListener('pointerdown', handlePointerDown, true);
+    document.addEventListener('selectionchange', handleSelectionChange, true);
+    document.addEventListener('input', handleEditableUpdate, true);
+    document.addEventListener('keyup', handleEditableUpdate, true);
     window.addEventListener('resize', syncKeyboardState);
     viewport?.addEventListener('resize', syncKeyboardState);
     viewport?.addEventListener('scroll', syncKeyboardState);
@@ -224,9 +270,13 @@ export function useTelegramKeyboard() {
       document.removeEventListener('focusin', handleFocusIn, true);
       document.removeEventListener('focusout', handleFocusOut, true);
       document.removeEventListener('pointerdown', handlePointerDown, true);
+      document.removeEventListener('selectionchange', handleSelectionChange, true);
+      document.removeEventListener('input', handleEditableUpdate, true);
+      document.removeEventListener('keyup', handleEditableUpdate, true);
       window.removeEventListener('resize', syncKeyboardState);
       viewport?.removeEventListener('resize', syncKeyboardState);
       viewport?.removeEventListener('scroll', syncKeyboardState);
+      window.cancelAnimationFrame(scrollRaf);
     };
   }, []);
 

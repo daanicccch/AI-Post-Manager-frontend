@@ -970,8 +970,8 @@ textarea:focus {
     max(1rem, var(--safe-right-resolved))
     max(1rem, var(--safe-bottom-resolved))
     max(1rem, var(--safe-left-resolved));
-  background: rgba(16, 22, 34, 0.32);
-  backdrop-filter: blur(8px);
+  background: transparent;
+  backdrop-filter: none;
 }
 
 .rich-text-dialog {
