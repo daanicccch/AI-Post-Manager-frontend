@@ -4875,6 +4875,43 @@ body.app-lightbox-open .workspace-main {
   gap: 0.55rem;
 }
 
+.setup-header {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.setup-header__title {
+  margin: 0;
+  font-size: 1.55rem;
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+}
+
+.setup-header__description p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.setup-progress {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.4rem;
+}
+
+.setup-progress__segment {
+  height: 0.3rem;
+  border-radius: 999px;
+  background: rgba(121, 131, 171, 0.18);
+}
+
+.setup-progress__segment--active {
+  background: linear-gradient(90deg, rgba(248, 250, 252, 0.96), rgba(228, 232, 240, 0.9));
+}
+
+.setup-progress__segment--done {
+  background: rgba(92, 212, 152, 0.9);
+}
+
 .setup-stepbar__item {
   display: inline-flex;
   align-items: center;

@@ -24,7 +24,7 @@ export function OnboardingSourcesPage() {
 
   const [mode, setMode] = useState<'preset' | 'custom'>('preset');
   const [selectedPresetKey, setSelectedPresetKey] = useState('');
-  const [includeTargetChannel, setIncludeTargetChannel] = useState(true);
+  const [includeTargetChannel, setIncludeTargetChannel] = useState(false);
   const [selectedChannelUsernames, setSelectedChannelUsernames] = useState<string[]>([]);
   const [selectedWebUrls, setSelectedWebUrls] = useState<string[]>([]);
   const [channelQuery, setChannelQuery] = useState('');
@@ -56,7 +56,7 @@ export function OnboardingSourcesPage() {
 
     setMode(nextMode);
     setSelectedPresetKey(nextPresetKey || presets[0]?.key || '');
-    setIncludeTargetChannel(nextIncludeTarget !== false);
+    setIncludeTargetChannel(nextIncludeTarget === true);
     setSelectedChannelUsernames(normalizeSourceChannels(nextProfile.sourceChannels).map((item) => item.username));
     setSelectedWebUrls(normalizeWebSources(nextProfile.webSources).map((item) => item.url));
   }, [data, presets]);
@@ -160,25 +160,22 @@ export function OnboardingSourcesPage() {
 
   return (
     <section className="page-stack">
-      <section className="queue-control-card queue-control-card--profile">
-        <div className="queue-control-card__top">
-          <div className="queue-control-card__title">
-            <h2>{isRu ? '\u0428\u0430\u0433 1. \u0418\u0441\u0442\u043e\u0447\u043d\u0438\u043a\u0438' : 'Step 1. Sources'}</h2>
-          </div>
+      <section className="setup-header">
+        <div className="setup-progress" aria-label="Onboarding progress">
+          <span className="setup-progress__segment setup-progress__segment--active" />
+          <span className="setup-progress__segment" />
+          <span className="setup-progress__segment" />
+          <span className="setup-progress__segment" />
         </div>
-        <div className="setup-stepbar" aria-label="Onboarding steps">
-          <span className="setup-stepbar__item setup-stepbar__item--active">{isRu ? '\u0418\u0441\u0442\u043e\u0447\u043d\u0438\u043a\u0438' : 'Sources'}</span>
-          <span className="setup-stepbar__item">{isRu ? '\u0421\u0442\u0438\u043b\u044c' : 'Style'}</span>
-          <span className="setup-stepbar__item">{isRu ? '\u041f\u0440\u043e\u0441\u043c\u043e\u0442\u0440' : 'Review'}</span>
-          <span className="setup-stepbar__item">{isRu ? '\u041f\u043b\u0430\u043d' : 'Plan'}</span>
-        </div>
-        <section className="context-section context-section--tight">
+        <span className="eyebrow">{isRu ? '\u0428\u0430\u0433 1 \u0438\u0437 4' : 'Step 1 of 4'}</span>
+        <h2 className="setup-header__title">{isRu ? '\u0418\u0441\u0442\u043e\u0447\u043d\u0438\u043a\u0438 \u0434\u043b\u044f \u043a\u0430\u043d\u0430\u043b\u0430' : 'Sources for your channel'}</h2>
+        <div className="setup-header__description">
           <p>
             {isRu
               ? '\u0421\u043d\u0430\u0447\u0430\u043b\u0430 \u0432\u044b\u0431\u0435\u0440\u0438, \u043e\u0442\u043a\u0443\u0434\u0430 \u0431\u0440\u0430\u0442\u044c \u0441\u0442\u0438\u043b\u044c \u0438 \u0438\u0441\u0445\u043e\u0434\u043d\u044b\u0435 \u0438\u0441\u0442\u043e\u0447\u043d\u0438\u043a\u0438.'
               : 'First choose the channels and websites that will shape this profile.'}
           </p>
-        </section>
+        </div>
       </section>
 
       {error && <div className="state-banner state-banner--error">{error}</div>}

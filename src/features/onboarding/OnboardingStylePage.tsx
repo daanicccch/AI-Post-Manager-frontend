@@ -64,18 +64,15 @@ export function OnboardingStylePage() {
 
   return (
     <section className="page-stack">
-      <section className="queue-control-card queue-control-card--profile">
-        <div className="queue-control-card__top">
-          <div className="queue-control-card__title">
-            <h2>{isRu ? '\u0428\u0430\u0433 2. \u0413\u0435\u043d\u0435\u0440\u0430\u0446\u0438\u044f \u0441\u0442\u0438\u043b\u044f' : 'Step 2. Generate style'}</h2>
-          </div>
+      <section className="setup-header">
+        <div className="setup-progress" aria-label="Onboarding progress">
+          <span className="setup-progress__segment setup-progress__segment--done" />
+          <span className="setup-progress__segment setup-progress__segment--active" />
+          <span className="setup-progress__segment" />
+          <span className="setup-progress__segment" />
         </div>
-        <div className="setup-stepbar" aria-label="Onboarding steps">
-          <span className="setup-stepbar__item setup-stepbar__item--done">{isRu ? '\u0418\u0441\u0442\u043e\u0447\u043d\u0438\u043a\u0438' : 'Sources'}</span>
-          <span className="setup-stepbar__item setup-stepbar__item--active">{isRu ? '\u0421\u0442\u0438\u043b\u044c' : 'Style'}</span>
-          <span className="setup-stepbar__item">{isRu ? '\u041f\u0440\u043e\u0441\u043c\u043e\u0442\u0440' : 'Review'}</span>
-          <span className="setup-stepbar__item">{isRu ? '\u041f\u043b\u0430\u043d' : 'Plan'}</span>
-        </div>
+        <span className="eyebrow">{isRu ? '\u0428\u0430\u0433 2 \u0438\u0437 4' : 'Step 2 of 4'}</span>
+        <h2 className="setup-header__title">{isRu ? '\u0413\u0435\u043d\u0435\u0440\u0430\u0446\u0438\u044f \u0441\u0442\u0438\u043b\u044f' : 'Generate style'}</h2>
       </section>
 
       {error && <div className="state-banner state-banner--error">{error}</div>}
