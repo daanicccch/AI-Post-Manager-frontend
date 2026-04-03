@@ -4892,6 +4892,12 @@ body.app-lightbox-open .workspace-main {
   color: var(--muted);
 }
 
+.page-stack--setup {
+  min-height: calc(100dvh - 9rem);
+  padding-bottom: 7.5rem;
+  overflow: hidden;
+}
+
 .setup-progress {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -4952,6 +4958,10 @@ body.app-lightbox-open .workspace-main {
   grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
 }
 
+.setup-columns--single {
+  grid-template-columns: 1fr;
+}
+
 .setup-select-card,
 .setup-list-card {
   display: grid;
@@ -4997,6 +5007,62 @@ body.app-lightbox-open .workspace-main {
   gap: 0.6rem;
   max-height: 18rem;
   overflow: auto;
+}
+
+.setup-panel {
+  display: grid;
+  gap: 1rem;
+}
+
+.setup-panel--grow {
+  align-content: start;
+}
+
+.config-editor--setup {
+  min-height: 7.8rem;
+  resize: none;
+}
+
+.config-editor--setup-preview {
+  min-height: 18rem;
+  resize: none;
+}
+
+.setup-footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: 5.25rem minmax(0, 1fr);
+  gap: 1rem;
+  padding: 1rem 1rem calc(env(safe-area-inset-bottom, 0px) + 1rem);
+  background: linear-gradient(180deg, rgba(8, 10, 15, 0), rgba(8, 10, 15, 0.86) 28%, rgba(8, 10, 15, 0.96) 100%);
+}
+
+.setup-footer__back,
+.setup-footer__continue {
+  min-height: 4.5rem;
+  border: 0;
+  border-radius: 1.6rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.setup-footer__back {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.setup-footer__continue {
+  background: #b98ae4;
+  color: #ffffff;
+}
+
+.setup-footer__back:disabled,
+.setup-footer__continue:disabled {
+  opacity: 0.55;
 }
 
 @media (max-width: 720px) {

@@ -993,17 +993,22 @@ export async function handleLocalMockRequest<T>(path: string, init?: RequestInit
     const profile = getProfileBySlug(db, decodeURIComponent(onboardingSourcesMatch[1]));
     const body = parseBody(init);
     const includeTargetChannel = body.includeTargetChannel === true;
-    const channels = (Array.isArray(body.channels) ? body.channels : [])
-      .map((item) => ({
-        username: String((item as Record<string, unknown>).username || '').trim().replace(/^@+/, ''),
-        title: String((item as Record<string, unknown>).title || (item as Record<string, unknown>).name || '').trim(),
-        name: String((item as Record<string, unknown>).title || (item as Record<string, unknown>).name || '').trim(),
-        origin: 'custom',
-        usedForStyle: true,
-        usedForMonitoring: true,
-        is_check: true,
-      }))
-      .filter((item) => item.username);
+    const channels = Array.from(
+      new Map(
+        (Array.isArray(body.channels) ? body.channels : [])
+          .map((item) => ({
+            username: String((item as Record<string, unknown>).username || '').trim().replace(/^@+/, ''),
+            title: String((item as Record<string, unknown>).title || (item as Record<string, unknown>).name || '').trim(),
+            name: String((item as Record<string, unknown>).title || (item as Record<string, unknown>).name || '').trim(),
+            origin: 'custom',
+            usedForStyle: true,
+            usedForMonitoring: true,
+            is_check: true,
+          }))
+          .filter((item) => item.username)
+          .map((item) => [item.username.toLowerCase(), item])
+      ).values()
+    );
     const targetChannel = includeTargetChannel && profile.telegramChannelUsername
       ? [{
           username: String(profile.telegramChannelUsername).replace(/^@+/, ''),
@@ -1015,14 +1020,19 @@ export async function handleLocalMockRequest<T>(path: string, init?: RequestInit
           is_check: false,
         }]
       : [];
-    const webSources = (Array.isArray(body.webSources) ? body.webSources : [])
-      .map((item) => ({
-        url: String((item as Record<string, unknown>).url || '').trim(),
-        title: String((item as Record<string, unknown>).title || '').trim(),
-        sourceKind: String((item as Record<string, unknown>).sourceKind || 'website').trim() || 'website',
-        origin: 'custom',
-      }))
-      .filter((item) => item.url);
+    const webSources = Array.from(
+      new Map(
+        (Array.isArray(body.webSources) ? body.webSources : [])
+          .map((item) => ({
+            url: String((item as Record<string, unknown>).url || '').trim(),
+            title: String((item as Record<string, unknown>).title || '').trim(),
+            sourceKind: String((item as Record<string, unknown>).sourceKind || 'website').trim() || 'website',
+            origin: 'custom',
+          }))
+          .filter((item) => item.url)
+          .map((item) => [item.url.toLowerCase(), item])
+      ).values()
+    );
 
     profile.sourceChannels = [...channels, ...targetChannel];
     profile.webSources = webSources;

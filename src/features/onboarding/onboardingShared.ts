@@ -93,7 +93,19 @@ export function buildPresetMap(presets: SourcePreset[]) {
 }
 
 export function buildOnboardingUrl(step: OnboardingStepKey, profileId: string) {
-  return `/onboarding/${step}?profileId=${encodeURIComponent(profileId)}`;
+  const params = new URLSearchParams();
+  params.set('profileId', profileId);
+
+  if (typeof window !== 'undefined') {
+    const current = new URLSearchParams(window.location.search);
+    const mock = current.get('mock');
+    const persistedMock = window.localStorage.getItem('channelbot.local.mock-api');
+    if (mock === '1' || mock === 'true' || persistedMock === '1') {
+      params.set('mock', '1');
+    }
+  }
+
+  return `/onboarding/${step}?${params.toString()}`;
 }
 
 export function getOnboardingStepFromStatus(status: string | null | undefined): OnboardingStepKey {
