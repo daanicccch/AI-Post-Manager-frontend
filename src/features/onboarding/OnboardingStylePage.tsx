@@ -15,9 +15,13 @@ export function OnboardingStylePage() {
   const [personaSource, setPersonaSource] = useState<PersonaSource>('sources');
 
   const sourceChannels = useMemo(() => normalizeSourceChannels(profile?.sourceChannels), [profile?.sourceChannels]);
+  const externalStyleChannels = useMemo(
+    () => sourceChannels.filter((item) => item.origin !== 'target' && item.usedForStyle !== false),
+    [sourceChannels]
+  );
   const webSources = useMemo(() => normalizeWebSources(profile?.webSources), [profile?.webSources]);
-  const hasExternalSources = sourceChannels.some((item) => item.origin !== 'target') || webSources.length > 0;
-  const hasTargetChannel = Boolean(String(profile?.telegramChannelUsername || '').trim());
+  const hasExternalSources = externalStyleChannels.length > 0;
+  const hasTargetChannel = Boolean(String(profile?.telegramChannelId || '').trim());
 
   useEffect(() => {
     setPersonaSource(getDefaultPersonaSource(profile));
@@ -74,7 +78,7 @@ export function OnboardingStylePage() {
 
       {error && <div className="state-banner state-banner--error">{error}</div>}
 
-      <section className="queue-control-card queue-control-card--profile setup-panel">
+      <section className="queue-control-card queue-control-card--profile setup-panel setup-panel--fill">
         <div className="setup-choice-grid">
           <button
             className={`setup-select-card${personaSource === 'sources' ? ' setup-select-card--active' : ''}`}
@@ -110,8 +114,8 @@ export function OnboardingStylePage() {
         {!hasTargetChannel ? (
           <p className="editor-help">
             {isRu
-              ? '\u0420\u0435\u0436\u0438\u043c\u044b \u00ab\u041c\u043e\u0439 \u043a\u0430\u043d\u0430\u043b\u00bb \u0438 \u00ab\u0421\u043c\u0435\u0448\u0430\u043d\u043d\u044b\u0439\u00bb \u043d\u0435\u0434\u043e\u0441\u0442\u0443\u043f\u043d\u044b, \u043f\u043e\u043a\u0430 \u0446\u0435\u043b\u0435\u0432\u043e\u0439 \u043a\u0430\u043d\u0430\u043b \u043d\u0435 \u043f\u0440\u0438\u0432\u044f\u0437\u0430\u043d.'
-              : 'My channel and mixed mode are unavailable until the target channel is connected.'}
+              ? '\u00ab\u041c\u043e\u0439 \u043a\u0430\u043d\u0430\u043b\u00bb \u0438 \u00ab\u0421\u043c\u0435\u0448\u0430\u043d\u043d\u044b\u0439 \u0440\u0435\u0436\u0438\u043c\u00bb \u043f\u043e\u044f\u0432\u044f\u0442\u0441\u044f \u0441\u0440\u0430\u0437\u0443 \u043f\u043e\u0441\u043b\u0435 \u043f\u0440\u0438\u0432\u044f\u0437\u043a\u0438 target channel.'
+              : 'My channel and mixed mode unlock after the target channel is attached.'}
           </p>
         ) : null}
 
@@ -120,6 +124,14 @@ export function OnboardingStylePage() {
             {isRu
               ? '\u0415\u0441\u043b\u0438 \u043a\u0430\u043d\u0430\u043b \u043d\u043e\u0432\u044b\u0439 \u0438 \u0432 \u043d\u0451\u043c \u043f\u043e\u043a\u0430 \u043d\u0435\u0442 \u043f\u043e\u0441\u0442\u043e\u0432, \u0432\u044b\u0431\u0438\u0440\u0430\u0439 \u0440\u0435\u0436\u0438\u043c \u00ab\u0414\u0440\u0443\u0433\u0438\u0435 \u043a\u0430\u043d\u0430\u043b\u044b \u0438 \u0441\u0430\u0439\u0442\u044b\u00bb.'
               : 'If the channel is new and empty, use the external sources mode.'}
+          </p>
+        ) : null}
+
+        {!hasExternalSources && webSources.length > 0 ? (
+          <p className="editor-help">
+            {isRu
+              ? '\u0421\u0435\u0439\u0447\u0430\u0441 \u0441\u0442\u0438\u043b\u044c \u0433\u0435\u043d\u0435\u0440\u0438\u0440\u0443\u0435\u0442\u0441\u044f \u043f\u043e Telegram-\u043a\u0430\u043d\u0430\u043b\u0430\u043c. \u0421\u0430\u0439\u0442\u044b \u0441\u043e\u0445\u0440\u0430\u043d\u044f\u0442\u0441\u044f \u043a\u0430\u043a \u0438\u0441\u0442\u043e\u0447\u043d\u0438\u043a\u0438, \u043d\u043e \u0434\u043b\u044f style distill \u043d\u0443\u0436\u0435\u043d \u0445\u043e\u0442\u044f \u0431\u044b \u043e\u0434\u0438\u043d \u043a\u0430\u043d\u0430\u043b.'
+              : 'Style distillation currently uses Telegram channels. Websites are saved as sources, but you still need at least one channel for style generation.'}
           </p>
         ) : null}
       </section>

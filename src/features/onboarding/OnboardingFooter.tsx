@@ -24,7 +24,11 @@ export function OnboardingFooter({
         type="button"
         onClick={onBack}
       >
-        {'<'}
+        <span className="setup-footer__back-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path d="M14.5 6.5 9 12l5.5 5.5" />
+          </svg>
+        </span>
       </button>
       <button
         className="setup-footer__continue"

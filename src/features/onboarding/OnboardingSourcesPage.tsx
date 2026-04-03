@@ -4,13 +4,6 @@ import { useAppLocale } from '../../lib/appLocale';
 import { buildOnboardingUrl, buildPresetMap, getConfigValue, normalizeSourceChannels, normalizeWebSources, useOnboardingData } from './onboardingShared';
 import { OnboardingFooter } from './OnboardingFooter';
 
-function splitMultilineInput(value: string) {
-  return String(value || '')
-    .split(/\r?\n/)
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
-
 function parseChannelValue(value: string) {
   const trimmed = String(value || '').trim();
   if (!trimmed) {
@@ -57,8 +50,10 @@ export function OnboardingSourcesPage() {
 
   const [mode, setMode] = useState<'preset' | 'custom'>('preset');
   const [selectedPresetKey, setSelectedPresetKey] = useState('');
-  const [customChannelsText, setCustomChannelsText] = useState('');
-  const [customWebSourcesText, setCustomWebSourcesText] = useState('');
+  const [customChannels, setCustomChannels] = useState<Array<{ username: string; title: string }>>([]);
+  const [customWebSources, setCustomWebSources] = useState<Array<{ url: string; title: string }>>([]);
+  const [channelInput, setChannelInput] = useState('');
+  const [websiteInput, setWebsiteInput] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   const presetMap = useMemo(() => buildPresetMap(presets), [presets]);
@@ -76,16 +71,20 @@ export function OnboardingSourcesPage() {
 
     setMode(nextMode);
     setSelectedPresetKey(nextPresetKey || presets[0]?.key || '');
-    setCustomChannelsText(
+    setCustomChannels(
       normalizeSourceChannels(nextProfile.sourceChannels)
         .filter((item) => item.origin !== 'target')
-        .map((item) => item.title || item.username)
-        .join('\n')
+        .map((item) => ({
+          username: item.username,
+          title: item.title || item.username,
+        }))
     );
-    setCustomWebSourcesText(
+    setCustomWebSources(
       normalizeWebSources(nextProfile.webSources)
-        .map((item) => item.title || item.url)
-        .join('\n')
+        .map((item) => ({
+          url: item.url,
+          title: item.title || item.url,
+        }))
     );
   }, [data, presets]);
 
@@ -122,18 +121,21 @@ export function OnboardingSourcesPage() {
     try {
       const channels = Array.from(
         new Map(
-          splitMultilineInput(customChannelsText)
-            .map(parseChannelValue)
-            .filter((item): item is NonNullable<typeof item> => Boolean(item))
-            .map((item) => [String(item.username).toLowerCase(), item])
+          customChannels.map((item) => [String(item.username).toLowerCase(), {
+            username: item.username,
+            title: item.title,
+            usedForStyle: true,
+            usedForMonitoring: true,
+          }])
         ).values()
       );
       const webSources = Array.from(
         new Map(
-          splitMultilineInput(customWebSourcesText)
-            .map(parseWebSourceValue)
-            .filter((item): item is NonNullable<typeof item> => Boolean(item))
-            .map((item) => [String(item.url).toLowerCase(), item])
+          customWebSources.map((item) => [String(item.url).toLowerCase(), {
+            url: item.url,
+            title: item.title,
+            sourceKind: 'website',
+          }])
         ).values()
       );
 
@@ -149,6 +151,48 @@ export function OnboardingSourcesPage() {
     } finally {
       setIsSaving(false);
     }
+  }
+
+  function addChannel() {
+    const nextItem = parseChannelValue(channelInput);
+    if (!nextItem) {
+      return;
+    }
+
+    setCustomChannels((current) => {
+      const nextMap = new Map(current.map((item) => [item.username.toLowerCase(), item]));
+      nextMap.set(nextItem.username.toLowerCase(), {
+        username: nextItem.username,
+        title: nextItem.title,
+      });
+      return Array.from(nextMap.values());
+    });
+    setChannelInput('');
+  }
+
+  function addWebsite() {
+    const nextItem = parseWebSourceValue(websiteInput);
+    if (!nextItem) {
+      return;
+    }
+
+    setCustomWebSources((current) => {
+      const nextMap = new Map(current.map((item) => [item.url.toLowerCase(), item]));
+      nextMap.set(nextItem.url.toLowerCase(), {
+        url: nextItem.url,
+        title: nextItem.title,
+      });
+      return Array.from(nextMap.values());
+    });
+    setWebsiteInput('');
+  }
+
+  function removeChannel(username: string) {
+    setCustomChannels((current) => current.filter((item) => item.username !== username));
+  }
+
+  function removeWebsite(url: string) {
+    setCustomWebSources((current) => current.filter((item) => item.url !== url));
   }
 
   if (isLoading && !profile) {
@@ -184,8 +228,8 @@ export function OnboardingSourcesPage() {
 
       {error && <div className="state-banner state-banner--error">{error}</div>}
 
-      <section className="queue-control-card queue-control-card--profile setup-panel">
-        <div className="action-row action-row--wrap">
+      <section className="queue-control-card queue-control-card--profile setup-panel setup-panel--fill">
+        <div className="setup-tabs">
           <button
             className={`secondary-button secondary-button--small${mode === 'preset' ? ' setup-choice-button--active' : ''}`}
             type="button"
@@ -203,7 +247,7 @@ export function OnboardingSourcesPage() {
         </div>
 
         {mode === 'preset' ? (
-          <div className="setup-choice-grid">
+          <div className="setup-preset-list" role="list">
             {presets.map((preset) => (
               <button
                 className={`setup-select-card${selectedPresetKey === preset.key ? ' setup-select-card--active' : ''}`}
@@ -217,37 +261,61 @@ export function OnboardingSourcesPage() {
             ))}
           </div>
         ) : (
-          <div className="setup-columns setup-columns--single">
-            <section className="context-section context-section--tight">
-              <label className="field-block">
-                <span>{isRu ? '\u041a\u0430\u043d\u0430\u043b\u044b' : 'Channels'}</span>
-                <textarea
-                  className="config-editor config-editor--setup"
-                  value={customChannelsText}
-                  onChange={(event) => setCustomChannelsText(event.target.value)}
+          <div className="setup-source-stack">
+            <section className="context-section context-section--tight setup-source-section">
+              <span className="setup-field-label">{isRu ? '\u0421\u0441\u044b\u043b\u043a\u0430 \u043d\u0430 \u043a\u0430\u043d\u0430\u043b' : 'Channel link'}</span>
+              <div className="setup-inline-input">
+                <input
+                  placeholder={isRu ? 't.me/channel или @channel' : 't.me/channel or @channel'}
+                  value={channelInput}
+                  onChange={(event) => setChannelInput(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault();
+                      addChannel();
+                    }
+                  }}
                 />
-              </label>
-              <p className="editor-help">
-                {isRu
-                  ? '\u041f\u043e \u043e\u0434\u043d\u043e\u043c\u0443 \u043a\u0430\u043d\u0430\u043b\u0443 \u043d\u0430 \u0441\u0442\u0440\u043e\u043a\u0443. \u041c\u043e\u0436\u043d\u043e \u0432\u0441\u0442\u0430\u0432\u0438\u0442\u044c @username \u0438\u043b\u0438 \u0441\u0441\u044b\u043b\u043a\u0443.'
-                  : 'One channel per line. You can paste @username or a t.me link.'}
-              </p>
+                <button className="secondary-button secondary-button--small" type="button" onClick={addChannel}>
+                  {isRu ? '\u0413\u043e\u0442\u043e\u0432\u043e' : 'Add'}
+                </button>
+              </div>
+              <div className="setup-chip-list" aria-live="polite">
+                {customChannels.map((item) => (
+                  <span className="setup-chip" key={item.username}>
+                    {item.title}
+                    <button aria-label={isRu ? '\u0423\u0434\u0430\u043b\u0438\u0442\u044c' : 'Remove'} type="button" onClick={() => removeChannel(item.username)}>×</button>
+                  </span>
+                ))}
+              </div>
             </section>
 
-            <section className="context-section context-section--tight">
-              <label className="field-block">
-                <span>{isRu ? '\u0421\u0430\u0439\u0442\u044b' : 'Websites'}</span>
-                <textarea
-                  className="config-editor config-editor--setup"
-                  value={customWebSourcesText}
-                  onChange={(event) => setCustomWebSourcesText(event.target.value)}
+            <section className="context-section context-section--tight setup-source-section">
+              <span className="setup-field-label">{isRu ? '\u0421\u0441\u044b\u043b\u043a\u0430 \u043d\u0430 \u0441\u0430\u0439\u0442' : 'Website link'}</span>
+              <div className="setup-inline-input">
+                <input
+                  placeholder={isRu ? 'site.com или https://site.com' : 'site.com or https://site.com'}
+                  value={websiteInput}
+                  onChange={(event) => setWebsiteInput(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault();
+                      addWebsite();
+                    }
+                  }}
                 />
-              </label>
-              <p className="editor-help">
-                {isRu
-                  ? '\u041f\u043e \u043e\u0434\u043d\u043e\u043c\u0443 \u0441\u0430\u0439\u0442\u0443 \u043d\u0430 \u0441\u0442\u0440\u043e\u043a\u0443.'
-                  : 'One website per line.'}
-              </p>
+                <button className="secondary-button secondary-button--small" type="button" onClick={addWebsite}>
+                  {isRu ? '\u0413\u043e\u0442\u043e\u0432\u043e' : 'Add'}
+                </button>
+              </div>
+              <div className="setup-chip-list" aria-live="polite">
+                {customWebSources.map((item) => (
+                  <span className="setup-chip" key={item.url}>
+                    {item.title}
+                    <button aria-label={isRu ? '\u0423\u0434\u0430\u043b\u0438\u0442\u044c' : 'Remove'} type="button" onClick={() => removeWebsite(item.url)}>×</button>
+                  </span>
+                ))}
+              </div>
             </section>
           </div>
         )}

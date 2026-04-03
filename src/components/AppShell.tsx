@@ -121,14 +121,17 @@ export function AppShell({ children }: AppShellProps) {
       <div className="workspace-shell__glow workspace-shell__glow--two" aria-hidden="true" />
 
       <div className={`app-frame${isBusy ? ' app-frame--busy' : ''}`}>
-        <div ref={scrollContainerRef} className="workspace-main-shell">
+        <div
+          ref={scrollContainerRef}
+          className={`workspace-main-shell${isOnboardingFlow ? ' workspace-main-shell--onboarding' : ''}`}
+        >
           <header className="app-topbar">
             <div className="app-topbar__intro">
               <h1>{title}</h1>
             </div>
           </header>
 
-          <main className="workspace-main">{children}</main>
+          <main className={`workspace-main${isOnboardingFlow ? ' workspace-main--onboarding' : ''}`}>{children}</main>
         </div>
 
         {!keyboardOpen && !isOnboardingFlow ? (

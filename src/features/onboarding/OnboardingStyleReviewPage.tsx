@@ -57,7 +57,7 @@ export function OnboardingStyleReviewPage() {
 
       {error && <div className="state-banner state-banner--error">{error}</div>}
 
-      <section className="editor-panel editor-panel--main editor-panel--profile setup-panel">
+      <section className="editor-panel editor-panel--main editor-panel--profile setup-panel setup-panel--fill">
         <textarea className="config-editor config-editor--setup-preview" readOnly value={String(profile.personaGuideMarkdown || '')} />
       </section>
 

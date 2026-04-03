@@ -124,16 +124,14 @@ export function getOnboardingStepFromStatus(status: string | null | undefined): 
 
 export function getDefaultPersonaSource(profile: Profile | null): PersonaSource {
   const sourceChannels = normalizeSourceChannels(profile?.sourceChannels);
-  const webSources = normalizeWebSources(profile?.webSources);
-  const hasExternalChannels = sourceChannels.some((item) => item.origin !== 'target');
+  const hasExternalChannels = sourceChannels.some((item) => item.origin !== 'target' && item.usedForStyle !== false);
   const hasTargetChannel = sourceChannels.some((item) => item.origin === 'target')
-    || Boolean(String(profile?.telegramChannelUsername || '').trim());
-  const hasWebSources = webSources.length > 0;
+    || Boolean(String(profile?.telegramChannelId || '').trim());
 
-  if ((hasExternalChannels || hasWebSources) && hasTargetChannel) {
+  if (hasExternalChannels && hasTargetChannel) {
     return 'sources';
   }
-  if (hasExternalChannels || hasWebSources) {
+  if (hasExternalChannels) {
     return 'sources';
   }
   if (hasTargetChannel) {

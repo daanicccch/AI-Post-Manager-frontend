@@ -195,7 +195,7 @@ export function OnboardingPlanPage() {
 
       {error && <div className="state-banner state-banner--error">{error}</div>}
 
-      <form className="setup-panel setup-panel--grow" onSubmit={handleSubmit}>
+      <form className="setup-panel setup-panel--grow setup-panel--fill" onSubmit={handleSubmit}>
         <section className="context-section context-section--tight">
           <label className="field-block">
             <span>{isRu ? '\u0422\u0430\u0439\u043c\u0437\u043e\u043d\u0430' : 'Timezone'}</span>
