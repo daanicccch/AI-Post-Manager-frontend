@@ -52,7 +52,7 @@ export function OnboardingStyleReviewPage() {
   }
 
   return (
-    <section className="page-stack page-stack--setup">
+    <section className="page-stack page-stack--setup page-stack--setup-review">
       <section className="setup-header">
         <div className="setup-progress" aria-label="Onboarding progress">
           <span className="setup-progress__segment setup-progress__segment--done" />
@@ -65,9 +65,9 @@ export function OnboardingStyleReviewPage() {
 
       {error && <div className="state-banner state-banner--error setup-error-banner">{error}</div>}
 
-      <section className="editor-panel editor-panel--main editor-panel--profile setup-panel setup-panel--fill">
+      <section className="editor-panel editor-panel--main editor-panel--profile setup-panel setup-panel--fill setup-style-review-panel">
         <textarea
-          className="config-editor config-editor--setup-preview"
+          className="config-editor config-editor--setup-preview setup-style-review-editor"
           value={draftGuide}
           onChange={(event) => setDraftGuide(event.target.value)}
         />

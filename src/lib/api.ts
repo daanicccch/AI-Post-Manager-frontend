@@ -89,6 +89,7 @@ export interface OnboardingState {
   presets: SourcePreset[];
   sourceChannelCatalog: SourceChannelOption[];
   webSourceCatalog: WebSourceOption[];
+  sourcePickerUrl?: string | null;
 }
 
 export interface OnboardingSourcesResult {

@@ -241,6 +241,7 @@ function buildOnboardingState(db: MockDb, requestedProfileId: string | null): On
     presets: clone(MOCK_SOURCE_PRESETS),
     sourceChannelCatalog: clone(sourceChannelCatalog),
     webSourceCatalog: clone(webSourceCatalog),
+    sourcePickerUrl: profile ? `mock://source-picker/${profile.slug}` : null,
   };
 }
 

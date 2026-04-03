@@ -174,6 +174,7 @@ export function useOnboardingData(profileId: string) {
     presets: data?.presets ?? [],
     sourceChannelCatalog: data?.sourceChannelCatalog ?? [],
     webSourceCatalog: data?.webSourceCatalog ?? [],
+    sourcePickerUrl: data?.sourcePickerUrl ?? null,
     reload,
     setError,
   };

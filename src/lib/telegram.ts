@@ -5,6 +5,7 @@ declare global {
         ready?: () => void;
         expand?: () => void;
         requestFullscreen?: () => void;
+        openTelegramLink?: (url: string) => void;
         disableVerticalSwipes?: () => void;
         enableVerticalSwipes?: () => void;
         onEvent?: (eventType: string, eventHandler: () => void) => void;
@@ -164,4 +165,19 @@ export function appendTelegramInitData(url: string) {
   const resolvedUrl = new URL(url, window.location.origin);
   resolvedUrl.searchParams.set('tgInitData', initDataRaw);
   return resolvedUrl.toString();
+}
+
+export function openTelegramLink(url: string) {
+  const normalizedUrl = String(url || '').trim();
+  if (!normalizedUrl) {
+    return;
+  }
+
+  const webApp = window.Telegram?.WebApp;
+  if (webApp?.openTelegramLink) {
+    safelyCallTelegramMethod('openTelegramLink', () => webApp.openTelegramLink?.(normalizedUrl));
+    return;
+  }
+
+  window.location.href = normalizedUrl;
 }
