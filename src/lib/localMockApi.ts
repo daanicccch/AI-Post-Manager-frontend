@@ -8,13 +8,18 @@ import type {
   GenerateDraftFromPoolInput,
   HistoryItem,
   InboxItem,
+  OnboardingState,
+  OnboardingSourcesResult,
   PersonaGuideDetail,
   Profile,
   ProfileAssetsUpdateResult,
   ScheduleDetail,
+  SourceChannelOption,
+  SourcePreset,
   SourcePost,
   StatusSummary,
-  UploadedMediaFile
+  UploadedMediaFile,
+  WebSourceOption
 } from './api';
 import { normalizeBrokenEncoding } from './encoding';
 
@@ -30,6 +35,38 @@ type MockDb = {
 
 const STORAGE_KEY = 'channelbot.local.mock-db.v1';
 
+const MOCK_SOURCE_PRESETS: SourcePreset[] = [
+  {
+    key: 'crypto',
+    title: 'Crypto',
+    description: 'Fast-moving crypto news, market pulse, and commentary.',
+    accentColor: '#F59E0B',
+    channels: [
+      { username: 'cointelegraph', title: 'Cointelegraph', name: 'Cointelegraph', usedForStyle: true, usedForMonitoring: true },
+      { username: 'decryptmedia', title: 'Decrypt', name: 'Decrypt', usedForStyle: true, usedForMonitoring: true },
+      { username: 'banksta', title: 'Banksta', name: 'Banksta', usedForStyle: true, usedForMonitoring: false },
+    ],
+    webSources: [
+      { url: 'https://www.theblock.co', title: 'The Block', sourceKind: 'website' },
+      { url: 'https://www.coindesk.com', title: 'CoinDesk', sourceKind: 'website' },
+    ],
+  },
+  {
+    key: 'news',
+    title: 'News',
+    description: 'General news preset with fast editorial signals.',
+    accentColor: '#2563EB',
+    channels: [
+      { username: 'meduzalive', title: 'Meduza Live', name: 'Meduza Live', usedForStyle: true, usedForMonitoring: true },
+      { username: 'rian_ru', title: 'RIA Novosti', name: 'RIA Novosti', usedForStyle: true, usedForMonitoring: false },
+    ],
+    webSources: [
+      { url: 'https://www.reuters.com', title: 'Reuters', sourceKind: 'website' },
+      { url: 'https://www.bloomberg.com', title: 'Bloomberg', sourceKind: 'website' },
+    ],
+  },
+];
+
 function delay(ms = 120) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
@@ -40,6 +77,10 @@ function clone<T>(value: T): T {
 
 function nowIso(offsetMinutes = 0) {
   return new Date(Date.now() + offsetMinutes * 60_000).toISOString();
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
 function stripHtml(value: string | null | undefined) {
@@ -100,6 +141,108 @@ export function resolveLocalMockMediaUrl(path: string) {
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 }
 
+function clonePresetChannels(presetKey: string) {
+  const preset = MOCK_SOURCE_PRESETS.find((item) => item.key === presetKey);
+  return clone(preset?.channels || []).map((item) => ({
+    ...item,
+    origin: 'preset',
+    is_check: item.usedForMonitoring !== false,
+  }));
+}
+
+function clonePresetWebSources(presetKey: string) {
+  const preset = MOCK_SOURCE_PRESETS.find((item) => item.key === presetKey);
+  return clone(preset?.webSources || []).map((item) => ({
+    ...item,
+    origin: 'preset',
+  }));
+}
+
+function normalizeMockSourceChannels(items: unknown[] | undefined): SourceChannelOption[] {
+  return (Array.isArray(items) ? items : [])
+    .map((item) => {
+      if (!item || typeof item !== 'object' || Array.isArray(item)) {
+        return null;
+      }
+      const username = String((item as Record<string, unknown>).username || '').trim().replace(/^@+/, '');
+      if (!username) {
+        return null;
+      }
+      return {
+        username,
+        title: String((item as Record<string, unknown>).title || (item as Record<string, unknown>).name || username).trim() || username,
+        name: String((item as Record<string, unknown>).name || (item as Record<string, unknown>).title || username).trim() || username,
+        usedForStyle: (item as Record<string, unknown>).usedForStyle !== false,
+        usedForMonitoring: (item as Record<string, unknown>).usedForMonitoring !== false,
+        is_check: (item as Record<string, unknown>).is_check !== false,
+        origin: String((item as Record<string, unknown>).origin || '').trim() || undefined,
+      };
+    })
+    .filter((item): item is NonNullable<typeof item> => Boolean(item));
+}
+
+function normalizeMockWebSources(items: unknown[] | undefined): WebSourceOption[] {
+  return (Array.isArray(items) ? items : [])
+    .map((item) => {
+      if (!item || typeof item !== 'object' || Array.isArray(item)) {
+        return null;
+      }
+      const url = String((item as Record<string, unknown>).url || '').trim();
+      if (!url) {
+        return null;
+      }
+      return {
+        url,
+        title: String((item as Record<string, unknown>).title || url).trim() || url,
+        sourceKind: String((item as Record<string, unknown>).sourceKind || 'website').trim() || 'website',
+        origin: String((item as Record<string, unknown>).origin || '').trim() || undefined,
+      };
+    })
+    .filter((item): item is NonNullable<typeof item> => Boolean(item));
+}
+
+function buildOnboardingState(db: MockDb, requestedProfileId: string | null): OnboardingState {
+  const profile =
+    (requestedProfileId ? db.profiles.find((item) => item.slug === requestedProfileId) : null)
+    || db.profiles.find((item) => item.onboardingStatus && item.onboardingStatus !== 'completed')
+    || db.profiles[0]
+    || null;
+
+  const sourceChannelCatalog = Array.from(
+    new Map(
+      MOCK_SOURCE_PRESETS
+        .flatMap((preset) => preset.channels)
+        .map((item) => [item.username, item])
+    ).values()
+  );
+  const webSourceCatalog = Array.from(
+    new Map(
+      MOCK_SOURCE_PRESETS
+        .flatMap((preset) => preset.webSources)
+        .map((item) => [item.url, item])
+    ).values()
+  );
+
+  return {
+    session: profile
+      ? {
+          id: profile.id,
+          status: String(profile.onboardingStatus || 'awaiting_source_setup'),
+          profileId: profile.slug,
+          targetChannelId: profile.telegramChannelId,
+          targetChannelUsername: profile.telegramChannelUsername || null,
+          targetChannelTitle: profile.telegramChannelTitle || profile.title,
+          payload: isRecord(profile.sourceChannelsConfig) ? (profile.sourceChannelsConfig as Record<string, unknown>) : {},
+          updatedAt: profile.updatedAt || nowIso(),
+        }
+      : null,
+    profile: profile ? clone(profile) : null,
+    presets: clone(MOCK_SOURCE_PRESETS),
+    sourceChannelCatalog: clone(sourceChannelCatalog),
+    webSourceCatalog: clone(webSourceCatalog),
+  };
+}
+
 function createInitialProfiles(): Profile[] {
   return [
     {
@@ -107,7 +250,10 @@ function createInitialProfiles(): Profile[] {
       slug: 'alpha',
       title: 'Alpha Signals',
       telegramChannelId: '@alpha_signals',
+      telegramChannelUsername: 'alpha_signals',
+      telegramChannelTitle: 'Alpha Signals',
       writingLanguage: 'ru',
+      onboardingStatus: 'awaiting_source_setup',
       editorRoleText: 'Rewrite source posts into concise Telegram updates.',
       rulesPath: 'profiles/alpha/rules.md',
       templatesPath: 'profiles/alpha/templates.md',
@@ -141,7 +287,7 @@ function createInitialProfiles(): Profile[] {
       latestDraftUpdatedAt: nowIso(-30),
       schedule: {
         timezone: 'Europe/Moscow',
-        isEnabled: true,
+        isEnabled: false,
         config: {},
         updatedAt: nowIso(-300)
       }
@@ -151,7 +297,10 @@ function createInitialProfiles(): Profile[] {
       slug: 'digest',
       title: 'Weekly Digest',
       telegramChannelId: '@weekly_digest',
+      telegramChannelUsername: 'weekly_digest',
+      telegramChannelTitle: 'Weekly Digest',
       writingLanguage: 'ru',
+      onboardingStatus: 'completed',
       editorRoleText: 'Prepare digest-ready summaries from selected channels.',
       rulesPath: 'profiles/digest/rules.md',
       templatesPath: 'profiles/digest/templates.md',
@@ -785,6 +934,154 @@ export async function handleLocalMockRequest<T>(path: string, init?: RequestInit
 
   if (method === 'GET' && pathname === '/status') {
     return buildMockStatus(db) as T;
+  }
+
+  if (method === 'GET' && pathname === '/onboarding') {
+    const requestedProfileId = url.searchParams.get('profileId');
+    return buildOnboardingState(db, requestedProfileId) as T;
+  }
+
+  const onboardingPresetMatch = pathname.match(/^\/onboarding\/([^/]+)\/preset$/);
+  if (method === 'POST' && onboardingPresetMatch) {
+    const profile = getProfileBySlug(db, decodeURIComponent(onboardingPresetMatch[1]));
+    const body = parseBody(init);
+    const presetKey = String(body.presetKey || '').trim();
+    const includeTargetChannel = body.includeTargetChannel !== false;
+    const presetChannels = clonePresetChannels(presetKey);
+    const presetWebSources = clonePresetWebSources(presetKey);
+
+    profile.sourceChannels = includeTargetChannel && profile.telegramChannelUsername
+      ? [
+          ...presetChannels,
+          {
+            username: String(profile.telegramChannelUsername).replace(/^@+/, ''),
+            title: profile.telegramChannelTitle || profile.title,
+            name: profile.telegramChannelTitle || profile.title,
+            origin: 'target',
+            usedForStyle: true,
+            usedForMonitoring: false,
+            is_check: false,
+          },
+        ]
+      : presetChannels;
+    profile.webSources = presetWebSources;
+    profile.sourceChannelsConfig = {
+      mode: 'preset',
+      presetKey,
+      includeTargetChannel,
+    };
+    profile.webSourcesConfig = {
+      mode: 'preset',
+      presetKey,
+    };
+    profile.onboardingStatus = 'awaiting_style_generation';
+    profile.updatedAt = nowIso();
+    syncProfileStats(db);
+    saveDb(db);
+
+    const result: OnboardingSourcesResult = {
+      profile: clone(profile),
+      sourceChannels: clone(normalizeMockSourceChannels(profile.sourceChannels)),
+      webSources: clone(normalizeMockWebSources(profile.webSources)),
+    };
+    return result as T;
+  }
+
+  const onboardingSourcesMatch = pathname.match(/^\/onboarding\/([^/]+)\/sources$/);
+  if (method === 'PUT' && onboardingSourcesMatch) {
+    const profile = getProfileBySlug(db, decodeURIComponent(onboardingSourcesMatch[1]));
+    const body = parseBody(init);
+    const includeTargetChannel = body.includeTargetChannel === true;
+    const channels = (Array.isArray(body.channels) ? body.channels : [])
+      .map((item) => ({
+        username: String((item as Record<string, unknown>).username || '').trim().replace(/^@+/, ''),
+        title: String((item as Record<string, unknown>).title || (item as Record<string, unknown>).name || '').trim(),
+        name: String((item as Record<string, unknown>).title || (item as Record<string, unknown>).name || '').trim(),
+        origin: 'custom',
+        usedForStyle: true,
+        usedForMonitoring: true,
+        is_check: true,
+      }))
+      .filter((item) => item.username);
+    const targetChannel = includeTargetChannel && profile.telegramChannelUsername
+      ? [{
+          username: String(profile.telegramChannelUsername).replace(/^@+/, ''),
+          title: profile.telegramChannelTitle || profile.title,
+          name: profile.telegramChannelTitle || profile.title,
+          origin: 'target',
+          usedForStyle: true,
+          usedForMonitoring: false,
+          is_check: false,
+        }]
+      : [];
+    const webSources = (Array.isArray(body.webSources) ? body.webSources : [])
+      .map((item) => ({
+        url: String((item as Record<string, unknown>).url || '').trim(),
+        title: String((item as Record<string, unknown>).title || '').trim(),
+        sourceKind: String((item as Record<string, unknown>).sourceKind || 'website').trim() || 'website',
+        origin: 'custom',
+      }))
+      .filter((item) => item.url);
+
+    profile.sourceChannels = [...channels, ...targetChannel];
+    profile.webSources = webSources;
+    profile.sourceChannelsConfig = {
+      mode: 'custom',
+      includeTargetChannel,
+    };
+    profile.webSourcesConfig = {
+      mode: 'custom',
+    };
+    profile.onboardingStatus = 'awaiting_style_generation';
+    profile.updatedAt = nowIso();
+    syncProfileStats(db);
+    saveDb(db);
+
+    const result: OnboardingSourcesResult = {
+      profile: clone(profile),
+      sourceChannels: clone(normalizeMockSourceChannels(profile.sourceChannels)),
+      webSources: clone(normalizeMockWebSources(profile.webSources)),
+    };
+    return result as T;
+  }
+
+  const onboardingGenerateStyleMatch = pathname.match(/^\/onboarding\/([^/]+)\/generate-style$/);
+  if (method === 'POST' && onboardingGenerateStyleMatch) {
+    const profile = getProfileBySlug(db, decodeURIComponent(onboardingGenerateStyleMatch[1]));
+    const sources = normalizeMockSourceChannels(profile.sourceChannels);
+    const webSources = normalizeMockWebSources(profile.webSources);
+    profile.personaGuideMarkdown = `# ${profile.title} style\n\nThis style guide was regenerated from the onboarding source set.\n\n## Core voice\n- Short opening with one strong takeaway.\n- Calm, editorial tone.\n- No filler and no promo language.\n\n## Source blend\n- Channels: ${sources.map((item) => `@${item.username}`).join(', ') || 'target channel only'}\n- Web: ${webSources.map((item) => item.title || item.url).join(', ') || 'none'}\n\n## Post rhythm\n- Lead with the signal.\n- Explain why it matters.\n- Close with one next action or implication.`;
+    profile.onboardingStatus = 'awaiting_style_review';
+    profile.updatedAt = nowIso();
+    syncProfileStats(db);
+    saveDb(db);
+    const result: DistillPersonaResult = {
+      profileId: profile.slug,
+      postsAnalyzed: (db.sourcePosts[profile.slug] || []).length,
+      outputPath: profile.personaGuidePath || `profiles/${profile.slug}/persona.md`,
+      profile: clone(profile),
+    };
+    return result as T;
+  }
+
+  const onboardingConfirmStyleMatch = pathname.match(/^\/onboarding\/([^/]+)\/confirm-style$/);
+  if (method === 'POST' && onboardingConfirmStyleMatch) {
+    const profile = getProfileBySlug(db, decodeURIComponent(onboardingConfirmStyleMatch[1]));
+    profile.onboardingStatus = 'awaiting_schedule_setup';
+    profile.updatedAt = nowIso();
+    syncProfileStats(db);
+    saveDb(db);
+    return clone(profile) as T;
+  }
+
+  const onboardingCompleteMatch = pathname.match(/^\/onboarding\/([^/]+)\/complete$/);
+  if (method === 'POST' && onboardingCompleteMatch) {
+    const profile = getProfileBySlug(db, decodeURIComponent(onboardingCompleteMatch[1]));
+    profile.onboardingStatus = 'completed';
+    profile.updatedAt = nowIso();
+    syncProfileStats(db);
+    saveDb(db);
+    return clone(profile) as T;
   }
 
   const personaMatch = pathname.match(/^\/profiles\/([^/]+)\/persona-guide$/);

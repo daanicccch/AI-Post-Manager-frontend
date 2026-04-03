@@ -5,6 +5,8 @@ import { CreateDraftPage } from '../features/create/CreateDraftPage';
 import { DraftPage } from '../features/drafts/DraftPage';
 import { HistoryPage } from '../features/history/HistoryPage';
 import { InboxPage } from '../features/inbox/InboxPage';
+import { OnboardingPlanPage } from '../features/onboarding/OnboardingPlanPage';
+import { OnboardingPage } from '../features/onboarding/OnboardingPage';
 import { ProfilePage } from '../features/profiles/ProfilePage';
 import { SchedulePage } from '../features/schedule/SchedulePage';
 import { BusyOverlayProvider } from '../lib/busyOverlay';
@@ -45,6 +47,8 @@ export function App() {
           <Route path="/create" element={<CreateDraftPage />} />
           <Route path="/drafts/:draftId" element={<DraftPage />} />
           <Route path="/history" element={<HistoryPage />} />
+          <Route path="/onboarding" element={<OnboardingPage />} />
+          <Route path="/onboarding-plan" element={<OnboardingPlanPage />} />
           <Route path="/schedule" element={<SchedulePage />} />
           <Route path="/profiles" element={<ProfilePage />} />
           <Route path="*" element={<Navigate to="/" replace />} />

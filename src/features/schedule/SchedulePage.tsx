@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { SchedulePageSkeleton } from '../../components/LoadingSkeleton';
 import { SelectField } from '../../components/SelectField';
 import { api, type Profile, type ScheduleDetail } from '../../lib/api';
@@ -172,6 +173,8 @@ function buildPlannerConfig({
 export function SchedulePage() {
   const { language } = useAppLocale();
   const isRu = language === 'ru';
+  const [searchParams] = useSearchParams();
+  const requestedProfileId = String(searchParams.get('profileId') || '').trim();
 
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [profileId, setProfileId] = useState<string>('');
@@ -254,12 +257,16 @@ export function SchedulePage() {
       .listProfiles()
       .then((items) => {
         setProfiles(items);
-        setProfileId(items[0]?.slug ?? '');
+        const preferredProfileId =
+          (requestedProfileId && items.some((profile) => profile.slug === requestedProfileId) && requestedProfileId)
+          || items[0]?.slug
+          || '';
+        setProfileId(preferredProfileId);
       })
       .catch((loadError: Error) => {
         setError(loadError.message);
       });
-  }, []);
+  }, [requestedProfileId]);
 
   useEffect(() => {
     if (!profileId) {
@@ -333,7 +340,6 @@ export function SchedulePage() {
       weeklyDigestStart
     ]
   );
-
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsSaving(true);

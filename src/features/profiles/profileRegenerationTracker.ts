@@ -84,7 +84,7 @@ export function clearStoredProfileRegeneration(profileId?: string) {
   }
 }
 
-export function ensureProfileRegeneration(profileId: string, personaSource: 'sources' | 'target') {
+export function ensureProfileRegeneration(profileId: string, personaSource: 'sources' | 'target' | 'mixed') {
   const existingJob = pendingProfileRegenerations.get(profileId);
   if (existingJob) {
     return existingJob;

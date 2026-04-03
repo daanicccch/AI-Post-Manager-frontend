@@ -7,7 +7,10 @@ export interface Profile {
   slug: string;
   title: string;
   telegramChannelId: string | null;
+  telegramChannelUsername?: string | null;
+  telegramChannelTitle?: string | null;
   writingLanguage: string;
+  onboardingStatus?: string | null;
   editorRoleText: string | null;
   rulesPath?: string | null;
   templatesPath?: string | null;
@@ -41,6 +44,57 @@ export interface Profile {
     config?: Record<string, unknown>;
     updatedAt?: string;
   };
+}
+
+export interface SourceChannelOption {
+  username: string;
+  title?: string;
+  name?: string;
+  usedForStyle?: boolean;
+  usedForMonitoring?: boolean;
+  is_check?: boolean;
+  origin?: string;
+}
+
+export interface WebSourceOption {
+  url: string;
+  title?: string;
+  sourceKind?: string;
+  origin?: string;
+}
+
+export interface SourcePreset {
+  key: string;
+  title: string;
+  description: string;
+  accentColor?: string | null;
+  channels: SourceChannelOption[];
+  webSources: WebSourceOption[];
+}
+
+export interface OnboardingSession {
+  id: number;
+  status: string;
+  profileId?: string | null;
+  targetChannelId?: string | null;
+  targetChannelUsername?: string | null;
+  targetChannelTitle?: string | null;
+  payload?: Record<string, unknown>;
+  updatedAt?: string | null;
+}
+
+export interface OnboardingState {
+  session: OnboardingSession | null;
+  profile: Profile | null;
+  presets: SourcePreset[];
+  sourceChannelCatalog: SourceChannelOption[];
+  webSourceCatalog: WebSourceOption[];
+}
+
+export interface OnboardingSourcesResult {
+  profile: Profile;
+  sourceChannels: SourceChannelOption[];
+  webSources: WebSourceOption[];
 }
 
 export interface StatusSummary {
@@ -386,10 +440,53 @@ export const api = {
       method: 'PUT',
       body: JSON.stringify(body)
     }),
-  distillPersona: (profileId: string, body: { personaSource: 'sources' | 'target' }) =>
+  distillPersona: (profileId: string, body: { personaSource: 'sources' | 'target' | 'mixed' }) =>
     request<DistillPersonaResult>(`/profiles/${profileId}/distill-persona`, {
       method: 'POST',
       body: JSON.stringify(body)
+    }),
+  getOnboarding: (profileId?: string) => {
+    const search = new URLSearchParams();
+    if (profileId) search.set('profileId', profileId);
+    return request<OnboardingState>(`/onboarding?${search.toString()}`);
+  },
+  applyOnboardingPreset: (
+    profileId: string,
+    body: {
+      presetKey: string;
+      includeTargetChannel: boolean;
+    }
+  ) =>
+    request<OnboardingSourcesResult>(`/onboarding/${profileId}/preset`, {
+      method: 'POST',
+      body: JSON.stringify(body)
+    }),
+  saveOnboardingSources: (
+    profileId: string,
+    body: {
+      channels: SourceChannelOption[];
+      webSources: WebSourceOption[];
+      includeTargetChannel: boolean;
+    }
+  ) =>
+    request<OnboardingSourcesResult>(`/onboarding/${profileId}/sources`, {
+      method: 'PUT',
+      body: JSON.stringify(body)
+    }),
+  generateOnboardingStyle: (profileId: string) =>
+    request<DistillPersonaResult>(`/onboarding/${profileId}/generate-style`, {
+      method: 'POST',
+      body: JSON.stringify({})
+    }),
+  confirmOnboardingStyle: (profileId: string) =>
+    request<Profile>(`/onboarding/${profileId}/confirm-style`, {
+      method: 'POST',
+      body: JSON.stringify({})
+    }),
+  completeOnboarding: (profileId: string) =>
+    request<Profile>(`/onboarding/${profileId}/complete`, {
+      method: 'POST',
+      body: JSON.stringify({})
     }),
   listInbox: (params: { status?: string; profileId?: string }) => {
     const search = new URLSearchParams();

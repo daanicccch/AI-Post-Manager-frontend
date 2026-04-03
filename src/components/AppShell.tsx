@@ -61,6 +61,7 @@ function NavIcon({ kind }: { kind: string }) {
 export function AppShell({ children }: AppShellProps) {
   const { language } = useAppLocale();
   const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const keyboardOpen = useTelegramKeyboard();
   const { isBusy } = useBusyOverlay();
@@ -93,10 +94,16 @@ export function AppShell({ children }: AppShellProps) {
     }
   ];
   const isEditor = location.pathname.startsWith('/drafts/');
+  const isOnboardingFlow = location.pathname.startsWith('/onboarding') || searchParams.get('onboarding') === '1';
   const currentSection =
     navigation.find((item) => (item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to))) ??
     null;
   const title =
+    isOnboardingFlow
+      ? isRu
+        ? 'Настройка канала'
+        : 'Channel setup'
+      :
     isEditor
       ? isRu
         ? '\u041f\u0440\u043e\u0432\u0435\u0440\u043a\u0430 \u043f\u043e\u0441\u0442\u0430'
@@ -124,7 +131,7 @@ export function AppShell({ children }: AppShellProps) {
           <main className="workspace-main">{children}</main>
         </div>
 
-        {!keyboardOpen ? (
+        {!keyboardOpen && !isOnboardingFlow ? (
           <nav
             className={`bottom-nav${isBusy ? ' bottom-nav--disabled' : ''}`}
             aria-label={isRu ? '\u041d\u0430\u0432\u0438\u0433\u0430\u0446\u0438\u044f' : 'Primary'}
