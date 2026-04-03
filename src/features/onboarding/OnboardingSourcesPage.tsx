@@ -247,7 +247,7 @@ export function OnboardingSourcesPage() {
         </div>
 
         {mode === 'preset' ? (
-          <div className="setup-preset-list" role="list">
+          <div className="setup-preset-list setup-preset-list--dense" role="list">
             {presets.map((preset) => (
               <button
                 className={`setup-select-card${selectedPresetKey === preset.key ? ' setup-select-card--active' : ''}`}

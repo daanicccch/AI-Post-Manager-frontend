@@ -4,6 +4,29 @@ import { useAppLocale } from '../../lib/appLocale';
 import { buildOnboardingUrl, getDefaultPersonaSource, normalizeSourceChannels, normalizeWebSources, useOnboardingData } from './onboardingShared';
 import { OnboardingFooter } from './OnboardingFooter';
 
+function formatStyleError(message: string, isRu: boolean, personaSource: PersonaSource) {
+  const normalized = String(message || '').toLowerCase();
+  if (normalized.includes('not enough posts to distill style')) {
+    if (personaSource === 'target') {
+      return isRu
+        ? 'В целевом канале пока не хватает постов для генерации стиля. Выбери режим с другими каналами или смешанный режим.'
+        : 'There are not enough posts in the target channel yet. Try external sources or mixed mode.';
+    }
+
+    if (personaSource === 'mixed') {
+      return isRu
+        ? 'Для смешанного режима пока не хватает постов. Проверь, что в целевом канале и добавленных каналах уже есть публикации.'
+        : 'There are not enough posts for mixed mode yet. Make sure the target and added channels already have publications.';
+    }
+
+    return isRu
+      ? 'В выбранных каналах пока не хватает постов для генерации стиля. Добавь каналы с уже опубликованными постами.'
+      : 'There are not enough posts in the selected channels yet. Add channels that already have published posts.';
+  }
+
+  return message;
+}
+
 export function OnboardingStylePage() {
   const { language } = useAppLocale();
   const isRu = language === 'ru';
@@ -39,7 +62,8 @@ export function OnboardingStylePage() {
       await api.generateOnboardingStyle(profile.slug, { personaSource });
       window.location.assign(buildOnboardingUrl('style-review', profile.slug));
     } catch (generationError) {
-      setError(generationError instanceof Error ? generationError.message : 'Failed to generate style');
+      const rawMessage = generationError instanceof Error ? generationError.message : 'Failed to generate style';
+      setError(formatStyleError(rawMessage, isRu, personaSource));
     } finally {
       setIsGenerating(false);
     }
@@ -76,10 +100,10 @@ export function OnboardingStylePage() {
         </div>
       </section>
 
-      {error && <div className="state-banner state-banner--error">{error}</div>}
+      {error && <div className="state-banner state-banner--error setup-error-banner">{error}</div>}
 
       <section className="queue-control-card queue-control-card--profile setup-panel setup-panel--fill">
-        <div className="setup-choice-grid">
+        <div className="setup-choice-grid setup-choice-grid--style">
           <button
             className={`setup-select-card${personaSource === 'sources' ? ' setup-select-card--active' : ''}`}
             disabled={!hasExternalSources}

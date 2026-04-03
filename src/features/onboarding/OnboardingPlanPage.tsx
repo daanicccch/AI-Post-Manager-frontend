@@ -193,9 +193,9 @@ export function OnboardingPlanPage() {
         <h2 className="setup-header__title">{isRu ? '\u041f\u043b\u0430\u043d \u043f\u0443\u0431\u043b\u0438\u043a\u0430\u0446\u0438\u0439' : 'Publishing plan'}</h2>
       </section>
 
-      {error && <div className="state-banner state-banner--error">{error}</div>}
+      {error && <div className="state-banner state-banner--error setup-error-banner">{error}</div>}
 
-      <form className="setup-panel setup-panel--grow setup-panel--fill" onSubmit={handleSubmit}>
+      <form className="setup-panel setup-panel--grow setup-panel--fill setup-plan-form" onSubmit={handleSubmit}>
         <section className="context-section context-section--tight">
           <label className="field-block">
             <span>{isRu ? '\u0422\u0430\u0439\u043c\u0437\u043e\u043d\u0430' : 'Timezone'}</span>
@@ -203,16 +203,23 @@ export function OnboardingPlanPage() {
           </label>
         </section>
 
-        <section className="context-section context-section--tight">
-          <div className="action-row action-row--wrap">
-            <button className="secondary-button secondary-button--small" type="button" onClick={addSlot}>
+        <section className="context-section context-section--tight setup-plan-slots">
+          <div className="panel-heading panel-heading--tight setup-plan-heading">
+            <div>
+              <span className="eyebrow">{isRu ? '\u0421\u043b\u043e\u0442\u044b' : 'Slots'}</span>
+              <h3>{isRu ? '\u041a\u043e\u0433\u0434\u0430 \u043c\u043e\u0436\u043d\u043e \u043f\u0443\u0431\u043b\u0438\u043a\u043e\u0432\u0430\u0442\u044c \u043f\u043e\u0441\u0442\u044b' : 'When posts may be published'}</h3>
+            </div>
+
+            <button className="secondary-button secondary-button--small schedule-add-button" type="button" onClick={addSlot}>
               {isRu ? '\u0414\u043e\u0431\u0430\u0432\u0438\u0442\u044c \u0441\u043b\u043e\u0442' : 'Add slot'}
             </button>
           </div>
 
           <div className="schedule-slot-list">
             {slots.length === 0 ? (
-              <div className="editor-help">{isRu ? '\u041f\u043e\u043a\u0430 \u043d\u0435\u0442 \u043d\u0438 \u043e\u0434\u043d\u043e\u0433\u043e \u0441\u043b\u043e\u0442\u0430.' : 'No slots yet.'}</div>
+              <div className="empty-state setup-plan-empty">
+                <p>{isRu ? '\u041f\u043e\u043a\u0430 \u043d\u0435\u0442 \u043d\u0438 \u043e\u0434\u043d\u043e\u0433\u043e \u0441\u043b\u043e\u0442\u0430.' : 'No slots yet.'}</p>
+              </div>
             ) : (
               slots.map((slot, index) => (
                 <article className="schedule-slot-card" key={slot.id}>
@@ -243,6 +250,12 @@ export function OnboardingPlanPage() {
                       <input type="time" value={slot.end} onChange={(event) => updateSlot(slot.id, { end: event.target.value })} />
                     </label>
                   </div>
+
+                  {slot.start >= slot.end ? (
+                    <div className="draft-row__meta schedule-slot-card__meta">
+                      <span>{isRu ? '\u041a\u043e\u043d\u0435\u0446 \u0434\u043e\u043b\u0436\u0435\u043d \u0431\u044b\u0442\u044c \u043f\u043e\u0437\u0436\u0435 \u043d\u0430\u0447\u0430\u043b\u0430' : 'End must be later than start'}</span>
+                    </div>
+                  ) : null}
                 </article>
               ))
             )}

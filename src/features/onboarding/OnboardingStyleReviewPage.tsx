@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { api } from '../../lib/api';
 import { useAppLocale } from '../../lib/appLocale';
 import { buildOnboardingUrl, useOnboardingData } from './onboardingShared';
@@ -12,6 +12,11 @@ export function OnboardingStyleReviewPage() {
     : String(new URLSearchParams(window.location.search).get('profileId') || '').trim();
   const { error, isLoading, profile, setError } = useOnboardingData(profileId);
   const [isSaving, setIsSaving] = useState(false);
+  const [draftGuide, setDraftGuide] = useState('');
+
+  useEffect(() => {
+    setDraftGuide(String(profile?.personaGuideMarkdown || ''));
+  }, [profile?.personaGuideMarkdown]);
 
   async function handleContinue() {
     if (!profile?.slug) {
@@ -22,6 +27,9 @@ export function OnboardingStyleReviewPage() {
     setError(null);
 
     try {
+      await api.updateProfileAssets(profile.slug, {
+        personaGuideMarkdown: draftGuide,
+      });
       await api.confirmOnboardingStyle(profile.slug);
       window.location.assign(buildOnboardingUrl('plan', profile.slug));
     } catch (confirmError) {
@@ -55,10 +63,14 @@ export function OnboardingStyleReviewPage() {
         <h2 className="setup-header__title">{isRu ? '\u041f\u0440\u043e\u0432\u0435\u0440\u044c \u0441\u0442\u0438\u043b\u044c' : 'Review the style'}</h2>
       </section>
 
-      {error && <div className="state-banner state-banner--error">{error}</div>}
+      {error && <div className="state-banner state-banner--error setup-error-banner">{error}</div>}
 
       <section className="editor-panel editor-panel--main editor-panel--profile setup-panel setup-panel--fill">
-        <textarea className="config-editor config-editor--setup-preview" readOnly value={String(profile.personaGuideMarkdown || '')} />
+        <textarea
+          className="config-editor config-editor--setup-preview"
+          value={draftGuide}
+          onChange={(event) => setDraftGuide(event.target.value)}
+        />
       </section>
 
       <OnboardingFooter
