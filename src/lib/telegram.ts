@@ -5,6 +5,7 @@ declare global {
         ready?: () => void;
         expand?: () => void;
         requestFullscreen?: () => void;
+        close?: () => void;
         openTelegramLink?: (url: string) => void;
         disableVerticalSwipes?: () => void;
         enableVerticalSwipes?: () => void;
