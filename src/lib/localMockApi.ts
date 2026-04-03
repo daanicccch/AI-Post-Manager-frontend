@@ -10,6 +10,7 @@ import type {
   InboxItem,
   OnboardingState,
   OnboardingSourcesResult,
+  PersonaSource,
   PersonaGuideDetail,
   Profile,
   ProfileAssetsUpdateResult,
@@ -1048,9 +1049,19 @@ export async function handleLocalMockRequest<T>(path: string, init?: RequestInit
   const onboardingGenerateStyleMatch = pathname.match(/^\/onboarding\/([^/]+)\/generate-style$/);
   if (method === 'POST' && onboardingGenerateStyleMatch) {
     const profile = getProfileBySlug(db, decodeURIComponent(onboardingGenerateStyleMatch[1]));
+    const body = parseBody(init);
+    const personaSource = (['sources', 'target', 'mixed'].includes(String(body.personaSource))
+      ? String(body.personaSource)
+      : 'sources') as PersonaSource;
     const sources = normalizeMockSourceChannels(profile.sourceChannels);
     const webSources = normalizeMockWebSources(profile.webSources);
-    profile.personaGuideMarkdown = `# ${profile.title} style\n\nThis style guide was regenerated from the onboarding source set.\n\n## Core voice\n- Short opening with one strong takeaway.\n- Calm, editorial tone.\n- No filler and no promo language.\n\n## Source blend\n- Channels: ${sources.map((item) => `@${item.username}`).join(', ') || 'target channel only'}\n- Web: ${webSources.map((item) => item.title || item.url).join(', ') || 'none'}\n\n## Post rhythm\n- Lead with the signal.\n- Explain why it matters.\n- Close with one next action or implication.`;
+    const personaSourceLabel =
+      personaSource === 'target'
+        ? 'target channel'
+        : personaSource === 'mixed'
+          ? 'target channel + external sources'
+          : 'external sources';
+    profile.personaGuideMarkdown = `# ${profile.title} style\n\nThis style guide was regenerated from ${personaSourceLabel}.\n\n## Core voice\n- Short opening with one strong takeaway.\n- Calm, editorial tone.\n- No filler and no promo language.\n\n## Source blend\n- Channels: ${sources.map((item) => `@${item.username}`).join(', ') || 'none'}\n- Web: ${webSources.map((item) => item.title || item.url).join(', ') || 'none'}\n- Generation mode: ${personaSource}\n\n## Post rhythm\n- Lead with the signal.\n- Explain why it matters.\n- Close with one next action or implication.`;
     profile.onboardingStatus = 'awaiting_style_review';
     profile.updatedAt = nowIso();
     syncProfileStats(db);

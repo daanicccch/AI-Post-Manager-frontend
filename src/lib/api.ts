@@ -121,6 +121,8 @@ export interface DistillPersonaResult {
   profile: Profile;
 }
 
+export type PersonaSource = 'sources' | 'target' | 'mixed';
+
 export interface ProfileAssetsUpdateResult {
   profileId: string;
   savedFields: string[];
@@ -473,10 +475,10 @@ export const api = {
       method: 'PUT',
       body: JSON.stringify(body)
     }),
-  generateOnboardingStyle: (profileId: string) =>
+  generateOnboardingStyle: (profileId: string, body: { personaSource: PersonaSource }) =>
     request<DistillPersonaResult>(`/onboarding/${profileId}/generate-style`, {
       method: 'POST',
-      body: JSON.stringify({})
+      body: JSON.stringify(body)
     }),
   confirmOnboardingStyle: (profileId: string) =>
     request<Profile>(`/onboarding/${profileId}/confirm-style`, {
