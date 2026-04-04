@@ -177,7 +177,6 @@ export function OnboardingSourcesPage() {
 
     if (sourcePickerUrl) {
       openTelegramLink(sourcePickerUrl);
-      window.Telegram?.WebApp?.close?.();
     }
   }
 
