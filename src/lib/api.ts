@@ -491,6 +491,11 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({})
     }),
+  acknowledgeOnboardingSourcePickerReturn: (profileId: string) =>
+    request<{ ok: true }>(`/onboarding/${profileId}/source-picker-return`, {
+      method: 'POST',
+      body: JSON.stringify({})
+    }),
   listInbox: (params: { status?: string; profileId?: string }) => {
     const search = new URLSearchParams();
     if (params.status) search.set('status', params.status);

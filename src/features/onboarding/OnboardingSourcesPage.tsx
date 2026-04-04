@@ -177,11 +177,26 @@ export function OnboardingSourcesPage() {
 
     if (sourcePickerUrl) {
       openTelegramLink(sourcePickerUrl);
-      window.setTimeout(() => {
-        closeTelegramMiniApp();
-      }, 150);
+      closeTelegramMiniApp();
     }
   }
+
+  useEffect(() => {
+    if (!profile?.slug || typeof window === 'undefined') {
+      return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('sourcePickerReturn') !== '1') {
+      return;
+    }
+
+    void api.acknowledgeOnboardingSourcePickerReturn(profile.slug).finally(() => {
+      params.delete('sourcePickerReturn');
+      const nextQuery = params.toString();
+      window.history.replaceState({}, '', `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ''}`);
+    });
+  }, [profile?.slug]);
 
   useEffect(() => {
     if (mode !== 'custom') {
