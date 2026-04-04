@@ -183,6 +183,41 @@ export function openTelegramLink(url: string) {
   window.location.href = normalizedUrl;
 }
 
+export function openTelegramLinkAndClose(url: string) {
+  const normalizedUrl = String(url || '').trim();
+  if (!normalizedUrl) {
+    return;
+  }
+
+  const webApp = window.Telegram?.WebApp;
+  if (webApp) {
+    try {
+      webApp.openTelegramLink?.(normalizedUrl);
+    } catch (error) {
+      if (import.meta.env.DEV) {
+        console.warn('[telegram] openTelegramLink is unavailable in this environment', error);
+      }
+    }
+
+    try {
+      webApp.close?.();
+    } catch (error) {
+      if (import.meta.env.DEV) {
+        console.warn('[telegram] close is unavailable in this environment', error);
+      }
+    }
+
+    window.setTimeout(() => {
+      try {
+        window.Telegram?.WebApp?.close?.();
+      } catch {}
+    }, 80);
+    return;
+  }
+
+  window.location.href = normalizedUrl;
+}
+
 export function closeTelegramMiniApp() {
   const webApp = window.Telegram?.WebApp;
   try {

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { AppShell } from '../components/AppShell';
 import { CreateDraftPage } from '../features/create/CreateDraftPage';
@@ -10,10 +10,58 @@ import { OnboardingPage } from '../features/onboarding/OnboardingPage';
 import { OnboardingSourcesPage } from '../features/onboarding/OnboardingSourcesPage';
 import { OnboardingStylePage } from '../features/onboarding/OnboardingStylePage';
 import { OnboardingStyleReviewPage } from '../features/onboarding/OnboardingStyleReviewPage';
+import { buildOnboardingUrl, getOnboardingStepFromStatus } from '../features/onboarding/onboardingShared';
 import { ProfilePage } from '../features/profiles/ProfilePage';
 import { SchedulePage } from '../features/schedule/SchedulePage';
 import { BusyOverlayProvider } from '../lib/busyOverlay';
+import { api } from '../lib/api';
 import { initTelegramWebApp } from '../lib/telegram';
+
+function HomeEntry() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [isResolving, setIsResolving] = useState(true);
+
+  useEffect(() => {
+    if (location.pathname !== '/') {
+      return;
+    }
+
+    let cancelled = false;
+
+    void api.getOnboarding()
+      .then((data) => {
+        if (cancelled) {
+          return;
+        }
+
+        const profile = data?.profile;
+        const status = String(profile?.onboardingStatus || data?.session?.status || '').trim();
+        if (profile?.slug && status && status !== 'completed') {
+          const step = getOnboardingStepFromStatus(status);
+          navigate(buildOnboardingUrl(step, profile.slug), { replace: true });
+          return;
+        }
+
+        setIsResolving(false);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setIsResolving(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [location.pathname, navigate]);
+
+  if (isResolving) {
+    return null;
+  }
+
+  return <InboxPage />;
+}
 
 function DraftDeepLinkRedirect() {
   const location = useLocation();
@@ -46,7 +94,7 @@ export function App() {
       <AppShell>
         <DraftDeepLinkRedirect />
         <Routes>
-          <Route path="/" element={<InboxPage />} />
+          <Route path="/" element={<HomeEntry />} />
           <Route path="/create" element={<CreateDraftPage />} />
           <Route path="/drafts/:draftId" element={<DraftPage />} />
           <Route path="/history" element={<HistoryPage />} />

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
 import { useAppLocale } from '../../lib/appLocale';
-import { closeTelegramMiniApp, openTelegramLink } from '../../lib/telegram';
+import { openTelegramLinkAndClose } from '../../lib/telegram';
 import { buildOnboardingUrl, buildPresetMap, getConfigValue, normalizeSourceChannels, normalizeWebSources, useOnboardingData } from './onboardingShared';
 import { OnboardingFooter } from './OnboardingFooter';
 
@@ -176,8 +176,7 @@ export function OnboardingSourcesPage() {
     }
 
     if (sourcePickerUrl) {
-      openTelegramLink(sourcePickerUrl);
-      closeTelegramMiniApp();
+      openTelegramLinkAndClose(sourcePickerUrl);
     }
   }
 
