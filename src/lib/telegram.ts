@@ -182,3 +182,12 @@ export function openTelegramLink(url: string) {
 
   window.location.href = normalizedUrl;
 }
+
+export function closeTelegramMiniApp() {
+  const webApp = window.Telegram?.WebApp;
+  if (!webApp?.close) {
+    return;
+  }
+
+  safelyCallTelegramMethod('close', () => webApp.close?.());
+}
