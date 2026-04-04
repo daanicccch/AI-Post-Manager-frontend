@@ -182,7 +182,7 @@ export function OnboardingSourcesPage() {
   }
 
   useEffect(() => {
-    if (!profile?.slug || typeof window === 'undefined') {
+    if (!profileId || typeof window === 'undefined') {
       return;
     }
 
@@ -191,12 +191,12 @@ export function OnboardingSourcesPage() {
       return;
     }
 
-    void api.acknowledgeOnboardingSourcePickerReturn(profile.slug).finally(() => {
+    void api.acknowledgeOnboardingSourcePickerReturn(profileId).finally(() => {
       params.delete('sourcePickerReturn');
       const nextQuery = params.toString();
       window.history.replaceState({}, '', `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ''}`);
     });
-  }, [profile?.slug]);
+  }, [profileId]);
 
   useEffect(() => {
     if (mode !== 'custom') {

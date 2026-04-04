@@ -185,9 +185,17 @@ export function openTelegramLink(url: string) {
 
 export function closeTelegramMiniApp() {
   const webApp = window.Telegram?.WebApp;
-  if (!webApp?.close) {
-    return;
+  try {
+    webApp?.close?.();
+  } catch (error) {
+    if (import.meta.env.DEV) {
+      console.warn('[telegram] close is unavailable in this environment', error);
+    }
   }
 
-  safelyCallTelegramMethod('close', () => webApp.close?.());
+  window.setTimeout(() => {
+    try {
+      window.Telegram?.WebApp?.close?.();
+    } catch {}
+  }, 80);
 }
