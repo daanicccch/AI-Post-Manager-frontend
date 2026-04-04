@@ -43,6 +43,11 @@ function HomeEntry() {
           return;
         }
 
+        if (!profile?.slug) {
+          navigate('/onboarding', { replace: true });
+          return;
+        }
+
         setIsResolving(false);
       })
       .catch(() => {
