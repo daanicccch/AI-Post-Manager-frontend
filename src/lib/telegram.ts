@@ -198,6 +198,16 @@ export function openTelegramLinkAndClose(url: string) {
         console.warn('[telegram] openTelegramLink is unavailable in this environment', error);
       }
     }
+
+    window.setTimeout(() => {
+      try {
+        window.Telegram?.WebApp?.close?.();
+      } catch (error) {
+        if (import.meta.env.DEV) {
+          console.warn('[telegram] close is unavailable in this environment', error);
+        }
+      }
+    }, 260);
     return;
   }
 

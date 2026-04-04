@@ -31,6 +31,7 @@
   --safe-right-resolved: max(var(--safe-right), var(--tg-safe-area-combined-right, 0px), var(--tg-safe-area-inset-right, 0px), var(--tg-content-safe-area-inset-right, 0px));
   --safe-bottom-resolved: max(var(--safe-bottom), var(--tg-safe-area-combined-bottom, 0px), var(--tg-safe-area-inset-bottom, 0px), var(--tg-content-safe-area-inset-bottom, 0px));
   --safe-left-resolved: max(var(--safe-left), var(--tg-safe-area-combined-left, 0px), var(--tg-safe-area-inset-left, 0px), var(--tg-content-safe-area-inset-left, 0px));
+  --safe-horizontal-resolved: max(var(--safe-left-resolved), var(--safe-right-resolved));
   font-family:
     -apple-system,
     BlinkMacSystemFont,
@@ -113,9 +114,9 @@ button:disabled {
   min-height: 100vh;
   padding:
     calc(1rem + var(--safe-top-resolved))
-    max(1rem, var(--safe-right-resolved))
+    max(1rem, var(--safe-horizontal-resolved))
     calc(1.5rem + var(--safe-bottom-resolved))
-    max(1rem, var(--safe-left-resolved));
+    max(1rem, var(--safe-horizontal-resolved));
 }
 
 .glass-header {
@@ -3190,9 +3191,9 @@ a {
   height: var(--tg-viewport-stable-height, 100dvh);
   padding:
     0
-    max(1rem, calc(1rem + var(--safe-right-resolved)))
+    max(1rem, calc(1rem + var(--safe-horizontal-resolved)))
     calc(0.4rem + var(--safe-bottom-resolved))
-    max(1rem, calc(1rem + var(--safe-left-resolved)));
+    max(1rem, calc(1rem + var(--safe-horizontal-resolved)));
   overflow: hidden;
 }
 
@@ -3930,8 +3931,8 @@ textarea:focus {
 }
 
 .workspace-shell {
-  padding-inline: max(0.55rem, calc(0.55rem + var(--safe-left-resolved)));
-  padding-right: max(0.55rem, calc(0.55rem + var(--safe-right-resolved)));
+  padding-inline: max(0.55rem, calc(0.55rem + var(--safe-horizontal-resolved)));
+  padding-right: max(0.55rem, calc(0.55rem + var(--safe-horizontal-resolved)));
 }
 
 .app-frame {
@@ -4256,8 +4257,8 @@ textarea:focus {
 
 @media (max-width: 640px) {
   .workspace-shell {
-    padding-inline: max(0.45rem, calc(0.45rem + var(--safe-left-resolved)));
-    padding-right: max(0.45rem, calc(0.45rem + var(--safe-right-resolved)));
+    padding-inline: max(0.45rem, calc(0.45rem + var(--safe-horizontal-resolved)));
+    padding-right: max(0.45rem, calc(0.45rem + var(--safe-horizontal-resolved)));
   }
 
   .app-topbar {
@@ -4786,6 +4787,7 @@ body.app-lightbox-open .workspace-main {
   gap: 0.68rem;
   width: 100%;
   max-width: 100%;
+  padding-inline: 0.16rem;
 }
 
 .page-stack--queue .feed-card {
@@ -5078,6 +5080,8 @@ body.app-lightbox-open .workspace-main {
   align-content: start;
   overflow-y: auto;
   overflow-x: hidden;
+  scrollbar-gutter: stable both-edges;
+  padding-inline: 0.16rem;
   padding-right: 0.08rem;
 }
 
@@ -5204,6 +5208,7 @@ body.app-lightbox-open .workspace-main {
   gap: 0.4rem;
   align-items: stretch;
   width: 100%;
+  padding-inline: 0.04rem;
 }
 
 .setup-tabs .secondary-button {
@@ -5226,6 +5231,7 @@ body.app-lightbox-open .workspace-main {
   display: grid;
   gap: 0.5rem;
   overflow-y: auto;
+  scrollbar-gutter: stable both-edges;
   padding-right: 0.2rem;
   align-content: start;
   width: 100%;
@@ -5286,6 +5292,7 @@ body.app-lightbox-open .workspace-main {
   align-content: start;
   width: 100%;
   max-width: 100%;
+  padding-inline: 0.04rem;
 }
 
 .setup-choice-grid--style {
