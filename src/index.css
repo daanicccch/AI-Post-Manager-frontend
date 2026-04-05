@@ -5129,10 +5129,7 @@ body.app-lightbox-open .workspace-main {
     max(0.55rem, calc(0.55rem + var(--safe-right-resolved)))
     calc(0.42rem + var(--safe-bottom-resolved))
     max(0.55rem, calc(0.55rem + var(--safe-left-resolved)));
-  background:
-    linear-gradient(180deg, rgba(245, 247, 255, 0), rgba(245, 247, 255, 0.78) 28%, rgba(245, 247, 255, 0.94));
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: transparent;
   pointer-events: none;
 }
 
