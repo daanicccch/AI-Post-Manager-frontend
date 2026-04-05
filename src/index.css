@@ -5117,29 +5117,42 @@ body.app-lightbox-open .workspace-main {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: calc(0.42rem + var(--safe-bottom-resolved));
+  bottom: 0;
   z-index: 20;
   display: grid;
   grid-template-columns: 4.4rem minmax(0, 1fr);
   gap: 0.45rem;
-  width: 100%;
-  max-width: none;
+  width: min(100%, 34rem);
+  margin: 0 auto;
   padding:
-    0
+    0.55rem
     max(0.55rem, calc(0.55rem + var(--safe-right-resolved)))
-    0
+    calc(0.72rem + var(--safe-bottom-resolved))
     max(0.55rem, calc(0.55rem + var(--safe-left-resolved)));
-  background: transparent;
+  border: 0;
+  border-radius: 1.7rem;
+  isolation: isolate;
   pointer-events: none;
+}
+
+.setup-footer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(255, 255, 255, 0.88);
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 249, 255, 0.97));
+  box-shadow: 0 18px 36px rgba(42, 61, 103, 0.16);
+  z-index: -1;
 }
 
 .setup-footer__back,
 .setup-footer__continue {
   position: relative;
   min-width: 0;
-  min-height: 3.35rem;
+  min-height: 3.2rem;
   border: 0;
-  border-radius: 1.25rem;
+  border-radius: 1.2rem;
   font-size: 1rem;
   font-weight: 700;
   pointer-events: auto;
@@ -5154,9 +5167,9 @@ body.app-lightbox-open .workspace-main {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(180deg, rgba(91, 99, 246, 0.16), rgba(91, 99, 246, 0.08));
-  box-shadow: inset 0 0 0 1px rgba(91, 99, 246, 0.14);
-  color: #3556ee;
+  background: linear-gradient(180deg, rgba(91, 99, 246, 0.1), rgba(91, 99, 246, 0.04));
+  box-shadow: inset 0 0 0 1px rgba(91, 99, 246, 0.08);
+  color: #6f7da2;
 }
 
 .setup-footer__back-icon {
@@ -5178,7 +5191,7 @@ body.app-lightbox-open .workspace-main {
 }
 
 .setup-footer__continue {
-  background: rgba(245, 247, 255, 0.92);
+  background: rgba(255, 255, 255, 0.76);
   color: #20263b;
   box-shadow: inset 0 0 0 1px rgba(121, 131, 171, 0.16);
 }
@@ -5273,6 +5286,15 @@ body.app-lightbox-open .workspace-main {
   width: 100%;
 }
 
+.setup-preset-spotlight__accent,
+.setup-select-card__accent {
+  width: 0.72rem;
+  height: 0.72rem;
+  border-radius: 999px;
+  background: var(--preset-accent);
+  box-shadow: 0 0 0 0.24rem color-mix(in srgb, var(--preset-accent) 16%, transparent);
+}
+
 .setup-preset-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(14.2rem, 1fr));
@@ -5290,11 +5312,14 @@ body.app-lightbox-open .workspace-main {
 }
 
 .setup-select-card--preset {
+  position: relative;
   gap: 0.45rem;
   min-height: 8.2rem;
   padding: 0.78rem 0.82rem;
   border-color: rgba(121, 131, 171, 0.16);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 249, 253, 0.96));
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--preset-accent, #3556ee) 12%, white) 0%, rgba(255, 255, 255, 0) 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 249, 253, 0.96));
   box-shadow: 0 0.45rem 1.4rem rgba(31, 41, 64, 0.05);
 }
 
@@ -5328,8 +5353,10 @@ body.app-lightbox-open .workspace-main {
 }
 
 .setup-select-card--preset.setup-select-card--active {
-  border-color: rgba(53, 86, 238, 0.34);
-  background: linear-gradient(180deg, rgba(241, 245, 255, 0.98), rgba(236, 241, 255, 0.98));
+  border-color: color-mix(in srgb, var(--preset-accent, #3556ee) 34%, white);
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--preset-accent, #3556ee) 18%, white) 0%, rgba(255, 255, 255, 0) 42%),
+    linear-gradient(180deg, rgba(241, 245, 255, 0.98), rgba(236, 241, 255, 0.98));
   box-shadow:
     0 0.8rem 1.8rem rgba(53, 86, 238, 0.08),
     inset 0 0 0 1px rgba(53, 86, 238, 0.12);
@@ -5337,7 +5364,8 @@ body.app-lightbox-open .workspace-main {
 
 .setup-select-card--preset.setup-select-card--active strong,
 .setup-select-card--preset.setup-select-card--active p,
-.setup-select-card--preset.setup-select-card--active .setup-select-card__pill {
+.setup-select-card--preset.setup-select-card--active .setup-select-card__pill,
+.setup-select-card--preset.setup-select-card--active .setup-select-card__meta {
   color: #3556ee;
 }
 
@@ -5557,7 +5585,7 @@ body.app-lightbox-open .workspace-main {
 }
 
 .page-stack--setup-review {
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr);
 }
 
 .page-stack--setup .panel-heading--tight {
@@ -5652,6 +5680,7 @@ body.app-lightbox-open .workspace-main {
     padding: 0.22rem 0.5rem;
     font-size: 0.7rem;
   }
+
 
   .setup-inline-input {
       grid-template-columns: minmax(0, 1fr);

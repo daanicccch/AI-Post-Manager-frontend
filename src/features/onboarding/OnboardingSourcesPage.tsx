@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
 import { useAppLocale } from '../../lib/appLocale';
 import { openTelegramLinkAndClose } from '../../lib/telegram';
-import { buildOnboardingUrl, buildPresetMap, getConfigValue, normalizeSourceChannels, normalizeWebSources, useOnboardingData } from './onboardingShared';
+import { buildOnboardingUrl, getConfigValue, normalizeSourceChannels, normalizeWebSources, useOnboardingData } from './onboardingShared';
 import { OnboardingFooter } from './OnboardingFooter';
 
 function parseWebSourceValue(value: string) {
@@ -139,8 +139,6 @@ export function OnboardingSourcesPage() {
     ? '\u0421\u0430\u0439\u0442\u044b \u0441\u043e\u0445\u0440\u0430\u043d\u044f\u044e\u0442\u0441\u044f \u043a\u0430\u043a \u0434\u043e\u043f\u043e\u043b\u043d\u0438\u0442\u0435\u043b\u044c\u043d\u044b\u0435 \u0438\u0441\u0442\u043e\u0447\u043d\u0438\u043a\u0438.'
     : 'Websites are saved as additional sources.';
 
-  const presetMap = useMemo(() => buildPresetMap(presets), [presets]);
-  const selectedPreset = selectedPresetKey ? presetMap.get(selectedPresetKey) || null : null;
   const decoratedPresets = useMemo(
     () => presets.map((preset) => ({
       ...preset,
@@ -395,6 +393,7 @@ export function OnboardingSourcesPage() {
                 key={preset.key}
                 type="button"
                 onClick={() => setSelectedPresetKey(preset.key)}
+                style={preset.accentColor ? { ['--preset-accent' as string]: preset.accentColor } : undefined}
               >
                 <span className="setup-select-card__topline">
                   <span className="setup-select-card__pill">
@@ -405,6 +404,7 @@ export function OnboardingSourcesPage() {
                 </span>
                 <strong>{preset.title}</strong>
                 <p>{preset.presentation.description}</p>
+                <span className="setup-select-card__accent" aria-hidden="true" />
               </button>
               ))}
             </div>
@@ -470,6 +470,7 @@ export function OnboardingSourcesPage() {
         onBack={() => {}}
         onContinue={mode === 'preset' ? handleApplyPreset : handleSaveCustomSources}
       />
+
     </section>
   );
 }

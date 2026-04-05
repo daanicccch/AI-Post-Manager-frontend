@@ -84,6 +84,7 @@ export function OnboardingStyleReviewPage() {
         onBack={() => window.location.assign(buildOnboardingUrl('style', profile.slug))}
         onContinue={handleContinue}
       />
+
     </section>
   );
 }

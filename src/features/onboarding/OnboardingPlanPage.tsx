@@ -274,6 +274,7 @@ export function OnboardingPlanPage() {
         onBack={() => window.location.assign(buildOnboardingUrl('style-review', profileId))}
         onContinue={() => void submit()}
       />
+
     </section>
   );
 }

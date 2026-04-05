@@ -171,6 +171,7 @@ export function OnboardingStylePage() {
         onBack={() => window.location.assign(buildOnboardingUrl('sources', profile.slug))}
         onContinue={handleGenerate}
       />
+
     </section>
   );
 }
