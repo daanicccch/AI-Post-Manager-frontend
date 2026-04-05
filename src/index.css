@@ -5089,6 +5089,15 @@ body.app-lightbox-open .workspace-main {
   align-content: start;
 }
 
+.setup-sources-panel {
+  padding-inline: 0.08rem;
+  padding-bottom: 0.42rem;
+}
+
+.setup-sources-card {
+  align-content: start;
+}
+
 .config-editor--setup {
   min-height: 7.8rem;
   resize: none;

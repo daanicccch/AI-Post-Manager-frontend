@@ -367,7 +367,8 @@ export function OnboardingSourcesPage() {
 
       {error && <div className="state-banner state-banner--error">{error}</div>}
 
-      <section className="queue-control-card queue-control-card--profile setup-panel">
+      <section className="setup-panel setup-panel--fill setup-sources-panel">
+        <div className="queue-control-card queue-control-card--profile setup-sources-card">
         <div className="setup-tabs">
           <button
             className={`secondary-button secondary-button--small${mode === 'preset' ? ' setup-choice-button--active' : ''}`}
@@ -454,6 +455,7 @@ export function OnboardingSourcesPage() {
             </section>
           </div>
         )}
+        </div>
       </section>
 
       <OnboardingFooter
