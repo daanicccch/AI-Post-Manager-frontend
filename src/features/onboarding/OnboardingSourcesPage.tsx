@@ -353,13 +353,6 @@ export function OnboardingSourcesPage() {
               ? '\u0412\u044b\u0431\u0435\u0440\u0438 \u0433\u043e\u0442\u043e\u0432\u044b\u0439 \u043f\u0440\u0435\u0441\u0435\u0442 \u0438\u043b\u0438 \u0437\u0430\u0434\u0430\u0439 \u0441\u0432\u043e\u0438 \u0438\u0441\u0442\u043e\u0447\u043d\u0438\u043a\u0438 \u0432\u0440\u0443\u0447\u043d\u0443\u044e.'
               : 'Choose a preset or add your own sources manually.'}
           </p>
-          {mode === 'preset' ? (
-            <p>
-              {isRu
-                ? '\u0412\u044b\u0431\u0435\u0440\u0438 \u0442\u0435\u043c\u0443 \u0438 \u0441\u0440\u0430\u0437\u0443 \u0438\u0434\u0438 \u0434\u0430\u043b\u044c\u0448\u0435.'
-                : 'Pick a theme and continue.'}
-            </p>
-          ) : null}
         </div>
       </section>
 
