@@ -358,8 +358,8 @@ export function OnboardingSourcesPage() {
           {mode === 'preset' ? (
             <p>
               {isRu
-                ? '\u041c\u044b \u043f\u043e\u043a\u0430\u0437\u044b\u0432\u0430\u0435\u043c \u043f\u0440\u0435\u0441\u0435\u0442\u044b \u043a\u0430\u043a \u043a\u0430\u0440\u0442\u043e\u0447\u043a\u0438, \u0447\u0442\u043e\u0431\u044b \u0431\u044b\u043b\u043e \u043f\u0440\u043e\u0449\u0435 \u0441\u0440\u0430\u0432\u043d\u0438\u0442\u044c \u0442\u0435\u043c\u044b \u0438 \u0438\u0441\u0442\u043e\u0447\u043d\u0438\u043a\u0438.'
-                : 'Presets are shown as cards so it is easier to compare topics and source mixes.'}
+                ? '\u0412\u044b\u0431\u0435\u0440\u0438 \u0442\u0435\u043c\u0443 \u0438 \u0441\u0440\u0430\u0437\u0443 \u0438\u0434\u0438 \u0434\u0430\u043b\u044c\u0448\u0435.'
+                : 'Pick a theme and continue.'}
             </p>
           ) : null}
         </div>
