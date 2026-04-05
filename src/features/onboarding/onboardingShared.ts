@@ -11,6 +11,12 @@ import {
 
 export type OnboardingStepKey = 'sources' | 'style' | 'style-review' | 'plan';
 
+const TEMP_PERSONA_GUIDE_MARKERS = [
+  'style draft',
+  'temporary style guide placeholder',
+  'choose source channels or a preset and then generate the final style',
+];
+
 export function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
@@ -138,6 +144,15 @@ export function getDefaultPersonaSource(profile: Profile | null): PersonaSource 
     return 'target';
   }
   return 'sources';
+}
+
+export function isTemporaryPersonaGuideMarkdown(value: string | null | undefined) {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (!normalized) {
+    return false;
+  }
+
+  return TEMP_PERSONA_GUIDE_MARKERS.every((marker) => normalized.includes(marker));
 }
 
 export function useOnboardingData(profileId: string) {
