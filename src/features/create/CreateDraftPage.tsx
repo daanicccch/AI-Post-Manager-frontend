@@ -32,7 +32,7 @@ const postTypeOptions = [
 ] as const;
 
 const SOURCE_POSTS_PAGE_SIZE = 5;
-const sourceLookbackOptions = ['1', '3', '6', '12', '24', '48', '72', '168'];
+const sourceLookbackOptions = ['1', '3', '6', '12', '24', '48', '72'];
 const sourceLimitOptions = ['10', '20', '40', '80', '120'];
 
 const creationModes = [
@@ -58,7 +58,7 @@ const creationModes = [
 
 function getDefaultSourcePoolWindow(postType: 'post' | 'alert' | 'weekly') {
   if (postType === 'weekly') {
-    return { lookbackHours: 168, limit: 150 };
+    return { lookbackHours: 72, limit: 120 };
   }
 
   if (postType === 'alert') {
@@ -209,9 +209,9 @@ function SourceVisual({
 function getSourcePoolPresets(postType: 'post' | 'alert' | 'weekly') {
   if (postType === 'weekly') {
     return [
-      { label: 'Recommended', helper: '7 days, 150 sources', lookbackHours: '', limit: '' },
-      { label: 'Focused', helper: '5 days, 90 sources', lookbackHours: '120', limit: '90' },
-      { label: 'Wide', helper: '10 days, 220 sources', lookbackHours: '240', limit: '220' }
+      { label: 'Recommended', helper: '72 hours, 120 sources', lookbackHours: '', limit: '' },
+      { label: 'Focused', helper: '48 hours, 80 sources', lookbackHours: '48', limit: '80' },
+      { label: 'Fast', helper: '24 hours, 40 sources', lookbackHours: '24', limit: '40' }
     ];
   }
 
@@ -259,7 +259,7 @@ export function CreateDraftPage() {
   const [sourceLinks, setSourceLinks] = useState('');
   const [sourcePosts, setSourcePosts] = useState<SourcePost[]>([]);
   const [sourceSearch, setSourceSearch] = useState('');
-  const [sourceLookbackHours, setSourceLookbackHours] = useState('72');
+  const [sourceLookbackHours, setSourceLookbackHours] = useState('24');
   const [sourceLimit, setSourceLimit] = useState('20');
   const [sourceMediaOnly, setSourceMediaOnly] = useState(false);
   const [sourceRefreshNonce, setSourceRefreshNonce] = useState(0);
@@ -313,7 +313,7 @@ export function CreateDraftPage() {
   const visibleSourcePosts = sourcePosts.slice(0, visibleSourceCount);
   const canShowMoreSources = visibleSourceCount < sourcePosts.length;
   const pickFilterSummary = [
-    sourceLookbackHours === '168' ? (isRu ? '7 дней' : '7 days') : `${sourceLookbackHours}${isRu ? 'ч' : 'h'}`,
+    `${sourceLookbackHours}${isRu ? 'ч' : 'h'}`,
     `${sourceLimit} ${isRu ? 'постов' : 'posts'}`,
     sourceMediaOnly ? (isRu ? 'только медиа' : 'media only') : null
   ]
@@ -341,7 +341,7 @@ export function CreateDraftPage() {
     () =>
       sourceLookbackOptions.map((option) => ({
         value: option,
-        label: option === '168' ? '7 days' : `${option} hours`
+        label: `${option} hours`
       })),
     []
   );
@@ -786,7 +786,7 @@ export function CreateDraftPage() {
                         <span>{isRu ? 'Глубина, часов' : 'Lookback hours'}</span>
                         <input
                           inputMode="numeric"
-                          placeholder={postType === 'weekly' ? '168' : postType === 'alert' ? '24' : '48'}
+                          placeholder={postType === 'weekly' ? '72' : postType === 'alert' ? '24' : '48'}
                           value={lookbackHours}
                           onChange={(event) => setLookbackHours(event.target.value)}
                         />
@@ -796,7 +796,7 @@ export function CreateDraftPage() {
                         <span>{isRu ? 'Лимит источников' : 'Source limit'}</span>
                         <input
                           inputMode="numeric"
-                          placeholder={postType === 'weekly' ? '150' : '80'}
+                          placeholder={postType === 'weekly' ? '120' : '80'}
                           value={limit}
                           onChange={(event) => setLimit(event.target.value)}
                         />
