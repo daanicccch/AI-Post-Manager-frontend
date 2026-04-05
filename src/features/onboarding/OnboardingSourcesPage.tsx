@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { api } from '../../lib/api';
 import { useAppLocale } from '../../lib/appLocale';
 import { openTelegramLinkAndClose } from '../../lib/telegram';
@@ -15,6 +15,136 @@ function parseWebSourceValue(value: string) {
     url: /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`,
     title: trimmed,
     sourceKind: 'website',
+  };
+}
+
+type PresetPresentation = {
+  description: string;
+  accentColor: string;
+  badge: string;
+  category: string;
+};
+
+const PRESET_PRESENTATIONS: Array<{
+  match: string;
+  accentColor: string;
+  badge: string;
+  descriptionRu: string;
+  descriptionEn: string;
+  categoryRu: string;
+  categoryEn: string;
+}> = [
+  {
+    match: '\u043c\u0430\u0440\u043a\u0435\u0442\u0438\u043d\u0433 \u0438 pr',
+    accentColor: '#ff8a5b',
+    badge: 'PR',
+    descriptionRu: '\u0418\u0434\u0435\u0438, \u043a\u0435\u0439\u0441\u044b, \u0437\u0430\u043f\u0443\u0441\u043a\u0438 \u0438 \u0441\u0438\u043b\u044c\u043d\u044b\u0435 \u0445\u043e\u0434\u044b \u0438\u0437 \u043c\u0438\u0440\u0430 \u0431\u0440\u0435\u043d\u0434\u043e\u0432, \u043a\u043e\u043c\u043c\u0443\u043d\u0438\u043a\u0430\u0446\u0438\u0439 \u0438 \u0440\u043e\u0441\u0442\u0430 \u0430\u0443\u0434\u0438\u0442\u043e\u0440\u0438\u0438.',
+    descriptionEn: 'Campaigns, case studies, launches, and standout moves from branding, communications, and audience growth.',
+    categoryRu: '\u0411\u0440\u0435\u043d\u0434\u044b \u0438 \u043a\u0435\u0439\u0441\u044b',
+    categoryEn: 'Brands and cases',
+  },
+  {
+    match: '\u043a\u0438\u0431\u0435\u0440\u0441\u043f\u043e\u0440\u0442',
+    accentColor: '#6d5dfc',
+    badge: 'GG',
+    descriptionRu: '\u041d\u043e\u0432\u043e\u0441\u0442\u0438 \u0441\u0446\u0435\u043d\u044b, \u0442\u0440\u0430\u043d\u0441\u0444\u0435\u0440\u044b, \u043c\u0430\u0442\u0447\u0438, \u0438\u043d\u0441\u0430\u0439\u0434\u044b \u0438 \u044f\u0440\u043a\u0438\u0435 \u0441\u044e\u0436\u0435\u0442\u044b \u043f\u043e Dota 2 \u0438 CS2.',
+    descriptionEn: 'Scene news, roster moves, match stories, insider notes, and standout moments across Dota 2 and CS2.',
+    categoryRu: '\u0422\u0443\u0440\u043d\u0438\u0440\u044b \u0438 \u0441\u0446\u0435\u043d\u0430',
+    categoryEn: 'Tournaments and scene',
+  },
+  {
+    match: '\u043d\u043e\u0432\u043e\u0441\u0442\u0438 \u043c\u0435\u0434\u0438\u0446\u0438\u043d\u044b',
+    accentColor: '#2bb7a8',
+    badge: 'MD',
+    descriptionRu: '\u0412\u0430\u0436\u043d\u044b\u0435 \u043c\u0435\u0434\u0438\u0446\u0438\u043d\u0441\u043a\u0438\u0435 \u043e\u0442\u043a\u0440\u044b\u0442\u0438\u044f, \u0438\u0441\u0441\u043b\u0435\u0434\u043e\u0432\u0430\u043d\u0438\u044f, \u043f\u0440\u0430\u043a\u0442\u0438\u043a\u0430 \u0432\u0440\u0430\u0447\u0435\u0439 \u0438 \u0430\u043f\u0434\u0435\u0439\u0442\u044b \u0437\u0434\u0440\u0430\u0432\u043e\u043e\u0445\u0440\u0430\u043d\u0435\u043d\u0438\u044f \u0431\u0435\u0437 \u0436\u0451\u043b\u0442\u043e\u0439 \u043f\u043e\u0434\u0430\u0447\u0438.',
+    descriptionEn: 'Major medical discoveries, research updates, clinical practice insights, and healthcare changes without tabloid framing.',
+    categoryRu: '\u041d\u0430\u0443\u043a\u0430 \u0438 \u0437\u0434\u043e\u0440\u043e\u0432\u044c\u0435',
+    categoryEn: 'Science and health',
+  },
+  {
+    match: '\u0444\u043e\u043d\u0434\u043e\u0432\u044b\u0439 \u0440\u044b\u043d\u043e\u043a',
+    accentColor: '#3d8bff',
+    badge: 'FX',
+    descriptionRu: '\u0414\u0432\u0438\u0436\u0435\u043d\u0438\u044f \u0430\u043a\u0446\u0438\u0439, \u043e\u0442\u0447\u0451\u0442\u044b \u043a\u043e\u043c\u043f\u0430\u043d\u0438\u0439, \u0441\u0435\u043a\u0442\u043e\u0440\u044b \u0440\u043e\u0441\u0442\u0430 \u0438 \u043f\u043e\u043d\u044f\u0442\u043d\u044b\u0439 \u0440\u0430\u0437\u0431\u043e\u0440 \u0440\u044b\u043d\u043e\u0447\u043d\u044b\u0445 \u0442\u0440\u0435\u043d\u0434\u043e\u0432.',
+    descriptionEn: 'Stock moves, earnings, sector shifts, and accessible breakdowns of market trends and catalysts.',
+    categoryRu: '\u0420\u044b\u043d\u043e\u043a \u0438 \u043a\u043e\u043c\u043f\u0430\u043d\u0438\u0438',
+    categoryEn: 'Markets and companies',
+  },
+  {
+    match: '\u043d\u043e\u0432\u043e\u0441\u0442\u0438 \u043d\u0435\u0439\u0440\u043e\u0441\u0435\u0442',
+    accentColor: '#7a6cff',
+    badge: 'AI',
+    descriptionRu: '\u0417\u0430\u043f\u0443\u0441\u043a\u0438 \u043c\u043e\u0434\u0435\u043b\u0435\u0439, \u0438\u043d\u0441\u0442\u0440\u0443\u043c\u0435\u043d\u0442\u044b, \u0430\u043f\u0434\u0435\u0439\u0442\u044b \u043b\u0430\u0431\u043e\u0440\u0430\u0442\u043e\u0440\u0438\u0439 \u0438 \u043f\u0440\u0430\u043a\u0442\u0438\u0447\u0435\u0441\u043a\u0438\u0435 \u0441\u044e\u0436\u0435\u0442\u044b \u043f\u043e AI.',
+    descriptionEn: 'Model launches, new tools, lab updates, and practical AI stories worth repackaging for a broad audience.',
+    categoryRu: '\u0422\u0435\u0445\u043d\u043e\u043b\u043e\u0433\u0438\u0438 \u0438 AI',
+    categoryEn: 'Technology and AI',
+  },
+  {
+    match: '\u043f\u0441\u0438\u0445\u043e\u043b\u043e\u0433\u0438\u044f \u043e\u0442\u043d\u043e\u0448\u0435\u043d\u0438\u0439',
+    accentColor: '#ff6f91',
+    badge: 'EQ',
+    descriptionRu: '\u0420\u0430\u0437\u0431\u043e\u0440 \u0441\u0446\u0435\u043d\u0430\u0440\u0438\u0435\u0432 \u0432 \u043f\u0430\u0440\u0435, \u044d\u043c\u043e\u0446\u0438\u0439, \u0433\u0440\u0430\u043d\u0438\u0446, \u043f\u0440\u0438\u0432\u044f\u0437\u0430\u043d\u043d\u043e\u0441\u0442\u0438 \u0438 \u043f\u043e\u043d\u044f\u0442\u043d\u044b\u0445 \u0441\u043e\u0432\u0435\u0442\u043e\u0432 \u0431\u0435\u0437 \u043d\u0440\u0430\u0432\u043e\u0443\u0447\u0435\u043d\u0438\u0439.',
+    descriptionEn: 'Relationship dynamics, emotions, boundaries, attachment patterns, and practical advice without a preachy tone.',
+    categoryRu: '\u042d\u043c\u043e\u0446\u0438\u0438 \u0438 \u0433\u0440\u0430\u043d\u0438\u0446\u044b',
+    categoryEn: 'Emotions and boundaries',
+  },
+  {
+    match: '\u043c\u0430\u0442\u0440\u0438\u0446\u0430 \u0441\u0443\u0434\u044c\u0431\u044b',
+    accentColor: '#f59e0b',
+    badge: '77',
+    descriptionRu: '\u041a\u043e\u043d\u0442\u0435\u043d\u0442 \u043f\u043e \u043c\u0430\u0442\u0440\u0438\u0446\u0435 \u0441\u0443\u0434\u044c\u0431\u044b, \u0447\u0438\u0441\u043b\u0430\u043c, \u043b\u0438\u0447\u043d\u044b\u043c \u0440\u0430\u0441\u0448\u0438\u0444\u0440\u043e\u0432\u043a\u0430\u043c \u0438 \u0432\u043e\u0432\u043b\u0435\u043a\u0430\u044e\u0449\u0438\u043c \u0438\u043d\u0442\u0435\u0440\u043f\u0440\u0435\u0442\u0430\u0446\u0438\u044f\u043c.',
+    descriptionEn: 'Destiny matrix, number meanings, personal readings, and engaging interpretations for numerology-driven content.',
+    categoryRu: '\u0421\u0438\u043c\u0432\u043e\u043b\u044b \u0438 \u0447\u0438\u0441\u043b\u0430',
+    categoryEn: 'Symbols and numbers',
+  },
+  {
+    match: '\u0430\u0441\u0442\u0440\u043e\u043b\u043e\u0433\u0438\u0447\u0435\u0441\u043a\u0438\u0435 \u043f\u0440\u043e\u0433\u043d\u043e\u0437\u044b',
+    accentColor: '#8b5cf6',
+    badge: 'AZ',
+    descriptionRu: '\u0415\u0436\u0435\u0434\u043d\u0435\u0432\u043d\u044b\u0435 \u0438 \u043d\u0435\u0434\u0435\u043b\u044c\u043d\u044b\u0435 \u043f\u0440\u043e\u0433\u043d\u043e\u0437\u044b, \u0430\u0441\u043f\u0435\u043a\u0442\u044b, \u043b\u0443\u043d\u043d\u044b\u0435 \u0441\u044e\u0436\u0435\u0442\u044b \u0438 \u043c\u044f\u0433\u043a\u0430\u044f \u044d\u0437\u043e\u0442\u0435\u0440\u0438\u0447\u043d\u0430\u044f \u043f\u043e\u0434\u0430\u0447\u0430.',
+    descriptionEn: 'Daily and weekly forecasts, aspects, lunar stories, and a softer astrology editorial tone.',
+    categoryRu: '\u041f\u0440\u043e\u0433\u043d\u043e\u0437\u044b \u0438 \u0440\u0438\u0442\u043c\u044b',
+    categoryEn: 'Forecasts and rhythms',
+  },
+  {
+    match: '\u043b\u0438\u0447\u043d\u044b\u0435 \u0444\u0438\u043d\u0430\u043d\u0441\u044b',
+    accentColor: '#22a06b',
+    badge: 'PF',
+    descriptionRu: '\u0411\u044e\u0434\u0436\u0435\u0442, \u043d\u0430\u043a\u043e\u043f\u043b\u0435\u043d\u0438\u044f, \u0438\u043d\u0432\u0435\u0441\u0442\u0438\u0446\u0438\u0438, \u0444\u0438\u043d\u0430\u043d\u0441\u043e\u0432\u044b\u0435 \u043f\u0440\u0438\u0432\u044b\u0447\u043a\u0438 \u0438 \u043f\u043e\u043d\u044f\u0442\u043d\u044b\u0439 \u0442\u043e\u043d \u0431\u0435\u0437 \u0441\u043b\u043e\u0436\u043d\u043e\u0433\u043e \u0436\u0430\u0440\u0433\u043e\u043d\u0430.',
+    descriptionEn: 'Budgeting, savings, investing, money habits, and practical finance explained without heavy jargon.',
+    categoryRu: '\u0414\u0435\u043d\u044c\u0433\u0438 \u0438 \u043f\u0440\u0438\u0432\u044b\u0447\u043a\u0438',
+    categoryEn: 'Money and habits',
+  },
+];
+
+function getPresetPresentation(
+  title: string,
+  description: string,
+  accentColor: string | null | undefined,
+  isRu: boolean,
+): PresetPresentation {
+  const normalizedTitle = String(title || '').trim().toLowerCase();
+  const matchedPreset = PRESET_PRESENTATIONS.find((preset) => normalizedTitle.includes(preset.match));
+
+  if (matchedPreset) {
+    return {
+      description: String(description || '').trim() || (isRu ? matchedPreset.descriptionRu : matchedPreset.descriptionEn),
+      accentColor: String(accentColor || '').trim() || matchedPreset.accentColor,
+      badge: matchedPreset.badge,
+      category: isRu ? matchedPreset.categoryRu : matchedPreset.categoryEn,
+    };
+  }
+
+  const words = String(title || '').trim().split(/\s+/).filter(Boolean);
+  const badge = words.slice(0, 2).map((word) => word.slice(0, 1).toUpperCase()).join('') || 'PR';
+
+  return {
+    description: String(description || '').trim() || (isRu
+      ? '\u041f\u043e\u0434\u0431\u043e\u0440\u043a\u0430 \u0438\u0441\u0442\u043e\u0447\u043d\u0438\u043a\u043e\u0432 \u0434\u043b\u044f \u0431\u044b\u0441\u0442\u0440\u043e\u0433\u043e \u0441\u0442\u0430\u0440\u0442\u0430 \u043a\u0430\u043d\u0430\u043b\u0430 \u0432 \u0432\u044b\u0431\u0440\u0430\u043d\u043d\u043e\u0439 \u0442\u0435\u043c\u0435.'
+      : 'A curated source pack to launch the channel faster in this niche.'),
+    accentColor: String(accentColor || '').trim() || '#4f6bff',
+    badge,
+    category: isRu ? '\u0413\u043e\u0442\u043e\u0432\u0430\u044f \u043f\u043e\u0434\u0431\u043e\u0440\u043a\u0430' : 'Curated pack',
   };
 }
 
@@ -41,6 +171,16 @@ export function OnboardingSourcesPage() {
 
   const presetMap = useMemo(() => buildPresetMap(presets), [presets]);
   const selectedPreset = selectedPresetKey ? presetMap.get(selectedPresetKey) || null : null;
+  const decoratedPresets = useMemo(
+    () => presets.map((preset) => ({
+      ...preset,
+      presentation: getPresetPresentation(preset.title, preset.description, preset.accentColor, isRu),
+    })),
+    [isRu, presets],
+  );
+  const selectedPresetPresentation = selectedPreset
+    ? getPresetPresentation(selectedPreset.title, selectedPreset.description, selectedPreset.accentColor, isRu)
+    : null;
 
   useEffect(() => {
     if (!data?.profile) {
@@ -251,8 +391,8 @@ export function OnboardingSourcesPage() {
           {mode === 'preset' ? (
             <p>
               {isRu
-                ? '\u041f\u0440\u0435\u0441\u0435\u0442\u043e\u0432 \u0431\u0443\u0434\u0435\u0442 \u043c\u043d\u043e\u0433\u043e, \u043f\u043e\u044d\u0442\u043e\u043c\u0443 \u0441\u043f\u0438\u0441\u043e\u043a \u043c\u043e\u0436\u043d\u043e \u043b\u0438\u0441\u0442\u0430\u0442\u044c.'
-                : 'You can scroll through a long preset list here.'}
+                ? '\u041c\u044b \u043f\u043e\u043a\u0430\u0437\u044b\u0432\u0430\u0435\u043c \u043f\u0440\u0435\u0441\u0435\u0442\u044b \u043a\u0430\u043a \u043a\u0430\u0440\u0442\u043e\u0447\u043a\u0438, \u0447\u0442\u043e\u0431\u044b \u0431\u044b\u043b\u043e \u043f\u0440\u043e\u0449\u0435 \u0441\u0440\u0430\u0432\u043d\u0438\u0442\u044c \u0442\u0435\u043c\u044b \u0438 \u0438\u0441\u0442\u043e\u0447\u043d\u0438\u043a\u0438.'
+                : 'Presets are shown as cards so it is easier to compare topics and source mixes.'}
             </p>
           ) : null}
         </div>
@@ -279,18 +419,54 @@ export function OnboardingSourcesPage() {
         </div>
 
         {mode === 'preset' ? (
-          <div className="setup-preset-list setup-preset-list--dense" role="list">
-            {presets.map((preset) => (
+          <div className="setup-preset-layout">
+            {selectedPreset && selectedPresetPresentation ? (
+              <section
+                className="setup-preset-hero"
+                style={{ '--preset-accent': selectedPresetPresentation.accentColor } as CSSProperties}
+              >
+                <div className="setup-preset-hero__badge" aria-hidden="true">{selectedPresetPresentation.badge}</div>
+                <div className="setup-preset-hero__content">
+                  <span className="setup-preset-hero__eyebrow">
+                    {isRu ? '\u0421\u0435\u0439\u0447\u0430\u0441 \u0432\u044b\u0431\u0440\u0430\u043d\u043e' : 'Selected now'}
+                  </span>
+                  <strong>{selectedPreset.title}</strong>
+                  <p>{selectedPresetPresentation.description}</p>
+                </div>
+                <div className="setup-preset-hero__meta" aria-label={isRu ? '\u0421\u043e\u0441\u0442\u0430\u0432 \u043f\u0440\u0435\u0441\u0435\u0442\u0430' : 'Preset composition'}>
+                  <span>{selectedPresetPresentation.category}</span>
+                  <span>{isRu ? `Telegram: ${selectedPreset.channels.length}` : `Telegram: ${selectedPreset.channels.length}`}</span>
+                  <span>{isRu ? `Web: ${selectedPreset.webSources.length}` : `Web: ${selectedPreset.webSources.length}`}</span>
+                </div>
+              </section>
+            ) : null}
+
+            <div className="setup-preset-grid" role="list">
+              {decoratedPresets.map((preset) => (
               <button
-                className={`setup-select-card${selectedPresetKey === preset.key ? ' setup-select-card--active' : ''}`}
+                className={`setup-select-card setup-select-card--preset${selectedPresetKey === preset.key ? ' setup-select-card--active' : ''}`}
                 key={preset.key}
                 type="button"
                 onClick={() => setSelectedPresetKey(preset.key)}
+                style={{ '--preset-accent': preset.presentation.accentColor } as CSSProperties}
               >
+                <span className="setup-select-card__topline">
+                  <span className="setup-select-card__badge" aria-hidden="true">{preset.presentation.badge}</span>
+                  <span className="setup-select-card__pill">
+                    {selectedPresetKey === preset.key
+                      ? (isRu ? '\u0412\u044b\u0431\u0440\u0430\u043d' : 'Selected')
+                      : preset.presentation.category}
+                  </span>
+                </span>
                 <strong>{preset.title}</strong>
-                <p>{preset.description}</p>
+                <p>{preset.presentation.description}</p>
+                <span className="setup-select-card__stats" aria-hidden="true">
+                  <span>{isRu ? `${preset.channels.length} \u043a\u0430\u043d\u0430\u043b\u043e\u0432` : `${preset.channels.length} channels`}</span>
+                  <span>{isRu ? `${preset.webSources.length} \u0441\u0430\u0439\u0442\u043e\u0432` : `${preset.webSources.length} sites`}</span>
+                </span>
               </button>
-            ))}
+              ))}
+            </div>
           </div>
         ) : (
           <div className="setup-source-stack">
