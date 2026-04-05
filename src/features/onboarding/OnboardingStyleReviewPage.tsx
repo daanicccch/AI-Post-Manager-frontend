@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react';
 import { api } from '../../lib/api';
 import { useAppLocale } from '../../lib/appLocale';
+import {
+  clearStoredProfileRegeneration,
+  getStoredProfileRegeneration,
+} from '../profiles/profileRegenerationTracker';
 import { buildOnboardingUrl, useOnboardingData } from './onboardingShared';
 import { OnboardingFooter } from './OnboardingFooter';
 
@@ -10,13 +14,96 @@ export function OnboardingStyleReviewPage() {
   const profileId = typeof window === 'undefined'
     ? ''
     : String(new URLSearchParams(window.location.search).get('profileId') || '').trim();
-  const { error, isLoading, profile, setError } = useOnboardingData(profileId);
+  const { error, isLoading, profile, reload, setError } = useOnboardingData(profileId);
   const [isSaving, setIsSaving] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [draftGuide, setDraftGuide] = useState('');
 
   useEffect(() => {
     setDraftGuide(String(profile?.personaGuideMarkdown || ''));
   }, [profile?.personaGuideMarkdown]);
+
+  useEffect(() => {
+    if (!profileId) {
+      setIsGenerating(false);
+      return;
+    }
+
+    const storedRegeneration = getStoredProfileRegeneration(profileId);
+    const hasGuide = Boolean(String(profile?.personaGuideMarkdown || '').trim());
+    const shouldTrackGeneration = Boolean(storedRegeneration)
+      || (profile?.onboardingStatus === 'awaiting_style_generation' && !hasGuide);
+
+    if (!shouldTrackGeneration) {
+      setIsGenerating(false);
+      return;
+    }
+
+    let cancelled = false;
+    let timeoutId = 0;
+    let attempt = 0;
+
+    const scheduleNextPoll = () => {
+      const delays = [1500, 3000, 5000, 8000, 12000];
+      const nextDelay = delays[Math.min(attempt, delays.length - 1)];
+      attempt += 1;
+      timeoutId = window.setTimeout(() => {
+        void pollStatus();
+      }, nextDelay);
+    };
+
+    const pollStatus = async () => {
+      try {
+        const status = await api.getPersonaDistillStatus(profileId);
+        if (cancelled) {
+          return;
+        }
+
+        if (status.status === 'completed') {
+          clearStoredProfileRegeneration(profileId);
+          setIsGenerating(false);
+          await reload();
+          return;
+        }
+
+        if (status.status === 'failed') {
+          clearStoredProfileRegeneration(profileId);
+          setIsGenerating(false);
+          setError(status.errorMessage || (isRu ? 'Не удалось сгенерировать стиль' : 'Failed to generate style'));
+          return;
+        }
+
+        if (status.status === 'idle') {
+          clearStoredProfileRegeneration(profileId);
+          setIsGenerating(false);
+          return;
+        }
+
+        setIsGenerating(true);
+        scheduleNextPoll();
+      } catch (statusError) {
+        if (cancelled) {
+          return;
+        }
+
+        setIsGenerating(true);
+        if (attempt >= 4) {
+          setError(statusError instanceof Error ? statusError.message : 'Failed to load style status');
+        } else {
+          scheduleNextPoll();
+        }
+      }
+    };
+
+    void pollStatus();
+
+    return () => {
+      cancelled = true;
+      if (timeoutId) {
+        window.clearTimeout(timeoutId);
+      }
+    };
+  }, [isRu, profile?.onboardingStatus, profileId, reload, setError]);
 
   async function handleContinue() {
     if (!profile?.slug) {
@@ -39,10 +126,10 @@ export function OnboardingStyleReviewPage() {
     }
   }
 
-  if (isLoading && !profile) {
+  if ((isLoading && !profile) || (isGenerating && !String(draftGuide || '').trim())) {
     return (
       <section className="page-stack">
-        <div className="state-banner">{isRu ? '\u0417\u0430\u0433\u0440\u0443\u0436\u0430\u0435\u043c \u0441\u0442\u0438\u043b\u044c...' : 'Loading style...'}</div>
+        <div className="state-banner">{isRu ? 'Генерируем стиль...' : 'Generating style...'}</div>
       </section>
     );
   }
@@ -64,10 +151,12 @@ export function OnboardingStyleReviewPage() {
       </section>
 
       {error && <div className="state-banner state-banner--error setup-error-banner">{error}</div>}
+      {isGenerating && <div className="state-banner state-banner--info setup-error-banner">{isRu ? 'Стиль ещё генерируется. Страница обновится автоматически.' : 'Style is still being generated. This page will refresh automatically.'}</div>}
 
       <section className="editor-panel editor-panel--main editor-panel--profile setup-panel setup-panel--fill setup-style-review-panel">
         <textarea
           className="config-editor config-editor--setup-preview setup-style-review-editor"
+          disabled={isGenerating || isSaving}
           value={draftGuide}
           onChange={(event) => setDraftGuide(event.target.value)}
         />
@@ -80,7 +169,7 @@ export function OnboardingStyleReviewPage() {
             ? (isRu ? '\u0421\u043e\u0445\u0440\u0430\u043d\u044f\u0435\u043c...' : 'Saving...')
             : (isRu ? '\u041f\u0440\u043e\u0434\u043e\u043b\u0436\u0438\u0442\u044c' : 'Continue')
         }
-        continueDisabled={isSaving}
+        continueDisabled={isSaving || isGenerating}
         onBack={() => window.location.assign(buildOnboardingUrl('style', profile.slug))}
         onContinue={handleContinue}
       />

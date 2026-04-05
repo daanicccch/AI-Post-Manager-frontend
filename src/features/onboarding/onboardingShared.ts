@@ -113,11 +113,11 @@ export function getOnboardingStepFromStatus(status: string | null | undefined): 
   if (normalizedStatus === 'awaiting_style_review') {
     return 'style-review';
   }
+  if (normalizedStatus === 'awaiting_style_generation') {
+    return 'style-review';
+  }
   if (normalizedStatus === 'awaiting_schedule_setup' || normalizedStatus === 'completed') {
     return 'plan';
-  }
-  if (normalizedStatus === 'awaiting_style_generation') {
-    return 'style';
   }
   return 'sources';
 }

@@ -124,6 +124,21 @@ export interface DistillPersonaResult {
 
 export type PersonaSource = 'sources' | 'target' | 'mixed';
 
+export interface PersonaGenerationJobStatus {
+  jobId: string | null;
+  profileId: string;
+  personaSource: PersonaSource | null;
+  status: 'idle' | 'running' | 'completed' | 'failed';
+  startedAt: string | null;
+  finishedAt: string | null;
+  errorMessage: string | null;
+  result: {
+    postsAnalyzed: number;
+    outputPath: string;
+    profileUpdatedAt: string | null;
+  } | null;
+}
+
 export interface ProfileAssetsUpdateResult {
   profileId: string;
   savedFields: string[];
@@ -444,10 +459,12 @@ export const api = {
       body: JSON.stringify(body)
     }),
   distillPersona: (profileId: string, body: { personaSource: 'sources' | 'target' | 'mixed' }) =>
-    request<DistillPersonaResult>(`/profiles/${profileId}/distill-persona`, {
+    request<PersonaGenerationJobStatus>(`/profiles/${profileId}/distill-persona`, {
       method: 'POST',
       body: JSON.stringify(body)
     }),
+  getPersonaDistillStatus: (profileId: string) =>
+    request<PersonaGenerationJobStatus>(`/profiles/${profileId}/distill-persona-status`),
   getOnboarding: (profileId?: string) => {
     const search = new URLSearchParams();
     if (profileId) search.set('profileId', profileId);
@@ -477,7 +494,7 @@ export const api = {
       body: JSON.stringify(body)
     }),
   generateOnboardingStyle: (profileId: string, body: { personaSource: PersonaSource }) =>
-    request<DistillPersonaResult>(`/onboarding/${profileId}/generate-style`, {
+    request<PersonaGenerationJobStatus>(`/onboarding/${profileId}/generate-style`, {
       method: 'POST',
       body: JSON.stringify(body)
     }),

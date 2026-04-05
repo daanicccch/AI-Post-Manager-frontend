@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api, type PersonaSource } from '../../lib/api';
 import { useAppLocale } from '../../lib/appLocale';
+import { storeProfileRegeneration } from '../profiles/profileRegenerationTracker';
 import { buildOnboardingUrl, getDefaultPersonaSource, normalizeSourceChannels, normalizeWebSources, useOnboardingData } from './onboardingShared';
 import { OnboardingFooter } from './OnboardingFooter';
 
@@ -59,7 +60,8 @@ export function OnboardingStylePage() {
     setError(null);
 
     try {
-      await api.generateOnboardingStyle(profile.slug, { personaSource });
+      const job = await api.generateOnboardingStyle(profile.slug, { personaSource });
+      storeProfileRegeneration(profile.slug, job.startedAt, job.jobId);
       window.location.assign(buildOnboardingUrl('style-review', profile.slug));
     } catch (generationError) {
       const rawMessage = generationError instanceof Error ? generationError.message : 'Failed to generate style';

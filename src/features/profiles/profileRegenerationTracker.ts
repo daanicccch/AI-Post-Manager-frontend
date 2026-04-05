@@ -1,22 +1,26 @@
-import { api, type DistillPersonaResult } from '../../lib/api';
-
-type PendingProfileRegeneration = {
-  profileId: string;
-  startedAt: number;
-  promise: Promise<DistillPersonaResult>;
-};
+import { api, type PersonaGenerationJobStatus, type PersonaSource } from '../../lib/api';
 
 type StoredProfileRegeneration = {
   profileId: string;
   startedAt: number;
-  baselineUpdatedAt: string | null;
+  jobId: string | null;
 };
 
-const pendingProfileRegenerations = new Map<string, PendingProfileRegeneration>();
 const PROFILE_REGENERATION_STORAGE_KEY = 'channelbot.profile-regeneration';
 
-export function getPendingProfileRegeneration(profileId: string) {
-  return pendingProfileRegenerations.get(profileId) || null;
+function normalizeStartedAt(value: number | string | null | undefined) {
+  if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+    return value;
+  }
+
+  if (typeof value === 'string' && value.trim()) {
+    const parsed = new Date(value).getTime();
+    if (Number.isFinite(parsed) && parsed > 0) {
+      return parsed;
+    }
+  }
+
+  return Date.now();
 }
 
 export function getStoredProfileRegeneration(profileId: string) {
@@ -43,26 +47,22 @@ export function getStoredProfileRegeneration(profileId: string) {
     return {
       profileId: parsedValue.profileId,
       startedAt: parsedValue.startedAt,
-      baselineUpdatedAt: typeof parsedValue.baselineUpdatedAt === 'string'
-        ? parsedValue.baselineUpdatedAt
-        : null,
+      jobId: typeof parsedValue.jobId === 'string' ? parsedValue.jobId : null,
     };
   } catch {
     return null;
   }
 }
 
-export function storeProfileRegeneration(profileId: string, startedAt: number, baselineUpdatedAt: string | null | undefined) {
+export function storeProfileRegeneration(profileId: string, startedAt: number | string | null | undefined, jobId?: string | null) {
   if (typeof window === 'undefined') {
     return;
   }
 
   const payload: StoredProfileRegeneration = {
     profileId,
-    startedAt,
-    baselineUpdatedAt: typeof baselineUpdatedAt === 'string' && baselineUpdatedAt.trim()
-      ? baselineUpdatedAt
-      : null,
+    startedAt: normalizeStartedAt(startedAt),
+    jobId: typeof jobId === 'string' && jobId.trim() ? jobId : null,
   };
 
   window.localStorage.setItem(PROFILE_REGENERATION_STORAGE_KEY, JSON.stringify(payload));
@@ -84,25 +84,6 @@ export function clearStoredProfileRegeneration(profileId?: string) {
   }
 }
 
-export function ensureProfileRegeneration(profileId: string, personaSource: 'sources' | 'target' | 'mixed') {
-  const existingJob = pendingProfileRegenerations.get(profileId);
-  if (existingJob) {
-    return existingJob;
-  }
-
-  const startedAt = Date.now();
-  const promise = api
-    .distillPersona(profileId, { personaSource })
-    .finally(() => {
-      pendingProfileRegenerations.delete(profileId);
-    });
-
-  const job = {
-    profileId,
-    startedAt,
-    promise,
-  };
-
-  pendingProfileRegenerations.set(profileId, job);
-  return job;
+export function ensureProfileRegeneration(profileId: string, personaSource: PersonaSource): Promise<PersonaGenerationJobStatus> {
+  return api.distillPersona(profileId, { personaSource });
 }

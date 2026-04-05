@@ -1,12 +1,11 @@
 import { startTransition, useEffect, useMemo, useState, useTransition } from 'react';
 import { ProfilePageSkeleton } from '../../components/LoadingSkeleton';
 import { SelectField } from '../../components/SelectField';
-import { api, type DistillPersonaResult, type Profile } from '../../lib/api';
+import { api, type Profile } from '../../lib/api';
 import { useAppLocale } from '../../lib/appLocale';
 import {
   clearStoredProfileRegeneration,
   ensureProfileRegeneration,
-  getPendingProfileRegeneration,
   getStoredProfileRegeneration,
   storeProfileRegeneration,
 } from './profileRegenerationTracker';
@@ -108,12 +107,6 @@ export function ProfilePage() {
         currentProfile.slug === nextProfile.slug ? { ...currentProfile, ...nextProfile } : currentProfile
       )
     );
-  }
-
-  function applyDistillResult(result: DistillPersonaResult) {
-    applyProfileDetail(result.profile);
-    setRegenProgress(100);
-    setFeedback(isRu ? 'Стиль перегенерирован.' : 'Channel style regenerated from source channels.');
   }
 
   function getRegenerationErrorMessage(regenerateError: unknown) {
@@ -235,40 +228,9 @@ export function ProfilePage() {
       return;
     }
 
-    const pendingJob = getPendingProfileRegeneration(profileId);
     let cancelled = false;
     let pollTimer = 0;
-
-    if (pendingJob) {
-      setIsRegenerating(true);
-      setRegenStartedAt(pendingJob.startedAt);
-
-      pendingJob.promise
-        .then((result) => {
-          if (cancelled || result.profile.slug !== profileId) {
-            return;
-          }
-
-          clearStoredProfileRegeneration(profileId);
-          applyDistillResult(result);
-        })
-        .catch((regenerateError) => {
-          if (!cancelled) {
-            clearStoredProfileRegeneration(profileId);
-            setError(getRegenerationErrorMessage(regenerateError));
-          }
-        })
-        .finally(() => {
-          if (!cancelled) {
-            setIsRegenerating(false);
-            setRegenStartedAt(null);
-          }
-        });
-
-      return () => {
-        cancelled = true;
-      };
-    }
+    let attempt = 0;
 
     const storedRegeneration = getStoredProfileRegeneration(profileId);
     if (!storedRegeneration) {
@@ -287,19 +249,28 @@ export function ProfilePage() {
     setIsRegenerating(true);
     setRegenStartedAt(storedRegeneration.startedAt);
 
-    const pollProfile = async () => {
+    const scheduleNextPoll = () => {
+      const delays = [1500, 3000, 5000, 8000, 12000];
+      const nextDelay = delays[Math.min(attempt, delays.length - 1)];
+      attempt += 1;
+      pollTimer = window.setTimeout(() => {
+        void pollStatus();
+      }, nextDelay);
+    };
+
+    const pollStatus = async () => {
       try {
-        const profile = await api.getProfile(profileId);
+        const status = await api.getPersonaDistillStatus(profileId);
         if (cancelled) {
           return;
         }
 
-        const baselineUpdatedAt = storedRegeneration.baselineUpdatedAt;
-        const isCompleted = baselineUpdatedAt
-          ? profile.updatedAt !== baselineUpdatedAt
-          : Boolean(String(profile.personaGuideMarkdown || '').trim());
+        if (status.status === 'completed') {
+          const profile = await api.getProfile(profileId);
+          if (cancelled) {
+            return;
+          }
 
-        if (isCompleted) {
           clearStoredProfileRegeneration(profileId);
           applyProfileDetail(profile);
           setRegenProgress(100);
@@ -309,29 +280,50 @@ export function ProfilePage() {
           return;
         }
 
+        if (status.status === 'failed') {
+          clearStoredProfileRegeneration(profileId);
+          setIsRegenerating(false);
+          setRegenStartedAt(null);
+          setError(status.errorMessage || (isRu ? 'Не удалось перегенерировать стиль' : 'Failed to regenerate channel style'));
+          return;
+        }
+
+        if (status.status === 'idle') {
+          clearStoredProfileRegeneration(profileId);
+          setIsRegenerating(false);
+          setRegenStartedAt(null);
+          return;
+        }
+
         if (Date.now() - storedRegeneration.startedAt > PROFILE_REGENERATION_TIMEOUT_MS) {
           clearStoredProfileRegeneration(profileId);
           setIsRegenerating(false);
           setRegenStartedAt(null);
+          return;
         }
-      } catch {
+
+        scheduleNextPoll();
+      } catch (statusError) {
         if (!cancelled && Date.now() - storedRegeneration.startedAt > PROFILE_REGENERATION_TIMEOUT_MS) {
           clearStoredProfileRegeneration(profileId);
           setIsRegenerating(false);
           setRegenStartedAt(null);
+          setError(getRegenerationErrorMessage(statusError));
+          return;
+        }
+
+        if (!cancelled) {
+          scheduleNextPoll();
         }
       }
     };
 
-    void pollProfile();
-    pollTimer = window.setInterval(() => {
-      void pollProfile();
-    }, 3000);
+    void pollStatus();
 
     return () => {
       cancelled = true;
       if (pollTimer) {
-        window.clearInterval(pollTimer);
+        window.clearTimeout(pollTimer);
       }
     };
   }, [isRu, profileId, regenSyncNonce]);
@@ -362,18 +354,25 @@ export function ProfilePage() {
     }
   }
 
-  function handleRegenerateStyle() {
+  async function handleRegenerateStyle() {
     if (!profileId) {
       return;
     }
 
     setFeedback(null);
     setError(null);
-    const pendingJob = ensureProfileRegeneration(profileId, 'sources');
-    storeProfileRegeneration(profileId, pendingJob.startedAt, profileDetail?.updatedAt ?? null);
-    setIsRegenerating(true);
-    setRegenStartedAt(pendingJob.startedAt);
-    setRegenSyncNonce((currentNonce) => currentNonce + 1);
+
+    try {
+      const job = await ensureProfileRegeneration(profileId, 'sources');
+      storeProfileRegeneration(profileId, job.startedAt, job.jobId);
+      setIsRegenerating(true);
+      setRegenStartedAt(job.startedAt ? new Date(job.startedAt).getTime() : Date.now());
+      setRegenSyncNonce((currentNonce) => currentNonce + 1);
+    } catch (regenerateError) {
+      setIsRegenerating(false);
+      setRegenStartedAt(null);
+      setError(getRegenerationErrorMessage(regenerateError));
+    }
   }
 
   function handleSave() {
@@ -464,7 +463,9 @@ export function ProfilePage() {
                 className="secondary-button secondary-button--small"
                 type="button"
                 disabled={isProfileLoading || isRegenerating || isSaving}
-                onClick={handleRegenerateStyle}
+                onClick={() => {
+                  void handleRegenerateStyle();
+                }}
               >
                 {isRegenerating ? (isRu ? 'Генерируем...' : 'Regenerating...') : isRu ? 'Перегенерировать' : 'Regenerate style'}
               </button>

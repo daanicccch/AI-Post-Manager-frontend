@@ -1,5 +1,4 @@
 import type {
-  DistillPersonaResult,
   DraftDetail,
   DraftMediaItem,
   DraftSource,
@@ -10,6 +9,7 @@ import type {
   InboxItem,
   OnboardingState,
   OnboardingSourcesResult,
+  PersonaGenerationJobStatus,
   PersonaSource,
   PersonaGuideDetail,
   Profile,
@@ -1077,11 +1077,19 @@ export async function handleLocalMockRequest<T>(path: string, init?: RequestInit
     profile.updatedAt = nowIso();
     syncProfileStats(db);
     saveDb(db);
-    const result: DistillPersonaResult = {
+    const result: PersonaGenerationJobStatus = {
+      jobId: `mock-persona:${profile.slug}:${Date.now()}`,
       profileId: profile.slug,
-      postsAnalyzed: (db.sourcePosts[profile.slug] || []).length,
-      outputPath: profile.personaGuidePath || `profiles/${profile.slug}/persona.md`,
-      profile: clone(profile),
+      personaSource,
+      status: 'completed',
+      startedAt: profile.updatedAt,
+      finishedAt: profile.updatedAt,
+      errorMessage: null,
+      result: {
+        postsAnalyzed: (db.sourcePosts[profile.slug] || []).length,
+        outputPath: profile.personaGuidePath || `profiles/${profile.slug}/persona.md`,
+        profileUpdatedAt: profile.updatedAt || null,
+      },
     };
     return result as T;
   }
@@ -1186,15 +1194,49 @@ export async function handleLocalMockRequest<T>(path: string, init?: RequestInit
   const distillMatch = pathname.match(/^\/profiles\/([^/]+)\/distill-persona$/);
   if (method === 'POST' && distillMatch) {
     const profile = getProfileBySlug(db, decodeURIComponent(distillMatch[1]));
+    const body = parseBody(init);
+    const personaSource = (['sources', 'target', 'mixed'].includes(String(body.personaSource))
+      ? String(body.personaSource)
+      : 'sources') as PersonaSource;
     profile.personaGuideMarkdown = `# ${profile.title} style\n\nLocal mock regenerated this style from the attached source channels.\n\n- Keep the lead short\n- Clarify why the update matters\n- End with one next-step takeaway`;
     profile.updatedAt = nowIso();
     syncProfileStats(db);
     saveDb(db);
-    const result: DistillPersonaResult = {
+    const result: PersonaGenerationJobStatus = {
+      jobId: `mock-persona:${profile.slug}:${Date.now()}`,
       profileId: profile.slug,
-      postsAnalyzed: (db.sourcePosts[profile.slug] || []).length,
-      outputPath: profile.personaGuidePath || `profiles/${profile.slug}/persona.md`,
-      profile: clone(profile)
+      personaSource,
+      status: 'completed',
+      startedAt: profile.updatedAt,
+      finishedAt: profile.updatedAt,
+      errorMessage: null,
+      result: {
+        postsAnalyzed: (db.sourcePosts[profile.slug] || []).length,
+        outputPath: profile.personaGuidePath || `profiles/${profile.slug}/persona.md`,
+        profileUpdatedAt: profile.updatedAt || null,
+      },
+    };
+    return result as T;
+  }
+
+  const distillStatusMatch = pathname.match(/^\/profiles\/([^/]+)\/distill-persona-status$/);
+  if (method === 'GET' && distillStatusMatch) {
+    const profile = getProfileBySlug(db, decodeURIComponent(distillStatusMatch[1]));
+    const result: PersonaGenerationJobStatus = {
+      jobId: null,
+      profileId: profile.slug,
+      personaSource: null,
+      status: String(profile.personaGuideMarkdown || '').trim() ? 'completed' : 'idle',
+      startedAt: profile.updatedAt || null,
+      finishedAt: profile.updatedAt || null,
+      errorMessage: null,
+      result: String(profile.personaGuideMarkdown || '').trim()
+        ? {
+            postsAnalyzed: (db.sourcePosts[profile.slug] || []).length,
+            outputPath: profile.personaGuidePath || `profiles/${profile.slug}/persona.md`,
+            profileUpdatedAt: profile.updatedAt || null,
+          }
+        : null,
     };
     return result as T;
   }
