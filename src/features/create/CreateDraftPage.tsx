@@ -319,6 +319,54 @@ function getSourceHydrationDetail(sourcePost: SourcePost, isRu: boolean) {
   return errorMessage;
 }
 
+function hasLoadedSourceMedia(sourcePost: SourcePost) {
+  return (sourcePost.mediaCount || 0) > 0 && Array.isArray(sourcePost.mediaPaths) && sourcePost.mediaPaths.length > 0;
+}
+
+function shouldRenderPendingSourceSkeleton(sourcePost: SourcePost) {
+  return isSourceHydrationInProgress(sourcePost) && !hasLoadedSourceMedia(sourcePost);
+}
+
+function mergeSourcePosts(previousItems: SourcePost[], nextItems: SourcePost[]) {
+  const previousById = new Map(previousItems.map((item) => [item.id, item]));
+
+  return nextItems.map((nextItem) => {
+    const previousItem = previousById.get(nextItem.id);
+    if (!previousItem || !hasLoadedSourceMedia(previousItem) || hasLoadedSourceMedia(nextItem)) {
+      return nextItem;
+    }
+
+    return {
+      ...nextItem,
+      mediaPaths: previousItem.mediaPaths,
+      mediaCount: previousItem.mediaCount,
+      mediaPreviewPath: previousItem.mediaPreviewPath,
+      mediaPreviewUrl: previousItem.mediaPreviewUrl,
+      hydrationPending: false,
+      hydrationStatus: 'completed' as const,
+      hydrationError: null,
+    };
+  });
+}
+
+function PendingSourceCardSkeleton() {
+  return (
+    <article className="create-source-card create-source-card--skeleton">
+      <span aria-hidden="true" className="ui-skeleton ui-skeleton--card-visual" />
+
+      <div className="create-source-card__body skeleton-stack skeleton-stack--tight">
+        <div className="skeleton-row">
+          <span aria-hidden="true" className="ui-skeleton ui-skeleton--line ui-skeleton--line-medium" />
+          <span aria-hidden="true" className="ui-skeleton ui-skeleton--meta ui-skeleton--meta-short" />
+        </div>
+        <span aria-hidden="true" className="ui-skeleton ui-skeleton--line ui-skeleton--line-short" />
+        <span aria-hidden="true" className="ui-skeleton ui-skeleton--line" />
+        <span aria-hidden="true" className="ui-skeleton ui-skeleton--line ui-skeleton--line-medium" />
+      </div>
+    </article>
+  );
+}
+
 export function CreateDraftPage() {
   const { language } = useAppLocale();
   const isRu = language === 'ru';
@@ -353,7 +401,6 @@ export function CreateDraftPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSourceLoading, setIsSourceLoading] = useState(false);
-  const [isSourceRefreshing, setIsSourceRefreshing] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [expandedPreview, setExpandedPreview] = useState<{ src: string; alt: string } | null>(null);
   const sourceFetchRequestIdRef = useRef(0);
@@ -418,11 +465,11 @@ export function CreateDraftPage() {
     clearSourceHydrationTimer();
     sourceHydrationTimerRef.current = window.setTimeout(() => {
       sourceHydrationTimerRef.current = null;
-      void loadSourcePosts({ refresh: false, background: true });
+      void loadSourcePosts({ refresh: false });
     }, SOURCE_HYDRATION_POLL_DELAY_MS);
   }
 
-  async function loadSourcePosts({ refresh, background = false }: { refresh: boolean; background?: boolean }) {
+  async function loadSourcePosts({ refresh }: { refresh: boolean }) {
     if (mode !== 'source_post' || !profileId) {
       return;
     }
@@ -432,11 +479,7 @@ export function CreateDraftPage() {
 
     clearSourceHydrationTimer();
     setError(null);
-    if (background) {
-      setIsSourceRefreshing(true);
-    } else {
-      setIsSourceLoading(true);
-    }
+    setIsSourceLoading(true);
 
     const parsedLookbackHours = parseOptionalPositiveInt(sourceLookbackHours);
     const parsedLimit = parseOptionalPositiveInt(sourceLimit);
@@ -454,7 +497,7 @@ export function CreateDraftPage() {
         return;
       }
 
-      setSourcePosts(items);
+      setSourcePosts((currentItems) => mergeSourcePosts(currentItems, items));
       setSelectedSourcePostId((currentId) =>
         items.some((sourcePost) => sourcePost.id === currentId) ? currentId : (items[0]?.id ?? null)
       );
@@ -480,11 +523,7 @@ export function CreateDraftPage() {
       );
     } finally {
       if (sourceFetchRequestIdRef.current === requestId) {
-        if (background) {
-          setIsSourceRefreshing(false);
-        } else {
-          setIsSourceLoading(false);
-        }
+        setIsSourceLoading(false);
       }
     }
   }
@@ -562,7 +601,6 @@ export function CreateDraftPage() {
     return () => {
       clearSourceHydrationTimer();
       sourceFetchRequestIdRef.current += 1;
-      setIsSourceRefreshing(false);
     };
   }, [deferredSourceSearch, mode, profileId, sourceLimit, sourceLookbackHours, sourceMediaOnly]);
 
@@ -1042,6 +1080,10 @@ export function CreateDraftPage() {
                 ) : (
                   <div className="source-pick-list source-pick-list--mobile">
                     {visibleSourcePosts.map((sourcePost) => {
+                      if (shouldRenderPendingSourceSkeleton(sourcePost)) {
+                        return <PendingSourceCardSkeleton key={sourcePost.id} />;
+                      }
+
                       const isSelected = selectedSourcePostId === sourcePost.id;
                       const hydrationStatus = getSourceHydrationStatus(sourcePost);
                       const hydrationLabel = getSourceHydrationLabel(sourcePost, isRu);
@@ -1138,12 +1180,6 @@ export function CreateDraftPage() {
                     <h3>{isRu ? 'Нет недавних постов-источников' : 'No recent source posts'}</h3>
                     <p>{isRu ? 'Увеличьте окно поиска или отключите фильтр «только медиа».' : 'Try a larger lookback window or disable the media-only filter.'}</p>
                   </div>
-                )}
-
-                {isSourceRefreshing && sourcePosts.length > 0 && (
-                  <p className="editor-help create-source-refresh-note">
-                    {isRu ? 'Превью обновляются по мере загрузки медиа.' : 'Previews refresh as media finishes loading.'}
-                  </p>
                 )}
               </div>
             )}
