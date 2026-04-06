@@ -451,9 +451,6 @@ export function CreateDraftPage() {
     .join(' - ');
   const currentMediaDraft =
     mode === 'source_pool' ? poolMediaDraft : mode === 'source_post' ? pickMediaDraft : manualMediaDraft;
-  const hydratingSourceCount = sourcePosts.filter(isSourceHydrationInProgress).length;
-  const failedSourceCount = sourcePosts.filter((sourcePost) => getSourceHydrationStatus(sourcePost) === 'failed').length;
-
   function clearSourceHydrationTimer() {
     if (sourceHydrationTimerRef.current !== null) {
       window.clearTimeout(sourceHydrationTimerRef.current);
@@ -1045,35 +1042,6 @@ export function CreateDraftPage() {
                     <RefreshIcon />
                   </button>
                 </div>
-
-                {sourcePosts.length > 0 && (hydratingSourceCount > 0 || failedSourceCount > 0) && (
-                  <div className="create-source-hydration-summary">
-                    {hydratingSourceCount > 0 && (
-                      <p className="editor-help create-source-hydration-summary__item">
-                        {isRu
-                          ? `${hydratingSourceCount} источников все еще догружают медиа.`
-                          : `${hydratingSourceCount} sources are still hydrating media.`}
-                      </p>
-                    )}
-                    {failedSourceCount > 0 && (
-                      <p className="editor-help create-source-hydration-summary__item create-source-hydration-summary__item--error">
-                        {isRu
-                          ? `${failedSourceCount} источников не смогли загрузить медиа.`
-                          : `${failedSourceCount} sources failed to hydrate media.`}
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                {!isSourceLoading && sourcePosts.length > 0 && (
-                  <div className="create-list-meta">
-                    <p className="editor-help">
-                      {isRu
-                        ? `Показано ${visibleSourcePosts.length} из ${sourcePosts.length} источников.`
-                        : `Showing ${visibleSourcePosts.length} of ${sourcePosts.length} sources.`}
-                    </p>
-                  </div>
-                )}
 
                 {isSourceLoading && sourcePosts.length === 0 ? (
                   <SourceListSkeleton />
