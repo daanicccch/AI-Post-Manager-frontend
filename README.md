@@ -10,4 +10,4 @@ cp .env.example .env
 npm run dev
 ```
 
-По умолчанию frontend ожидает backend API на `http://localhost:3010/api`.
+По умолчанию frontend ожидает backend API на `http://localhost:3011/api`.

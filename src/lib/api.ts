@@ -249,6 +249,9 @@ export interface SourcePost {
   views: number;
   reactions: unknown;
   usedInPosts: unknown;
+  hydrationPending?: boolean;
+  hydrationStatus?: 'queued' | 'running' | 'completed' | 'failed';
+  hydrationError?: string | null;
 }
 
 export interface GenerateDraftFromPoolInput {
@@ -267,6 +270,7 @@ export interface GenerateDraftFromManualSourceInput {
   text: string;
   channelTitle?: string;
   channelKey?: string;
+  sourcePostId?: number | null;
   sourceTelegramPostId?: number | null;
   sourceLinks?: Array<{
     label: string;

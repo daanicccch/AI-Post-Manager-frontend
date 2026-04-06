@@ -3,6 +3,7 @@
   useDeferredValue,
   useEffect,
   useMemo,
+  useRef,
   useState
 } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -264,6 +265,64 @@ function formatCreateError(message: string, mode: 'source_pool' | 'source_post' 
   return message;
 }
 
+const SOURCE_HYDRATION_POLL_DELAY_MS = 2400;
+
+type SourceHydrationStatus = NonNullable<SourcePost['hydrationStatus']>;
+
+function getSourceHydrationStatus(sourcePost: SourcePost): SourceHydrationStatus {
+  if (sourcePost.hydrationStatus) {
+    return sourcePost.hydrationStatus;
+  }
+
+  if (sourcePost.hydrationError) {
+    return 'failed';
+  }
+
+  if (sourcePost.hydrationPending) {
+    return 'queued';
+  }
+
+  return 'completed';
+}
+
+function isSourceHydrationInProgress(sourcePost: SourcePost) {
+  const status = getSourceHydrationStatus(sourcePost);
+  return status === 'queued' || status === 'running';
+}
+
+function getSourceHydrationLabel(sourcePost: SourcePost, isRu: boolean) {
+  const status = getSourceHydrationStatus(sourcePost);
+
+  if (status === 'queued' || status === 'running') {
+    return isRu ? 'Медиа загружается' : 'Hydrating media';
+  }
+
+  if (status === 'failed') {
+    return isRu ? 'Не удалось загрузить медиа' : 'Media hydration failed';
+  }
+
+  if ((sourcePost.mediaCount || 0) > 0) {
+    return isRu ? 'Медиа готово' : 'Media ready';
+  }
+
+  return isRu ? 'Текстовый пост' : 'Text only';
+}
+
+function getSourceHydrationDetail(sourcePost: SourcePost, isRu: boolean) {
+  if (getSourceHydrationStatus(sourcePost) !== 'failed') {
+    return null;
+  }
+
+  const errorMessage = String(sourcePost.hydrationError || '').trim();
+  if (!errorMessage) {
+    return isRu
+      ? 'Превью появится после повторной синхронизации.'
+      : 'Preview will appear after the source is re-synced.';
+  }
+
+  return errorMessage;
+}
+
 export function CreateDraftPage() {
   const { language } = useAppLocale();
   const isRu = language === 'ru';
@@ -285,7 +344,6 @@ export function CreateDraftPage() {
   const [sourceLookbackHours, setSourceLookbackHours] = useState('24');
   const [sourceLimit, setSourceLimit] = useState('20');
   const [sourceMediaOnly, setSourceMediaOnly] = useState(false);
-  const [sourceRefreshNonce, setSourceRefreshNonce] = useState(0);
   const [selectedSourcePostId, setSelectedSourcePostId] = useState<number | null>(null);
   const [poolMediaDraft, setPoolMediaDraft] = useState<DraftMediaItem[]>([]);
   const [pickMediaDraft, setPickMediaDraft] = useState<DraftMediaItem[]>([]);
@@ -301,6 +359,8 @@ export function CreateDraftPage() {
   const [isSourceLoading, setIsSourceLoading] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [expandedPreview, setExpandedPreview] = useState<{ src: string; alt: string } | null>(null);
+  const sourceFetchRequestIdRef = useRef(0);
+  const sourceHydrationTimerRef = useRef<number | null>(null);
 
   const deferredSourceSearch = useDeferredValue(sourceSearch);
   const selectedSourcePost = useMemo(
@@ -347,6 +407,87 @@ export function CreateDraftPage() {
     .join(' - ');
   const currentMediaDraft =
     mode === 'source_pool' ? poolMediaDraft : mode === 'source_post' ? pickMediaDraft : manualMediaDraft;
+  const hydratedSourceCount = sourcePosts.filter((sourcePost) => {
+    const status = getSourceHydrationStatus(sourcePost);
+    return status === 'completed' && (sourcePost.mediaCount || 0) > 0;
+  }).length;
+  const hydratingSourceCount = sourcePosts.filter(isSourceHydrationInProgress).length;
+  const failedSourceCount = sourcePosts.filter((sourcePost) => getSourceHydrationStatus(sourcePost) === 'failed').length;
+
+  function clearSourceHydrationTimer() {
+    if (sourceHydrationTimerRef.current !== null) {
+      window.clearTimeout(sourceHydrationTimerRef.current);
+      sourceHydrationTimerRef.current = null;
+    }
+  }
+
+  function scheduleSourceHydrationRefresh() {
+    clearSourceHydrationTimer();
+    sourceHydrationTimerRef.current = window.setTimeout(() => {
+      sourceHydrationTimerRef.current = null;
+      void loadSourcePosts({ refresh: false });
+    }, SOURCE_HYDRATION_POLL_DELAY_MS);
+  }
+
+  async function loadSourcePosts({ refresh }: { refresh: boolean }) {
+    if (mode !== 'source_post' || !profileId) {
+      return;
+    }
+
+    const requestId = sourceFetchRequestIdRef.current + 1;
+    sourceFetchRequestIdRef.current = requestId;
+
+    clearSourceHydrationTimer();
+    setError(null);
+    setIsSourceLoading(true);
+
+    const parsedLookbackHours = parseOptionalPositiveInt(sourceLookbackHours);
+    const parsedLimit = parseOptionalPositiveInt(sourceLimit);
+
+    try {
+      const items = await api.listSourcePosts(profileId, {
+        lookbackHours: Number.isNaN(parsedLookbackHours) ? undefined : parsedLookbackHours,
+        limit: Number.isNaN(parsedLimit) ? undefined : parsedLimit ?? 20,
+        search: deferredSourceSearch.trim() || undefined,
+        mediaOnly: sourceMediaOnly,
+        refresh
+      });
+
+      if (sourceFetchRequestIdRef.current !== requestId) {
+        return;
+      }
+
+      setSourcePosts(items);
+      setSelectedSourcePostId((currentId) =>
+        items.some((sourcePost) => sourcePost.id === currentId) ? currentId : (items[0]?.id ?? null)
+      );
+
+      if (items.some(isSourceHydrationInProgress)) {
+        scheduleSourceHydrationRefresh();
+      }
+    } catch (loadError) {
+      if (sourceFetchRequestIdRef.current !== requestId) {
+        return;
+      }
+
+      if (sourcePosts.some(isSourceHydrationInProgress)) {
+        scheduleSourceHydrationRefresh();
+      }
+
+      setError(
+        loadError instanceof Error
+          ? loadError.message
+          : isRu
+            ? 'Не удалось загрузить источники.'
+            : 'Failed to load sources.'
+      );
+    } finally {
+      if (sourceFetchRequestIdRef.current === requestId) {
+        setIsSourceLoading(false);
+      }
+    }
+  }
+
   const profileSelectOptions = useMemo(
     () =>
       profiles.map((profile) => ({
@@ -416,49 +557,12 @@ export function CreateDraftPage() {
       return;
     }
 
-    let cancelled = false;
-    setIsSourceLoading(true);
-
-    const parsedLookbackHours = parseOptionalPositiveInt(sourceLookbackHours);
-    const parsedLimit = parseOptionalPositiveInt(sourceLimit);
-
-    api
-      .listSourcePosts(profileId, {
-        lookbackHours: Number.isNaN(parsedLookbackHours) ? undefined : parsedLookbackHours,
-        limit: Number.isNaN(parsedLimit) ? undefined : parsedLimit ?? 20,
-        search: deferredSourceSearch.trim() || undefined,
-        mediaOnly: sourceMediaOnly,
-        refresh: sourceRefreshNonce > 0
-      })
-      .then((items) => {
-        if (!cancelled) {
-          setSourcePosts(items);
-          setSelectedSourcePostId((currentId) =>
-            items.some((sourcePost) => sourcePost.id === currentId) ? currentId : (items[0]?.id ?? null)
-          );
-          if (sourceRefreshNonce > 0) {
-            setSourceRefreshNonce(0);
-          }
-        }
-      })
-      .catch((loadError: Error) => {
-        if (!cancelled) {
-          setError(loadError.message);
-          if (sourceRefreshNonce > 0) {
-            setSourceRefreshNonce(0);
-          }
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setIsSourceLoading(false);
-        }
-      });
-
+    void loadSourcePosts({ refresh: false });
     return () => {
-      cancelled = true;
+      clearSourceHydrationTimer();
+      sourceFetchRequestIdRef.current += 1;
     };
-  }, [deferredSourceSearch, mode, profileId, sourceLimit, sourceLookbackHours, sourceMediaOnly, sourceRefreshNonce]);
+  }, [deferredSourceSearch, mode, profileId, sourceLimit, sourceLookbackHours, sourceMediaOnly]);
 
   useEffect(() => {
     if (mode !== 'source_post') {
@@ -653,6 +757,7 @@ export function CreateDraftPage() {
           text: sourcePost.text,
           channelTitle: sourcePost.sourceChannel,
           channelKey: sourcePost.sourceChannel,
+          sourcePostId: sourcePost.id,
           sourceTelegramPostId: sourcePost.telegramPostId,
           sourceLinks: extractSourceLinks(sourcePost),
           mediaPaths: pickMediaOverrideEnabled ? currentMediaPaths : sourcePost.mediaPaths
@@ -893,11 +998,39 @@ export function CreateDraftPage() {
                     disabled={isSourceLoading}
                     title={refreshSourcePostsLabel}
                     type="button"
-                    onClick={() => setSourceRefreshNonce((current) => current + 1)}
+                    onClick={() => {
+                      void loadSourcePosts({ refresh: true });
+                    }}
                   >
                     <RefreshIcon />
                   </button>
                 </div>
+
+                {sourcePosts.length > 0 && (hydratingSourceCount > 0 || failedSourceCount > 0 || hydratedSourceCount > 0) && (
+                  <div className="create-source-hydration-summary">
+                    {hydratingSourceCount > 0 && (
+                      <p className="editor-help create-source-hydration-summary__item">
+                        {isRu
+                          ? `${hydratingSourceCount} источников все еще догружают медиа.`
+                          : `${hydratingSourceCount} sources are still hydrating media.`}
+                      </p>
+                    )}
+                    {failedSourceCount > 0 && (
+                      <p className="editor-help create-source-hydration-summary__item create-source-hydration-summary__item--error">
+                        {isRu
+                          ? `${failedSourceCount} источников не смогли загрузить медиа.`
+                          : `${failedSourceCount} sources failed to hydrate media.`}
+                      </p>
+                    )}
+                    {hydratedSourceCount > 0 && hydratingSourceCount === 0 && failedSourceCount === 0 && (
+                      <p className="editor-help create-source-hydration-summary__item">
+                        {isRu
+                          ? `${hydratedSourceCount} источников уже готовы с медиа.`
+                          : `${hydratedSourceCount} sources are ready with media.`}
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 {!isSourceLoading && sourcePosts.length > 0 && (
                   <div className="create-list-meta">
@@ -915,6 +1048,12 @@ export function CreateDraftPage() {
                   <div className="source-pick-list source-pick-list--mobile">
                     {visibleSourcePosts.map((sourcePost) => {
                       const isSelected = selectedSourcePostId === sourcePost.id;
+                      const hydrationStatus = getSourceHydrationStatus(sourcePost);
+                      const hydrationLabel = getSourceHydrationLabel(sourcePost, isRu);
+                      const hydrationDetail = getSourceHydrationDetail(sourcePost, isRu);
+                      const isHydrating = hydrationStatus === 'queued' || hydrationStatus === 'running';
+                      const isHydrationFailed = hydrationStatus === 'failed';
+                      const isTextOnly = hydrationStatus === 'completed' && (sourcePost.mediaCount || 0) === 0;
                       const sourceDateLabel = formatCompactPostMeta(
                         sourcePost.sourceDate || sourcePost.scrapedAt,
                         sourcePost.mediaCount,
@@ -924,13 +1063,24 @@ export function CreateDraftPage() {
                       return (
                         <article
                           key={sourcePost.id}
-                          className={`create-source-card${isSelected ? ' create-source-card--active' : ''}`}
+                          className={`create-source-card${
+                            isSelected ? ' create-source-card--active' : ''
+                          }${
+                            isHydrating ? ' create-source-card--hydrating' : ''
+                          }${
+                            isHydrationFailed ? ' create-source-card--hydration-failed' : ''
+                          }${
+                            isTextOnly ? ' create-source-card--text-only' : ''
+                          }`}
                         >
                           <div className="create-source-card__visual">
                             <SourceVisual
                               sourcePost={sourcePost}
                               onExpand={(src, alt) => setExpandedPreview({ src, alt })}
                             />
+                            <div className={`source-hydration-pill source-hydration-pill--${hydrationStatus}`}>
+                              {hydrationLabel}
+                            </div>
                             <button
                               aria-pressed={isSelected}
                               className={`source-select-badge${isSelected ? ' source-select-badge--active' : ''}`}
@@ -946,6 +1096,12 @@ export function CreateDraftPage() {
                               <strong>{sourcePost.sourceChannel}</strong>
                               <span>{sourceDateLabel}</span>
                             </div>
+
+                            {hydrationDetail ? (
+                              <div className="create-source-card__status">
+                                <span className="create-source-card__status-detail">{hydrationDetail}</span>
+                              </div>
+                            ) : null}
 
                             <div className="create-source-card__actions">
                               {getSourcePostUrl(sourcePost) && (
