@@ -2413,6 +2413,7 @@ textarea:focus {
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 0.75rem;
   align-items: end;
+  min-width: 0;
 }
 
 .create-source-rail__actions {
@@ -2766,6 +2767,8 @@ textarea:focus {
 .source-pick-list {
   display: grid;
   gap: 0.75rem;
+  width: 100%;
+  min-width: 0;
 }
 
 .source-pick-card {
@@ -4035,6 +4038,9 @@ textarea:focus {
 .create-selected-summary {
   display: grid;
   gap: 0.85rem;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
   padding: 0.8rem;
   border: 1px solid rgba(24, 39, 75, 0.08);
   border-radius: 1.35rem;
@@ -4056,12 +4062,14 @@ textarea:focus {
 .create-source-card__body {
   display: grid;
   gap: 0.55rem;
+  min-width: 0;
 }
 
 .feed-card__head,
 .create-source-card__header {
   display: grid;
   gap: 0.18rem;
+  min-width: 0;
 }
 
 .feed-card__head {
@@ -4076,6 +4084,8 @@ textarea:focus {
   font-size: 1.04rem;
   line-height: 1.25;
   color: #142033;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .feed-card__head span,
@@ -4085,6 +4095,8 @@ textarea:focus {
 .create-source-card__excerpt {
   margin: 0;
   color: var(--muted);
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .feed-card__meta {
@@ -4101,6 +4113,7 @@ textarea:focus {
   align-items: center;
   gap: 0.65rem;
   flex-wrap: wrap;
+  min-width: 0;
 }
 
 .feed-card__primary {
@@ -4747,13 +4760,8 @@ body.app-lightbox-open .workspace-main {
 }
 
 @media (max-width: 640px) {
-  .create-source-toolbar {
-    grid-template-columns: 1fr;
-    align-items: stretch;
-  }
-
   .create-icon-button {
-    justify-self: end;
+    align-self: end;
   }
 
   .create-filter-drawer__summary {
