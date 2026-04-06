@@ -70,7 +70,7 @@ export function OnboardingPlanPage() {
 
   useEffect(() => {
     if (!profileId) {
-      setError(isRu ? '\u041d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d \u043f\u0440\u043e\u0444\u0438\u043b\u044c.' : 'No onboarding profile selected.');
+      setError(isRu ? 'Не найден профиль.' : 'No onboarding profile selected.');
       setIsLoading(false);
       return;
     }
@@ -108,7 +108,7 @@ export function OnboardingPlanPage() {
       ...current,
       {
         ...createPlannerSlot(current.length),
-        label: isRu ? `\u0421\u043b\u043e\u0442 ${current.length + 1}` : `Slot ${current.length + 1}`,
+        label: isRu ? `Слот ${current.length + 1}` : `Slot ${current.length + 1}`,
       },
     ]);
   }
@@ -127,12 +127,12 @@ export function OnboardingPlanPage() {
 
     try {
       if (slots.length === 0) {
-        throw new Error(isRu ? '\u0414\u043e\u0431\u0430\u0432\u044c \u0445\u043e\u0442\u044f \u0431\u044b \u043e\u0434\u0438\u043d \u0441\u043b\u043e\u0442.' : 'Add at least one publishing slot.');
+        throw new Error(isRu ? 'Добавь хотя бы один слот.' : 'Add at least one publishing slot.');
       }
       if (invalidSlotCount > 0) {
         throw new Error(
           isRu
-            ? '\u0412 \u043a\u0430\u0436\u0434\u043e\u043c \u0441\u043b\u043e\u0442\u0435 \u0432\u0440\u0435\u043c\u044f \u043e\u043a\u043e\u043d\u0447\u0430\u043d\u0438\u044f \u0434\u043e\u043b\u0436\u043d\u043e \u0431\u044b\u0442\u044c \u043f\u043e\u0437\u0436\u0435 \u0441\u0442\u0430\u0440\u0442\u0430.'
+            ? 'В каждом слоте время окончания должно быть позже старта.'
             : 'Each slot must end later than it starts.'
         );
       }
@@ -176,7 +176,7 @@ export function OnboardingPlanPage() {
   if (isLoading) {
     return (
       <section className="page-stack">
-        <div className="state-banner">{isRu ? '\u0417\u0430\u0433\u0440\u0443\u0436\u0430\u0435\u043c \u043f\u043b\u0430\u043d...' : 'Loading planner...'}</div>
+        <div className="state-banner">{isRu ? 'Загружаем план...' : 'Loading planner...'}</div>
       </section>
     );
   }
@@ -190,7 +190,7 @@ export function OnboardingPlanPage() {
           <span className="setup-progress__segment setup-progress__segment--done" />
           <span className="setup-progress__segment setup-progress__segment--active" />
         </div>
-        <h2 className="setup-header__title">{isRu ? '\u041f\u043b\u0430\u043d \u043f\u0443\u0431\u043b\u0438\u043a\u0430\u0446\u0438\u0439' : 'Publishing plan'}</h2>
+        <h2 className="setup-header__title">{isRu ? 'План публикаций' : 'Publishing plan'}</h2>
       </section>
 
       {error && <div className="state-banner state-banner--error setup-error-banner">{error}</div>}
@@ -198,7 +198,7 @@ export function OnboardingPlanPage() {
       <form className="setup-panel setup-panel--grow setup-panel--fill setup-plan-form" onSubmit={handleSubmit}>
         <section className="context-section context-section--tight">
           <label className="field-block">
-            <span>{isRu ? '\u0422\u0430\u0439\u043c\u0437\u043e\u043d\u0430' : 'Timezone'}</span>
+            <span>{isRu ? 'Таймзона' : 'Timezone'}</span>
             <input value={timezone} onChange={(event) => setTimezone(event.target.value)} />
           </label>
         </section>
@@ -206,30 +206,30 @@ export function OnboardingPlanPage() {
         <section className="context-section context-section--tight setup-plan-slots">
           <div className="panel-heading panel-heading--tight setup-plan-heading">
             <div>
-              <span className="eyebrow">{isRu ? '\u0421\u043b\u043e\u0442\u044b' : 'Slots'}</span>
-              <h3>{isRu ? '\u041a\u043e\u0433\u0434\u0430 \u043c\u043e\u0436\u043d\u043e \u043f\u0443\u0431\u043b\u0438\u043a\u043e\u0432\u0430\u0442\u044c \u043f\u043e\u0441\u0442\u044b' : 'When posts may be published'}</h3>
+              <span className="eyebrow">{isRu ? 'Слоты' : 'Slots'}</span>
+              <h3>{isRu ? 'Когда можно публиковать посты' : 'When posts may be published'}</h3>
             </div>
 
             <button className="secondary-button secondary-button--small schedule-add-button" type="button" onClick={addSlot}>
-              {isRu ? '\u0414\u043e\u0431\u0430\u0432\u0438\u0442\u044c \u0441\u043b\u043e\u0442' : 'Add slot'}
+              {isRu ? 'Добавить слот' : 'Add slot'}
             </button>
           </div>
 
           <div className="schedule-slot-list">
             {slots.length === 0 ? (
               <div className="empty-state setup-plan-empty">
-                <p>{isRu ? '\u041f\u043e\u043a\u0430 \u043d\u0435\u0442 \u043d\u0438 \u043e\u0434\u043d\u043e\u0433\u043e \u0441\u043b\u043e\u0442\u0430.' : 'No slots yet.'}</p>
+                <p>{isRu ? 'Пока нет ни одного слота.' : 'No slots yet.'}</p>
               </div>
             ) : (
               slots.map((slot, index) => (
                 <article className="schedule-slot-card" key={slot.id}>
                   <div className="schedule-slot-card__top">
                     <label className="field-block">
-                      <span>{isRu ? '\u041d\u0430\u0437\u0432\u0430\u043d\u0438\u0435' : 'Label'}</span>
+                      <span>{isRu ? 'Название' : 'Label'}</span>
                       <input value={slot.label} onChange={(event) => updateSlot(slot.id, { label: event.target.value })} />
                     </label>
                     <button
-                      aria-label={isRu ? `\u0423\u0434\u0430\u043b\u0438\u0442\u044c \u0441\u043b\u043e\u0442 ${index + 1}` : `Remove slot ${index + 1}`}
+                      aria-label={isRu ? `Удалить слот ${index + 1}` : `Remove slot ${index + 1}`}
                       className="schedule-remove-button"
                       disabled={slots.length === 1}
                       type="button"
@@ -241,19 +241,19 @@ export function OnboardingPlanPage() {
 
                   <div className="schedule-slot-card__times">
                     <label className="field-block">
-                      <span>{isRu ? '\u041d\u0430\u0447\u0430\u043b\u043e' : 'Start'}</span>
+                      <span>{isRu ? 'Начало' : 'Start'}</span>
                       <input type="time" value={slot.start} onChange={(event) => updateSlot(slot.id, { start: event.target.value })} />
                     </label>
 
                     <label className="field-block">
-                      <span>{isRu ? '\u041a\u043e\u043d\u0435\u0446' : 'End'}</span>
+                      <span>{isRu ? 'Конец' : 'End'}</span>
                       <input type="time" value={slot.end} onChange={(event) => updateSlot(slot.id, { end: event.target.value })} />
                     </label>
                   </div>
 
                   {slot.start >= slot.end ? (
                     <div className="draft-row__meta schedule-slot-card__meta">
-                      <span>{isRu ? '\u041a\u043e\u043d\u0435\u0446 \u0434\u043e\u043b\u0436\u0435\u043d \u0431\u044b\u0442\u044c \u043f\u043e\u0437\u0436\u0435 \u043d\u0430\u0447\u0430\u043b\u0430' : 'End must be later than start'}</span>
+                      <span>{isRu ? 'Конец должен быть позже начала' : 'End must be later than start'}</span>
                     </div>
                   ) : null}
                 </article>
@@ -264,11 +264,11 @@ export function OnboardingPlanPage() {
       </form>
 
       <OnboardingFooter
-        backLabel={isRu ? '\u041d\u0430\u0437\u0430\u0434' : 'Back'}
+        backLabel={isRu ? 'Назад' : 'Back'}
         continueLabel={
           isSaving
-            ? (isRu ? '\u0421\u043e\u0445\u0440\u0430\u043d\u044f\u0435\u043c...' : 'Saving...')
-            : (isRu ? '\u041f\u0440\u043e\u0434\u043e\u043b\u0436\u0438\u0442\u044c' : 'Continue')
+            ? (isRu ? 'Сохраняем...' : 'Saving...')
+            : (isRu ? 'Продолжить' : 'Continue')
         }
         continueDisabled={isSaving}
         onBack={() => window.location.assign(buildOnboardingUrl('style-review', profileId))}

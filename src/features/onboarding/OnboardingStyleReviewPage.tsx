@@ -104,7 +104,7 @@ export function OnboardingStyleReviewPage() {
         stopGeneration();
         setError(
           isRu
-            ? '\u0413\u0435\u043d\u0435\u0440\u0430\u0446\u0438\u044f \u0441\u0442\u0438\u043b\u044f \u0437\u0430\u043d\u044f\u043b\u0430 \u0441\u043b\u0438\u0448\u043a\u043e\u043c \u043c\u043d\u043e\u0433\u043e \u0432\u0440\u0435\u043c\u0435\u043d\u0438. \u041f\u043e\u043f\u0440\u043e\u0431\u0443\u0439 \u0437\u0430\u043f\u0443\u0441\u0442\u0438\u0442\u044c \u0435\u0451 \u0435\u0449\u0451 \u0440\u0430\u0437.'
+            ? 'Генерация стиля заняла слишком много времени. Попробуй запустить её ещё раз.'
             : 'Style generation is taking too long. Try starting it again.',
         );
         return;
@@ -128,7 +128,7 @@ export function OnboardingStyleReviewPage() {
           stopGeneration();
           setError(
             status.errorMessage
-              || (isRu ? '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0441\u0433\u0435\u043d\u0435\u0440\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0441\u0442\u0438\u043b\u044c' : 'Failed to generate style'),
+              || (isRu ? 'Не удалось сгенерировать стиль' : 'Failed to generate style'),
           );
           return;
         }
@@ -194,7 +194,7 @@ export function OnboardingStyleReviewPage() {
   if (isLoading && !profile) {
     return (
       <section className="page-stack">
-        <div className="state-banner">{isRu ? '\u0413\u0435\u043d\u0435\u0440\u0438\u0440\u0443\u0435\u043c \u0441\u0442\u0438\u043b\u044c...' : 'Generating style...'}</div>
+        <div className="state-banner">{isRu ? 'Генерируем стиль...' : 'Generating style...'}</div>
       </section>
     );
   }
@@ -212,7 +212,7 @@ export function OnboardingStyleReviewPage() {
           <span className="setup-progress__segment setup-progress__segment--active" />
           <span className="setup-progress__segment" />
         </div>
-        <h2 className="setup-header__title">{isRu ? '\u041f\u0440\u043e\u0432\u0435\u0440\u044c \u0441\u0442\u0438\u043b\u044c' : 'Review the style'}</h2>
+        <h2 className="setup-header__title">{isRu ? 'Проверь стиль' : 'Review the style'}</h2>
       </section>
 
       {error && <div className="state-banner state-banner--error setup-error-banner">{error}</div>}
@@ -232,18 +232,18 @@ export function OnboardingStyleReviewPage() {
 
           <div className="setup-generation-panel__copy">
             <span className="setup-generation-panel__eyebrow">
-              {isRu ? '\u0421\u0431\u043e\u0440 \u0441\u0442\u0438\u043b\u044f' : 'Style distill'}
+              {isRu ? 'Сбор стиля' : 'Style distill'}
             </span>
-            <strong>{isRu ? '\u0421\u043e\u0431\u0438\u0440\u0430\u0435\u043c \u0433\u043e\u043b\u043e\u0441 \u043a\u0430\u043d\u0430\u043b\u0430' : 'Building the channel voice'}</strong>
+            <strong>{isRu ? 'Собираем голос канала' : 'Building the channel voice'}</strong>
             <p>
               {isRu
-                ? '\u0410\u043d\u0430\u043b\u0438\u0437\u0438\u0440\u0443\u0435\u043c \u0438\u0441\u0442\u043e\u0447\u043d\u0438\u043a\u0438, \u0442\u043e\u043d, \u0440\u0438\u0442\u043c \u0438 \u0444\u043e\u0440\u043c\u0443\u043b\u0438\u0440\u0443\u0435\u043c \u0438\u0442\u043e\u0433\u043e\u0432\u044b\u0439 style guide. \u041a\u043e\u0433\u0434\u0430 \u043e\u043d \u0431\u0443\u0434\u0435\u0442 \u0433\u043e\u0442\u043e\u0432, \u044d\u043a\u0440\u0430\u043d \u043e\u0431\u043d\u043e\u0432\u0438\u0442\u0441\u044f \u0441\u0430\u043c.'
+                ? 'Анализируем источники, тон, ритм и формулируем итоговый style guide. Когда он будет готов, экран обновится сам.'
                 : 'We are analyzing sources, tone, pacing, and phrasing to assemble the final style guide. This screen will refresh automatically once it is ready.'}
             </p>
           </div>
 
           <div className="setup-generation-panel__meta">
-            <span>{isRu ? '\u041f\u0440\u043e\u0448\u043b\u043e' : 'Elapsed'}</span>
+            <span>{isRu ? 'Прошло' : 'Elapsed'}</span>
             <strong>{generationElapsedLabel}</strong>
           </div>
 
@@ -253,13 +253,13 @@ export function OnboardingStyleReviewPage() {
 
           <div className="setup-generation-stages" aria-hidden="true">
             <span className={`setup-generation-stage${generationStage >= 0 ? ' setup-generation-stage--active' : ''}`}>
-              {isRu ? '\u0418\u0441\u0442\u043e\u0447\u043d\u0438\u043a\u0438' : 'Sources'}
+              {isRu ? 'Источники' : 'Sources'}
             </span>
             <span className={`setup-generation-stage${generationStage >= 1 ? ' setup-generation-stage--active' : ''}`}>
-              {isRu ? '\u0422\u043e\u043d \u0438 \u0441\u0442\u0440\u0443\u043a\u0442\u0443\u0440\u0430' : 'Tone and structure'}
+              {isRu ? 'Тон и структура' : 'Tone and structure'}
             </span>
             <span className={`setup-generation-stage${generationStage >= 2 ? ' setup-generation-stage--active' : ''}`}>
-              {isRu ? '\u0424\u0438\u043d\u0430\u043b\u044c\u043d\u044b\u0439 guide' : 'Final guide'}
+              {isRu ? 'Финальный guide' : 'Final guide'}
             </span>
           </div>
         </section>
@@ -277,11 +277,11 @@ export function OnboardingStyleReviewPage() {
       ) : null}
 
       <OnboardingFooter
-        backLabel={isRu ? '\u041d\u0430\u0437\u0430\u0434' : 'Back'}
+        backLabel={isRu ? 'Назад' : 'Back'}
         continueLabel={
           isSaving
-            ? (isRu ? '\u0421\u043e\u0445\u0440\u0430\u043d\u044f\u0435\u043c...' : 'Saving...')
-            : (isRu ? '\u041f\u0440\u043e\u0434\u043e\u043b\u0436\u0438\u0442\u044c' : 'Continue')
+            ? (isRu ? 'Сохраняем...' : 'Saving...')
+            : (isRu ? 'Продолжить' : 'Continue')
         }
         continueDisabled={isSaving || isGenerating}
         onBack={() => window.location.assign(buildOnboardingUrl('style', profile.slug))}

@@ -5254,7 +5254,7 @@ body.app-lightbox-open .workspace-main {
 
 .setup-sources-panel {
   padding-inline: 0.08rem;
-  padding-bottom: calc(0.55rem + var(--safe-bottom-resolved));
+  padding-bottom: calc(5.8rem + var(--safe-bottom-resolved));
 }
 
 .setup-sources-card {
@@ -5573,6 +5573,7 @@ body.app-lightbox-open .workspace-main {
   gap: 0.5rem;
   align-content: start;
   width: 100%;
+  padding-bottom: 0.35rem;
 }
 
 .setup-preset-spotlight__accent,

@@ -74,7 +74,7 @@ export function OnboardingStylePage() {
   if (isLoading && !profile) {
     return (
       <section className="page-stack">
-        <div className="state-banner">{isRu ? '\u0417\u0430\u0433\u0440\u0443\u0436\u0430\u0435\u043c \u0448\u0430\u0433 \u0441 \u0433\u0435\u043d\u0435\u0440\u0430\u0446\u0438\u0435\u0439...' : 'Loading style step...'}</div>
+        <div className="state-banner">{isRu ? 'Загружаем шаг с генерацией...' : 'Loading style step...'}</div>
       </section>
     );
   }
@@ -92,11 +92,11 @@ export function OnboardingStylePage() {
           <span className="setup-progress__segment" />
           <span className="setup-progress__segment" />
         </div>
-        <h2 className="setup-header__title">{isRu ? '\u041a\u0430\u043a \u0433\u0435\u043d\u0435\u0440\u0438\u0442\u044c \u0441\u0442\u0438\u043b\u044c' : 'How style should be generated'}</h2>
+        <h2 className="setup-header__title">{isRu ? 'Как генерить стиль' : 'How style should be generated'}</h2>
         <div className="setup-header__description">
           <p>
             {isRu
-              ? '\u0414\u043b\u044f \u043d\u043e\u0432\u043e\u0433\u043e \u043a\u0430\u043d\u0430\u043b\u0430 \u043b\u0443\u0447\u0448\u0435 \u043e\u0431\u044b\u0447\u043d\u043e \u0431\u0440\u0430\u0442\u044c \u0441\u0442\u0438\u043b\u044c \u043f\u043e \u0432\u043d\u0435\u0448\u043d\u0438\u043c \u0438\u0441\u0442\u043e\u0447\u043d\u0438\u043a\u0430\u043c.'
+              ? 'Для нового канала лучше обычно брать стиль по внешним источникам.'
               : 'For a new channel, style is usually best generated from external sources.'}
           </p>
         </div>
@@ -112,8 +112,8 @@ export function OnboardingStylePage() {
             type="button"
             onClick={() => setPersonaSource('sources')}
           >
-            <strong>{isRu ? '\u0414\u0440\u0443\u0433\u0438\u0435 \u043a\u0430\u043d\u0430\u043b\u044b \u0438 \u0441\u0430\u0439\u0442\u044b' : 'Other channels and sites'}</strong>
-            <p>{isRu ? '\u0421\u0442\u0438\u043b\u044c \u0431\u0443\u0434\u0435\u0442 \u0441\u043e\u0431\u0440\u0430\u043d \u0442\u043e\u043b\u044c\u043a\u043e \u043f\u043e \u0432\u043d\u0435\u0448\u043d\u0438\u043c \u0438\u0441\u0442\u043e\u0447\u043d\u0438\u043a\u0430\u043c.' : 'Use only external sources.'}</p>
+            <strong>{isRu ? 'Другие каналы и сайты' : 'Other channels and sites'}</strong>
+            <p>{isRu ? 'Стиль будет собран только по внешним источникам.' : 'Use only external sources.'}</p>
           </button>
 
           <button
@@ -122,8 +122,8 @@ export function OnboardingStylePage() {
             type="button"
             onClick={() => setPersonaSource('target')}
           >
-            <strong>{isRu ? '\u041c\u043e\u0439 \u043a\u0430\u043d\u0430\u043b' : 'My channel'}</strong>
-            <p>{isRu ? '\u0412\u043a\u043b\u044e\u0447\u0430\u0439 \u044d\u0442\u043e\u0442 \u0440\u0435\u0436\u0438\u043c, \u0435\u0441\u043b\u0438 \u0432 \u043a\u0430\u043d\u0430\u043b\u0435 \u0443\u0436\u0435 \u0435\u0441\u0442\u044c \u043f\u043e\u0441\u0442\u044b.' : 'Use this only if your channel already has posts.'}</p>
+            <strong>{isRu ? 'Мой канал' : 'My channel'}</strong>
+            <p>{isRu ? 'Включай этот режим, если в канале уже есть посты.' : 'Use this only if your channel already has posts.'}</p>
           </button>
 
           <button
@@ -132,15 +132,15 @@ export function OnboardingStylePage() {
             type="button"
             onClick={() => setPersonaSource('mixed')}
           >
-            <strong>{isRu ? '\u0421\u043c\u0435\u0448\u0430\u043d\u043d\u044b\u0439 \u0440\u0435\u0436\u0438\u043c' : 'Mixed mode'}</strong>
-            <p>{isRu ? '\u0421\u043c\u0435\u0448\u0438\u0432\u0430\u0435\u0442 \u0442\u0432\u043e\u0439 \u043a\u0430\u043d\u0430\u043b \u0441 \u0432\u043d\u0435\u0448\u043d\u0438\u043c\u0438 \u0438\u0441\u0442\u043e\u0447\u043d\u0438\u043a\u0430\u043c\u0438.' : 'Blend your channel with external sources.'}</p>
+            <strong>{isRu ? 'Смешанный режим' : 'Mixed mode'}</strong>
+            <p>{isRu ? 'Смешивает твой канал с внешними источниками.' : 'Blend your channel with external sources.'}</p>
           </button>
         </div>
 
         {!hasTargetChannel ? (
           <p className="editor-help">
             {isRu
-              ? '\u00ab\u041c\u043e\u0439 \u043a\u0430\u043d\u0430\u043b\u00bb \u0438 \u00ab\u0421\u043c\u0435\u0448\u0430\u043d\u043d\u044b\u0439 \u0440\u0435\u0436\u0438\u043c\u00bb \u043f\u043e\u044f\u0432\u044f\u0442\u0441\u044f \u0441\u0440\u0430\u0437\u0443 \u043f\u043e\u0441\u043b\u0435 \u043f\u0440\u0438\u0432\u044f\u0437\u043a\u0438 target channel.'
+              ? '«Мой канал» и «Смешанный режим» появятся сразу после привязки target channel.'
               : 'My channel and mixed mode unlock after the target channel is attached.'}
           </p>
         ) : null}
@@ -148,7 +148,7 @@ export function OnboardingStylePage() {
         {hasTargetChannel ? (
           <p className="editor-help">
             {isRu
-              ? '\u0415\u0441\u043b\u0438 \u043a\u0430\u043d\u0430\u043b \u043d\u043e\u0432\u044b\u0439 \u0438 \u0432 \u043d\u0451\u043c \u043f\u043e\u043a\u0430 \u043d\u0435\u0442 \u043f\u043e\u0441\u0442\u043e\u0432, \u0432\u044b\u0431\u0438\u0440\u0430\u0439 \u0440\u0435\u0436\u0438\u043c \u00ab\u0414\u0440\u0443\u0433\u0438\u0435 \u043a\u0430\u043d\u0430\u043b\u044b \u0438 \u0441\u0430\u0439\u0442\u044b\u00bb.'
+              ? 'Если канал новый и в нём пока нет постов, выбирай режим «Другие каналы и сайты».'
               : 'If the channel is new and empty, use the external sources mode.'}
           </p>
         ) : null}
@@ -156,18 +156,18 @@ export function OnboardingStylePage() {
         {!hasExternalSources && webSources.length > 0 ? (
           <p className="editor-help">
             {isRu
-              ? '\u0421\u0435\u0439\u0447\u0430\u0441 \u0441\u0442\u0438\u043b\u044c \u0433\u0435\u043d\u0435\u0440\u0438\u0440\u0443\u0435\u0442\u0441\u044f \u043f\u043e Telegram-\u043a\u0430\u043d\u0430\u043b\u0430\u043c. \u0421\u0430\u0439\u0442\u044b \u0441\u043e\u0445\u0440\u0430\u043d\u044f\u0442\u0441\u044f \u043a\u0430\u043a \u0438\u0441\u0442\u043e\u0447\u043d\u0438\u043a\u0438, \u043d\u043e \u0434\u043b\u044f style distill \u043d\u0443\u0436\u0435\u043d \u0445\u043e\u0442\u044f \u0431\u044b \u043e\u0434\u0438\u043d \u043a\u0430\u043d\u0430\u043b.'
+              ? 'Сейчас стиль генерируется по Telegram-каналам. Сайты сохранятся как источники, но для style distill нужен хотя бы один канал.'
               : 'Style distillation currently uses Telegram channels. Websites are saved as sources, but you still need at least one channel for style generation.'}
           </p>
         ) : null}
       </section>
 
       <OnboardingFooter
-        backLabel={isRu ? '\u041d\u0430\u0437\u0430\u0434' : 'Back'}
+        backLabel={isRu ? 'Назад' : 'Back'}
         continueLabel={
           isGenerating
-            ? (isRu ? '\u0413\u0435\u043d\u0435\u0440\u0438\u0440\u0443\u0435\u043c...' : 'Generating...')
-            : (isRu ? '\u041f\u0440\u043e\u0434\u043e\u043b\u0436\u0438\u0442\u044c' : 'Continue')
+            ? (isRu ? 'Генерируем...' : 'Generating...')
+            : (isRu ? 'Продолжить' : 'Continue')
         }
         continueDisabled={isGenerating || (personaSource === 'sources' && !hasExternalSources)}
         onBack={() => window.location.assign(buildOnboardingUrl('sources', profile.slug))}

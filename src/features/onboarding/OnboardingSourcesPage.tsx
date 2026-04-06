@@ -31,66 +31,66 @@ const PRESET_PRESENTATIONS: Array<{
   categoryEn: string;
 }> = [
   {
-    match: '\u043c\u0430\u0440\u043a\u0435\u0442\u0438\u043d\u0433 \u0438 pr',
-    descriptionRu: '\u0418\u0434\u0435\u0438, \u043a\u0435\u0439\u0441\u044b, \u0437\u0430\u043f\u0443\u0441\u043a\u0438 \u0438 \u0441\u0438\u043b\u044c\u043d\u044b\u0435 \u0445\u043e\u0434\u044b \u0438\u0437 \u043c\u0438\u0440\u0430 \u0431\u0440\u0435\u043d\u0434\u043e\u0432, \u043a\u043e\u043c\u043c\u0443\u043d\u0438\u043a\u0430\u0446\u0438\u0439 \u0438 \u0440\u043e\u0441\u0442\u0430 \u0430\u0443\u0434\u0438\u0442\u043e\u0440\u0438\u0438.',
+    match: 'маркетинг и pr',
+    descriptionRu: 'Идеи, кейсы, запуски и сильные ходы из мира брендов, коммуникаций и роста аудитории.',
     descriptionEn: 'Campaigns, case studies, launches, and standout moves from branding, communications, and audience growth.',
-    categoryRu: '\u0411\u0440\u0435\u043d\u0434\u044b \u0438 \u043a\u0435\u0439\u0441\u044b',
+    categoryRu: 'Бренды и кейсы',
     categoryEn: 'Brands and cases',
   },
   {
-    match: '\u043a\u0438\u0431\u0435\u0440\u0441\u043f\u043e\u0440\u0442',
-    descriptionRu: '\u041d\u043e\u0432\u043e\u0441\u0442\u0438 \u0441\u0446\u0435\u043d\u044b, \u0442\u0440\u0430\u043d\u0441\u0444\u0435\u0440\u044b, \u043c\u0430\u0442\u0447\u0438, \u0438\u043d\u0441\u0430\u0439\u0434\u044b \u0438 \u044f\u0440\u043a\u0438\u0435 \u0441\u044e\u0436\u0435\u0442\u044b \u043f\u043e Dota 2 \u0438 CS2.',
+    match: 'киберспорт',
+    descriptionRu: 'Новости сцены, трансферы, матчи, инсайды и яркие сюжеты по Dota 2 и CS2.',
     descriptionEn: 'Scene news, roster moves, match stories, insider notes, and standout moments across Dota 2 and CS2.',
-    categoryRu: '\u0422\u0443\u0440\u043d\u0438\u0440\u044b \u0438 \u0441\u0446\u0435\u043d\u0430',
+    categoryRu: 'Турниры и сцена',
     categoryEn: 'Tournaments and scene',
   },
   {
-    match: '\u043d\u043e\u0432\u043e\u0441\u0442\u0438 \u043c\u0435\u0434\u0438\u0446\u0438\u043d\u044b',
-    descriptionRu: '\u0412\u0430\u0436\u043d\u044b\u0435 \u043c\u0435\u0434\u0438\u0446\u0438\u043d\u0441\u043a\u0438\u0435 \u043e\u0442\u043a\u0440\u044b\u0442\u0438\u044f, \u0438\u0441\u0441\u043b\u0435\u0434\u043e\u0432\u0430\u043d\u0438\u044f, \u043f\u0440\u0430\u043a\u0442\u0438\u043a\u0430 \u0432\u0440\u0430\u0447\u0435\u0439 \u0438 \u0430\u043f\u0434\u0435\u0439\u0442\u044b \u0437\u0434\u0440\u0430\u0432\u043e\u043e\u0445\u0440\u0430\u043d\u0435\u043d\u0438\u044f \u0431\u0435\u0437 \u0436\u0451\u043b\u0442\u043e\u0439 \u043f\u043e\u0434\u0430\u0447\u0438.',
+    match: 'новости медицины',
+    descriptionRu: 'Важные медицинские открытия, исследования, практика врачей и апдейты здравоохранения без жёлтой подачи.',
     descriptionEn: 'Major medical discoveries, research updates, clinical practice insights, and healthcare changes without tabloid framing.',
-    categoryRu: '\u041d\u0430\u0443\u043a\u0430 \u0438 \u0437\u0434\u043e\u0440\u043e\u0432\u044c\u0435',
+    categoryRu: 'Наука и здоровье',
     categoryEn: 'Science and health',
   },
   {
-    match: '\u0444\u043e\u043d\u0434\u043e\u0432\u044b\u0439 \u0440\u044b\u043d\u043e\u043a',
-    descriptionRu: '\u0414\u0432\u0438\u0436\u0435\u043d\u0438\u044f \u0430\u043a\u0446\u0438\u0439, \u043e\u0442\u0447\u0451\u0442\u044b \u043a\u043e\u043c\u043f\u0430\u043d\u0438\u0439, \u0441\u0435\u043a\u0442\u043e\u0440\u044b \u0440\u043e\u0441\u0442\u0430 \u0438 \u043f\u043e\u043d\u044f\u0442\u043d\u044b\u0439 \u0440\u0430\u0437\u0431\u043e\u0440 \u0440\u044b\u043d\u043e\u0447\u043d\u044b\u0445 \u0442\u0440\u0435\u043d\u0434\u043e\u0432.',
+    match: 'фондовый рынок',
+    descriptionRu: 'Движения акций, отчёты компаний, секторы роста и понятный разбор рыночных трендов.',
     descriptionEn: 'Stock moves, earnings, sector shifts, and accessible breakdowns of market trends and catalysts.',
-    categoryRu: '\u0420\u044b\u043d\u043e\u043a \u0438 \u043a\u043e\u043c\u043f\u0430\u043d\u0438\u0438',
+    categoryRu: 'Рынок и компании',
     categoryEn: 'Markets and companies',
   },
   {
-    match: '\u043d\u043e\u0432\u043e\u0441\u0442\u0438 \u043d\u0435\u0439\u0440\u043e\u0441\u0435\u0442',
-    descriptionRu: '\u0417\u0430\u043f\u0443\u0441\u043a\u0438 \u043c\u043e\u0434\u0435\u043b\u0435\u0439, \u0438\u043d\u0441\u0442\u0440\u0443\u043c\u0435\u043d\u0442\u044b, \u0430\u043f\u0434\u0435\u0439\u0442\u044b \u043b\u0430\u0431\u043e\u0440\u0430\u0442\u043e\u0440\u0438\u0439 \u0438 \u043f\u0440\u0430\u043a\u0442\u0438\u0447\u0435\u0441\u043a\u0438\u0435 \u0441\u044e\u0436\u0435\u0442\u044b \u043f\u043e AI.',
+    match: 'новости нейросет',
+    descriptionRu: 'Запуски моделей, инструменты, апдейты лабораторий и практические сюжеты по AI.',
     descriptionEn: 'Model launches, new tools, lab updates, and practical AI stories worth repackaging for a broad audience.',
-    categoryRu: '\u0422\u0435\u0445\u043d\u043e\u043b\u043e\u0433\u0438\u0438 \u0438 AI',
+    categoryRu: 'Технологии и AI',
     categoryEn: 'Technology and AI',
   },
   {
-    match: '\u043f\u0441\u0438\u0445\u043e\u043b\u043e\u0433\u0438\u044f \u043e\u0442\u043d\u043e\u0448\u0435\u043d\u0438\u0439',
-    descriptionRu: '\u0420\u0430\u0437\u0431\u043e\u0440 \u0441\u0446\u0435\u043d\u0430\u0440\u0438\u0435\u0432 \u0432 \u043f\u0430\u0440\u0435, \u044d\u043c\u043e\u0446\u0438\u0439, \u0433\u0440\u0430\u043d\u0438\u0446, \u043f\u0440\u0438\u0432\u044f\u0437\u0430\u043d\u043d\u043e\u0441\u0442\u0438 \u0438 \u043f\u043e\u043d\u044f\u0442\u043d\u044b\u0445 \u0441\u043e\u0432\u0435\u0442\u043e\u0432 \u0431\u0435\u0437 \u043d\u0440\u0430\u0432\u043e\u0443\u0447\u0435\u043d\u0438\u0439.',
+    match: 'психология отношений',
+    descriptionRu: 'Разбор сценариев в паре, эмоций, границ, привязанности и понятных советов без нравоучений.',
     descriptionEn: 'Relationship dynamics, emotions, boundaries, attachment patterns, and practical advice without a preachy tone.',
-    categoryRu: '\u042d\u043c\u043e\u0446\u0438\u0438 \u0438 \u0433\u0440\u0430\u043d\u0438\u0446\u044b',
+    categoryRu: 'Эмоции и границы',
     categoryEn: 'Emotions and boundaries',
   },
   {
-    match: '\u043c\u0430\u0442\u0440\u0438\u0446\u0430 \u0441\u0443\u0434\u044c\u0431\u044b',
-    descriptionRu: '\u041a\u043e\u043d\u0442\u0435\u043d\u0442 \u043f\u043e \u043c\u0430\u0442\u0440\u0438\u0446\u0435 \u0441\u0443\u0434\u044c\u0431\u044b, \u0447\u0438\u0441\u043b\u0430\u043c, \u043b\u0438\u0447\u043d\u044b\u043c \u0440\u0430\u0441\u0448\u0438\u0444\u0440\u043e\u0432\u043a\u0430\u043c \u0438 \u0432\u043e\u0432\u043b\u0435\u043a\u0430\u044e\u0449\u0438\u043c \u0438\u043d\u0442\u0435\u0440\u043f\u0440\u0435\u0442\u0430\u0446\u0438\u044f\u043c.',
+    match: 'матрица судьбы',
+    descriptionRu: 'Контент по матрице судьбы, числам, личным расшифровкам и вовлекающим интерпретациям.',
     descriptionEn: 'Destiny matrix, number meanings, personal readings, and engaging interpretations for numerology-driven content.',
-    categoryRu: '\u0421\u0438\u043c\u0432\u043e\u043b\u044b \u0438 \u0447\u0438\u0441\u043b\u0430',
+    categoryRu: 'Символы и числа',
     categoryEn: 'Symbols and numbers',
   },
   {
-    match: '\u0430\u0441\u0442\u0440\u043e\u043b\u043e\u0433\u0438\u0447\u0435\u0441\u043a\u0438\u0435 \u043f\u0440\u043e\u0433\u043d\u043e\u0437\u044b',
-    descriptionRu: '\u0415\u0436\u0435\u0434\u043d\u0435\u0432\u043d\u044b\u0435 \u0438 \u043d\u0435\u0434\u0435\u043b\u044c\u043d\u044b\u0435 \u043f\u0440\u043e\u0433\u043d\u043e\u0437\u044b, \u0430\u0441\u043f\u0435\u043a\u0442\u044b, \u043b\u0443\u043d\u043d\u044b\u0435 \u0441\u044e\u0436\u0435\u0442\u044b \u0438 \u043c\u044f\u0433\u043a\u0430\u044f \u044d\u0437\u043e\u0442\u0435\u0440\u0438\u0447\u043d\u0430\u044f \u043f\u043e\u0434\u0430\u0447\u0430.',
+    match: 'астрологические прогнозы',
+    descriptionRu: 'Ежедневные и недельные прогнозы, аспекты, лунные сюжеты и мягкая эзотеричная подача.',
     descriptionEn: 'Daily and weekly forecasts, aspects, lunar stories, and a softer astrology editorial tone.',
-    categoryRu: '\u041f\u0440\u043e\u0433\u043d\u043e\u0437\u044b \u0438 \u0440\u0438\u0442\u043c\u044b',
+    categoryRu: 'Прогнозы и ритмы',
     categoryEn: 'Forecasts and rhythms',
   },
   {
-    match: '\u043b\u0438\u0447\u043d\u044b\u0435 \u0444\u0438\u043d\u0430\u043d\u0441\u044b',
-    descriptionRu: '\u0411\u044e\u0434\u0436\u0435\u0442, \u043d\u0430\u043a\u043e\u043f\u043b\u0435\u043d\u0438\u044f, \u0438\u043d\u0432\u0435\u0441\u0442\u0438\u0446\u0438\u0438, \u0444\u0438\u043d\u0430\u043d\u0441\u043e\u0432\u044b\u0435 \u043f\u0440\u0438\u0432\u044b\u0447\u043a\u0438 \u0438 \u043f\u043e\u043d\u044f\u0442\u043d\u044b\u0439 \u0442\u043e\u043d \u0431\u0435\u0437 \u0441\u043b\u043e\u0436\u043d\u043e\u0433\u043e \u0436\u0430\u0440\u0433\u043e\u043d\u0430.',
+    match: 'личные финансы',
+    descriptionRu: 'Бюджет, накопления, инвестиции, финансовые привычки и понятный тон без сложного жаргона.',
     descriptionEn: 'Budgeting, savings, investing, money habits, and practical finance explained without heavy jargon.',
-    categoryRu: '\u0414\u0435\u043d\u044c\u0433\u0438 \u0438 \u043f\u0440\u0438\u0432\u044b\u0447\u043a\u0438',
+    categoryRu: 'Деньги и привычки',
     categoryEn: 'Money and habits',
   },
 ];
@@ -112,9 +112,9 @@ function getPresetPresentation(
 
   return {
     description: String(description || '').trim() || (isRu
-      ? '\u041f\u043e\u0434\u0431\u043e\u0440\u043a\u0430 \u0438\u0441\u0442\u043e\u0447\u043d\u0438\u043a\u043e\u0432 \u0434\u043b\u044f \u0431\u044b\u0441\u0442\u0440\u043e\u0433\u043e \u0441\u0442\u0430\u0440\u0442\u0430 \u043a\u0430\u043d\u0430\u043b\u0430 \u0432 \u0432\u044b\u0431\u0440\u0430\u043d\u043d\u043e\u0439 \u0442\u0435\u043c\u0435.'
+      ? 'Подборка источников для быстрого старта канала в выбранной теме.'
       : 'A curated source pack to launch the channel faster in this niche.'),
-    category: isRu ? '\u0413\u043e\u0442\u043e\u0432\u0430\u044f \u043f\u043e\u0434\u0431\u043e\u0440\u043a\u0430' : 'Curated pack',
+    category: isRu ? 'Готовая подборка' : 'Curated pack',
   };
 }
 
@@ -133,10 +133,10 @@ export function OnboardingSourcesPage() {
   const [websiteInput, setWebsiteInput] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const channelHint = isRu
-    ? '\u041a\u0430\u043d\u0430\u043b\u044b \u0434\u043e\u0431\u0430\u0432\u043b\u044f\u044e\u0442\u0441\u044f \u0447\u0435\u0440\u0435\u0437 Telegram-\u0431\u043e\u0442\u0430 \u043d\u0430\u0442\u0438\u0432\u043d\u044b\u043c \u043f\u0438\u043a\u0435\u0440\u043e\u043c. \u041f\u043e\u0434\u0445\u043e\u0434\u044f\u0442 \u043f\u0443\u0431\u043b\u0438\u0447\u043d\u044b\u0435 \u043a\u0430\u043d\u0430\u043b\u044b \u0441 username.'
+    ? 'Каналы добавляются через Telegram-бота нативным пикером. Подходят публичные каналы с username.'
     : 'Channels are added in the Telegram bot using the native picker. Public channels with usernames are supported.';
   const websiteHint = isRu
-    ? '\u0421\u0430\u0439\u0442\u044b \u0441\u043e\u0445\u0440\u0430\u043d\u044f\u044e\u0442\u0441\u044f \u043a\u0430\u043a \u0434\u043e\u043f\u043e\u043b\u043d\u0438\u0442\u0435\u043b\u044c\u043d\u044b\u0435 \u0438\u0441\u0442\u043e\u0447\u043d\u0438\u043a\u0438.'
+    ? 'Сайты сохраняются как дополнительные источники.'
     : 'Websites are saved as additional sources.';
 
   const decoratedPresets = useMemo(
@@ -328,7 +328,7 @@ export function OnboardingSourcesPage() {
   if (isLoading && !profile) {
     return (
       <section className="page-stack">
-        <div className="state-banner">{isRu ? '\u0417\u0430\u0433\u0440\u0443\u0436\u0430\u0435\u043c \u0438\u0441\u0442\u043e\u0447\u043d\u0438\u043a\u0438...' : 'Loading sources...'}</div>
+        <div className="state-banner">{isRu ? 'Загружаем источники...' : 'Loading sources...'}</div>
       </section>
     );
   }
@@ -346,11 +346,11 @@ export function OnboardingSourcesPage() {
           <span className="setup-progress__segment" />
           <span className="setup-progress__segment" />
         </div>
-        <h2 className="setup-header__title">{isRu ? '\u0418\u0441\u0442\u043e\u0447\u043d\u0438\u043a\u0438 \u0434\u043b\u044f \u043a\u0430\u043d\u0430\u043b\u0430' : 'Sources for your channel'}</h2>
+        <h2 className="setup-header__title">{isRu ? 'Источники для канала' : 'Sources for your channel'}</h2>
         <div className="setup-header__description">
           <p>
             {isRu
-              ? '\u0412\u044b\u0431\u0435\u0440\u0438 \u0433\u043e\u0442\u043e\u0432\u044b\u0439 \u043f\u0440\u0435\u0441\u0435\u0442 \u0438\u043b\u0438 \u0437\u0430\u0434\u0430\u0439 \u0441\u0432\u043e\u0438 \u0438\u0441\u0442\u043e\u0447\u043d\u0438\u043a\u0438 \u0432\u0440\u0443\u0447\u043d\u0443\u044e.'
+              ? 'Выбери готовый пресет или задай свои источники вручную.'
               : 'Choose a preset or add your own sources manually.'}
           </p>
         </div>
@@ -366,14 +366,14 @@ export function OnboardingSourcesPage() {
             type="button"
             onClick={() => setMode('preset')}
           >
-            {isRu ? '\u041f\u0440\u0435\u0441\u0435\u0442' : 'Preset'}
+            {isRu ? 'Пресет' : 'Preset'}
           </button>
           <button
             className={`secondary-button secondary-button--small${mode === 'custom' ? ' setup-choice-button--active' : ''}`}
             type="button"
             onClick={() => setMode('custom')}
           >
-            {isRu ? '\u0421\u0432\u043e\u0438 \u0438\u0441\u0442\u043e\u0447\u043d\u0438\u043a\u0438' : 'Custom'}
+            {isRu ? 'Свои источники' : 'Custom'}
           </button>
         </div>
 
@@ -388,13 +388,13 @@ export function OnboardingSourcesPage() {
                 onClick={() => setSelectedPresetKey(preset.key)}
                 style={preset.accentColor ? { ['--preset-accent' as string]: preset.accentColor } : undefined}
               >
-                <span className="setup-select-card__topline">
-                  <span className="setup-select-card__pill">
-                    {selectedPresetKey === preset.key
-                      ? (isRu ? '\u0412\u044b\u0431\u0440\u0430\u043d' : 'Selected')
-                      : preset.presentation.category}
+                {selectedPresetKey === preset.key ? (
+                  <span className="setup-select-card__topline">
+                    <span className="setup-select-card__pill">
+                      {isRu ? 'Выбран' : 'Selected'}
+                    </span>
                   </span>
-                </span>
+                ) : null}
                 <strong>{preset.title}</strong>
                 <p>{preset.presentation.description}</p>
                 <span className="setup-select-card__accent" aria-hidden="true" />
@@ -405,21 +405,21 @@ export function OnboardingSourcesPage() {
         ) : (
           <div className="setup-source-stack">
             <section className="context-section context-section--tight setup-source-section">
-              <span className="setup-field-label">{isRu ? '\u041a\u0430\u043d\u0430\u043b\u044b-\u0438\u0441\u0442\u043e\u0447\u043d\u0438\u043a\u0438' : 'Source channels'}</span>
+              <span className="setup-field-label">{isRu ? 'Каналы-источники' : 'Source channels'}</span>
               <p className="editor-help">{channelHint}</p>
-              <button className="secondary-button secondary-button--small" type="button" onClick={handleOpenSourcePicker}>{isRu ? '\u0414\u043e\u0431\u0430\u0432\u0438\u0442\u044c \u043a\u0430\u043d\u0430\u043b \u0432 \u0431\u043e\u0442\u0435' : 'Add channel in bot'}</button>
+              <button className="secondary-button secondary-button--small" type="button" onClick={handleOpenSourcePicker}>{isRu ? 'Добавить канал в боте' : 'Add channel in bot'}</button>
               <div className="setup-chip-list" aria-live="polite">
                 {customChannels.map((item) => (
                   <span className="setup-chip" key={item.username}>
                     {item.title}
-                    <button aria-label={isRu ? '\u0423\u0434\u0430\u043b\u0438\u0442\u044c' : 'Remove'} type="button" onClick={() => removeChannel(item.username)}>&times;</button>
+                    <button aria-label={isRu ? 'Удалить' : 'Remove'} type="button" onClick={() => removeChannel(item.username)}>&times;</button>
                   </span>
                 ))}
               </div>
             </section>
 
             <section className="context-section context-section--tight setup-source-section">
-              <span className="setup-field-label">{isRu ? '\u0421\u0441\u044b\u043b\u043a\u0430 \u043d\u0430 \u0441\u0430\u0439\u0442' : 'Website link'}</span>
+              <span className="setup-field-label">{isRu ? 'Ссылка на сайт' : 'Website link'}</span>
               <p className="editor-help">{websiteHint}</p>
               <div className="setup-inline-input">
                 <input
@@ -434,14 +434,14 @@ export function OnboardingSourcesPage() {
                   }}
                 />
                 <button className="secondary-button secondary-button--small" type="button" onClick={addWebsite}>
-                  {isRu ? '\u0413\u043e\u0442\u043e\u0432\u043e' : 'Add'}
+                  {isRu ? 'Готово' : 'Add'}
                 </button>
               </div>
               <div className="setup-chip-list" aria-live="polite">
                 {customWebSources.map((item) => (
                   <span className="setup-chip" key={item.url}>
                     {item.title}
-                    <button aria-label={isRu ? '\u0423\u0434\u0430\u043b\u0438\u0442\u044c' : 'Remove'} type="button" onClick={() => removeWebsite(item.url)}>&times;</button>
+                    <button aria-label={isRu ? 'Удалить' : 'Remove'} type="button" onClick={() => removeWebsite(item.url)}>&times;</button>
                   </span>
                 ))}
               </div>
@@ -453,11 +453,11 @@ export function OnboardingSourcesPage() {
 
       <OnboardingFooter
         backDisabled
-        backLabel={isRu ? '\u041d\u0430\u0437\u0430\u0434' : 'Back'}
+        backLabel={isRu ? 'Назад' : 'Back'}
         continueLabel={
           isSaving
-            ? (isRu ? '\u0421\u043e\u0445\u0440\u0430\u043d\u044f\u0435\u043c...' : 'Saving...')
-            : (isRu ? '\u041f\u0440\u043e\u0434\u043e\u043b\u0436\u0438\u0442\u044c' : 'Continue')
+            ? (isRu ? 'Сохраняем...' : 'Saving...')
+            : (isRu ? 'Продолжить' : 'Continue')
         }
         continueDisabled={isSaving || (mode === 'preset' && !selectedPresetKey)}
         onBack={() => {}}

@@ -69,27 +69,27 @@ export function AppShell({ children }: AppShellProps) {
   const navigation = [
     {
       to: '/',
-      label: isRu ? '\u0410\u043a\u0442\u0438\u0432\u043d\u044b\u0435' : 'Active',
+      label: isRu ? 'Активные' : 'Active',
       icon: 'queue'
     },
     {
       to: '/create',
-      label: isRu ? '\u0421\u043e\u0437\u0434\u0430\u0442\u044c' : 'Create',
+      label: isRu ? 'Создать' : 'Create',
       icon: 'create'
     },
     {
       to: '/schedule',
-      label: isRu ? '\u041f\u043b\u0430\u043d' : 'Planner',
+      label: isRu ? 'План' : 'Planner',
       icon: 'planner'
     },
     {
       to: '/history',
-      label: isRu ? '\u0418\u0441\u0442\u043e\u0440\u0438\u044f' : 'History',
+      label: isRu ? 'История' : 'History',
       icon: 'history'
     },
     {
       to: '/profiles',
-      label: isRu ? '\u041f\u0440\u043e\u0444\u0438\u043b\u044c' : 'Profile',
+      label: isRu ? 'Профиль' : 'Profile',
       icon: 'profile'
     }
   ];
@@ -106,7 +106,7 @@ export function AppShell({ children }: AppShellProps) {
       :
     isEditor
       ? isRu
-        ? '\u041f\u0440\u043e\u0432\u0435\u0440\u043a\u0430 \u043f\u043e\u0441\u0442\u0430'
+        ? 'Проверка поста'
         : 'Draft Review'
       : currentSection?.label || 'ChannelBot';
 
@@ -137,7 +137,7 @@ export function AppShell({ children }: AppShellProps) {
         {!keyboardOpen && !isOnboardingFlow ? (
           <nav
             className={`bottom-nav${isBusy ? ' bottom-nav--disabled' : ''}`}
-            aria-label={isRu ? '\u041d\u0430\u0432\u0438\u0433\u0430\u0446\u0438\u044f' : 'Primary'}
+            aria-label={isRu ? 'Навигация' : 'Primary'}
           >
             {navigation.map((item) => (
               <NavLink
