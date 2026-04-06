@@ -2408,12 +2408,63 @@ textarea:focus {
   padding-block: 0.82rem;
 }
 
+.create-source-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: end;
+}
+
 .create-source-rail__actions {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
   flex-wrap: wrap;
   justify-content: flex-end;
+}
+
+.create-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.85rem;
+  height: 2.85rem;
+  border: 1px solid rgba(121, 131, 171, 0.18);
+  border-radius: 0.95rem;
+  background: linear-gradient(180deg, rgba(250, 252, 255, 0.98), rgba(244, 247, 255, 0.98));
+  color: #2f4be0;
+  box-shadow: 0 10px 24px rgba(56, 74, 132, 0.08);
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, color 180ms ease;
+}
+
+.create-icon-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: rgba(47, 75, 224, 0.28);
+  box-shadow: 0 14px 28px rgba(56, 74, 132, 0.12);
+}
+
+.create-icon-button:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+.create-icon-button svg {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+.create-icon-button--spinning svg {
+  animation: create-refresh-spin 0.9s linear infinite;
+}
+
+@keyframes create-refresh-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .create-filter-pill {
@@ -4696,6 +4747,15 @@ body.app-lightbox-open .workspace-main {
 }
 
 @media (max-width: 640px) {
+  .create-source-toolbar {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .create-icon-button {
+    justify-self: end;
+  }
+
   .create-filter-drawer__summary {
     padding: 0.72rem 0.82rem;
   }

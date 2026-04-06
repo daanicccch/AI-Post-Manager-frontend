@@ -206,6 +206,29 @@ function SourceVisual({
   );
 }
 
+function RefreshIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <path
+        d="M20 12a8 8 0 1 1-2.34-5.66"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.9"
+      />
+      <path
+        d="M20 4v5h-5"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.9"
+      />
+    </svg>
+  );
+}
+
 function getSourcePoolPresets(postType: 'post' | 'alert' | 'weekly') {
   if (postType === 'weekly') {
     return [
@@ -312,6 +335,9 @@ export function CreateDraftPage() {
   const showPoolWindowDetails = lookbackHours.trim() !== '' || limit.trim() !== '';
   const visibleSourcePosts = sourcePosts.slice(0, visibleSourceCount);
   const canShowMoreSources = visibleSourceCount < sourcePosts.length;
+  const refreshSourcePostsLabel = isSourceLoading
+    ? isRu ? 'Обновляем источники' : 'Refreshing sources'
+    : isRu ? 'Обновить источники' : 'Refresh sources';
   const pickFilterSummary = [
     `${sourceLookbackHours}${isRu ? 'ч' : 'h'}`,
     `${sourceLimit} ${isRu ? 'постов' : 'posts'}`,
@@ -830,15 +856,6 @@ export function CreateDraftPage() {
                         >
                           {isRu ? 'Только медиа' : 'Media only'}
                         </button>
-
-                        <button
-                          className="secondary-button secondary-button--small"
-                          disabled={isSourceLoading}
-                          type="button"
-                          onClick={() => setSourceRefreshNonce((current) => current + 1)}
-                        >
-                          {isSourceLoading ? (isRu ? 'Обновляем...' : 'Refreshing...') : isRu ? 'Обновить' : 'Refresh'}
-                        </button>
                       </div>
                     </div>
 
@@ -860,6 +877,28 @@ export function CreateDraftPage() {
                   </div>
                 </details>
 
+                <div className="create-source-toolbar">
+                  <label className="field-block create-search-field create-search-field--inline">
+                    <span>{isRu ? 'Поиск по постам' : 'Search posts'}</span>
+                    <input
+                      placeholder={isRu ? 'канал или текст' : 'channel or text'}
+                      value={sourceSearch}
+                      onChange={(event) => setSourceSearch(event.target.value)}
+                    />
+                  </label>
+
+                  <button
+                    aria-label={refreshSourcePostsLabel}
+                    className={`create-icon-button${isSourceLoading ? ' create-icon-button--spinning' : ''}`}
+                    disabled={isSourceLoading}
+                    title={refreshSourcePostsLabel}
+                    type="button"
+                    onClick={() => setSourceRefreshNonce((current) => current + 1)}
+                  >
+                    <RefreshIcon />
+                  </button>
+                </div>
+
                 {!isSourceLoading && sourcePosts.length > 0 && (
                   <div className="create-list-meta">
                     <p className="editor-help">
@@ -869,15 +908,6 @@ export function CreateDraftPage() {
                     </p>
                   </div>
                 )}
-
-                <label className="field-block create-search-field create-search-field--inline">
-                  <span>{isRu ? 'Поиск по постам' : 'Search posts'}</span>
-                  <input
-                    placeholder={isRu ? 'канал или текст' : 'channel or text'}
-                    value={sourceSearch}
-                    onChange={(event) => setSourceSearch(event.target.value)}
-                  />
-                </label>
 
                 {isSourceLoading ? (
                   <SourceListSkeleton />
