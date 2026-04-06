@@ -301,11 +301,7 @@ function getSourceHydrationLabel(sourcePost: SourcePost, isRu: boolean) {
     return isRu ? 'Не удалось загрузить медиа' : 'Media hydration failed';
   }
 
-  if ((sourcePost.mediaCount || 0) > 0) {
-    return isRu ? 'Медиа готово' : 'Media ready';
-  }
-
-  return isRu ? 'Текстовый пост' : 'Text only';
+  return null;
 }
 
 function getSourceHydrationDetail(sourcePost: SourcePost, isRu: boolean) {
@@ -357,6 +353,7 @@ export function CreateDraftPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSourceLoading, setIsSourceLoading] = useState(false);
+  const [isSourceRefreshing, setIsSourceRefreshing] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [expandedPreview, setExpandedPreview] = useState<{ src: string; alt: string } | null>(null);
   const sourceFetchRequestIdRef = useRef(0);
@@ -407,10 +404,6 @@ export function CreateDraftPage() {
     .join(' - ');
   const currentMediaDraft =
     mode === 'source_pool' ? poolMediaDraft : mode === 'source_post' ? pickMediaDraft : manualMediaDraft;
-  const hydratedSourceCount = sourcePosts.filter((sourcePost) => {
-    const status = getSourceHydrationStatus(sourcePost);
-    return status === 'completed' && (sourcePost.mediaCount || 0) > 0;
-  }).length;
   const hydratingSourceCount = sourcePosts.filter(isSourceHydrationInProgress).length;
   const failedSourceCount = sourcePosts.filter((sourcePost) => getSourceHydrationStatus(sourcePost) === 'failed').length;
 
@@ -425,11 +418,11 @@ export function CreateDraftPage() {
     clearSourceHydrationTimer();
     sourceHydrationTimerRef.current = window.setTimeout(() => {
       sourceHydrationTimerRef.current = null;
-      void loadSourcePosts({ refresh: false });
+      void loadSourcePosts({ refresh: false, background: true });
     }, SOURCE_HYDRATION_POLL_DELAY_MS);
   }
 
-  async function loadSourcePosts({ refresh }: { refresh: boolean }) {
+  async function loadSourcePosts({ refresh, background = false }: { refresh: boolean; background?: boolean }) {
     if (mode !== 'source_post' || !profileId) {
       return;
     }
@@ -439,7 +432,11 @@ export function CreateDraftPage() {
 
     clearSourceHydrationTimer();
     setError(null);
-    setIsSourceLoading(true);
+    if (background) {
+      setIsSourceRefreshing(true);
+    } else {
+      setIsSourceLoading(true);
+    }
 
     const parsedLookbackHours = parseOptionalPositiveInt(sourceLookbackHours);
     const parsedLimit = parseOptionalPositiveInt(sourceLimit);
@@ -483,7 +480,11 @@ export function CreateDraftPage() {
       );
     } finally {
       if (sourceFetchRequestIdRef.current === requestId) {
-        setIsSourceLoading(false);
+        if (background) {
+          setIsSourceRefreshing(false);
+        } else {
+          setIsSourceLoading(false);
+        }
       }
     }
   }
@@ -561,6 +562,7 @@ export function CreateDraftPage() {
     return () => {
       clearSourceHydrationTimer();
       sourceFetchRequestIdRef.current += 1;
+      setIsSourceRefreshing(false);
     };
   }, [deferredSourceSearch, mode, profileId, sourceLimit, sourceLookbackHours, sourceMediaOnly]);
 
@@ -1006,7 +1008,7 @@ export function CreateDraftPage() {
                   </button>
                 </div>
 
-                {sourcePosts.length > 0 && (hydratingSourceCount > 0 || failedSourceCount > 0 || hydratedSourceCount > 0) && (
+                {sourcePosts.length > 0 && (hydratingSourceCount > 0 || failedSourceCount > 0) && (
                   <div className="create-source-hydration-summary">
                     {hydratingSourceCount > 0 && (
                       <p className="editor-help create-source-hydration-summary__item">
@@ -1022,13 +1024,6 @@ export function CreateDraftPage() {
                           : `${failedSourceCount} sources failed to hydrate media.`}
                       </p>
                     )}
-                    {hydratedSourceCount > 0 && hydratingSourceCount === 0 && failedSourceCount === 0 && (
-                      <p className="editor-help create-source-hydration-summary__item">
-                        {isRu
-                          ? `${hydratedSourceCount} источников уже готовы с медиа.`
-                          : `${hydratedSourceCount} sources are ready with media.`}
-                      </p>
-                    )}
                   </div>
                 )}
 
@@ -1042,7 +1037,7 @@ export function CreateDraftPage() {
                   </div>
                 )}
 
-                {isSourceLoading ? (
+                {isSourceLoading && sourcePosts.length === 0 ? (
                   <SourceListSkeleton />
                 ) : (
                   <div className="source-pick-list source-pick-list--mobile">
@@ -1078,9 +1073,11 @@ export function CreateDraftPage() {
                               sourcePost={sourcePost}
                               onExpand={(src, alt) => setExpandedPreview({ src, alt })}
                             />
-                            <div className={`source-hydration-pill source-hydration-pill--${hydrationStatus}`}>
-                              {hydrationLabel}
-                            </div>
+                            {hydrationLabel ? (
+                              <div className={`source-hydration-pill source-hydration-pill--${hydrationStatus}`}>
+                                {hydrationLabel}
+                              </div>
+                            ) : null}
                             <button
                               aria-pressed={isSelected}
                               className={`source-select-badge${isSelected ? ' source-select-badge--active' : ''}`}
@@ -1141,6 +1138,12 @@ export function CreateDraftPage() {
                     <h3>{isRu ? 'Нет недавних постов-источников' : 'No recent source posts'}</h3>
                     <p>{isRu ? 'Увеличьте окно поиска или отключите фильтр «только медиа».' : 'Try a larger lookback window or disable the media-only filter.'}</p>
                   </div>
+                )}
+
+                {isSourceRefreshing && sourcePosts.length > 0 && (
+                  <p className="editor-help create-source-refresh-note">
+                    {isRu ? 'Превью обновляются по мере загрузки медиа.' : 'Previews refresh as media finishes loading.'}
+                  </p>
                 )}
               </div>
             )}
