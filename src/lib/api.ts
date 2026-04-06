@@ -20,10 +20,6 @@ export interface Profile {
   webSourcesPath?: string | null;
   baseDir?: string | null;
   updatedAt?: string | null;
-  profileConfig?: Record<string, unknown>;
-  rulesMarkdown?: string | null;
-  templatesMarkdown?: string | null;
-  humanizerMarkdown?: string | null;
   personaGuideMarkdown?: string | null;
   sourceChannels?: unknown[];
   sourceChannelsConfig?: unknown;
@@ -450,12 +446,8 @@ export const api = {
     profileId: string,
     body: {
       personaGuideMarkdown?: string;
-      rulesMarkdown?: string;
-      templatesMarkdown?: string;
-      humanizerMarkdown?: string;
       sourceChannelsConfig?: unknown;
       webSourcesConfig?: unknown;
-      profileConfig?: Record<string, unknown>;
     }
   ) =>
     request<ProfileAssetsUpdateResult>(`/profiles/${profileId}/assets`, {

@@ -265,10 +265,6 @@ function createInitialProfiles(): Profile[] {
       webSourcesPath: 'profiles/alpha/webSources.json',
       baseDir: 'profiles/alpha',
       updatedAt: nowIso(-180),
-      profileConfig: { tone: 'calm', audience: 'traders' },
-      rulesMarkdown: '# Alpha rules\n\n- Keep it short.\n- Add one clear takeaway.',
-      templatesMarkdown: 'Use intro, signal, risk block, CTA.',
-      humanizerMarkdown: 'Sound direct, practical, and calm.',
       personaGuideMarkdown: '# Alpha style\n\nWrite as an editor who turns noisy market updates into clean Telegram-ready summaries.',
       sourceChannels: [
         { username: 'marketpulse', name: 'Market Pulse', is_check: true },
@@ -312,10 +308,6 @@ function createInitialProfiles(): Profile[] {
       webSourcesPath: 'profiles/digest/webSources.json',
       baseDir: 'profiles/digest',
       updatedAt: nowIso(-90),
-      profileConfig: { tone: 'editorial', audience: 'founders' },
-      rulesMarkdown: '# Digest rules\n\n- Keep sections balanced.\n- Focus on what changed.',
-      templatesMarkdown: 'Headline, three bullets, why it matters.',
-      humanizerMarkdown: 'Warm, editorial, no hype.',
       personaGuideMarkdown: '# Digest style\n\nBlend multiple source notes into one smooth weekly summary.',
       sourceChannels: [
         { username: 'productradar', name: 'Product Radar', is_check: true },
