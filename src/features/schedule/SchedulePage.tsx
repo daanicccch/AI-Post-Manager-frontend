@@ -20,6 +20,7 @@ type SourceChannelOption = {
 };
 
 const MIN_CHANNEL_CHECK_INTERVAL_MINUTES = 10;
+const MONITORING_CONTROLS_ENABLED = false;
 
 const weekDayOptions = [
   { value: 0, label: 'Monday' },
@@ -32,17 +33,55 @@ const weekDayOptions = [
 ];
 
 const commonTimezones = [
+  'Europe/Kaliningrad',
   'Europe/Moscow',
+  'Europe/Kirov',
+  'Europe/Volgograd',
+  'Europe/Astrakhan',
+  'Europe/Saratov',
+  'Europe/Ulyanovsk',
+  'Europe/Simferopol',
+  'Asia/Yekaterinburg',
+  'Asia/Omsk',
+  'Asia/Novosibirsk',
+  'Asia/Barnaul',
+  'Asia/Tomsk',
+  'Asia/Novokuznetsk',
+  'Asia/Krasnoyarsk',
+  'Asia/Irkutsk',
+  'Asia/Chita',
+  'Asia/Yakutsk',
+  'Asia/Khandyga',
+  'Asia/Vladivostok',
+  'Asia/Ust-Nera',
+  'Asia/Magadan',
+  'Asia/Sakhalin',
+  'Asia/Srednekolymsk',
+  'Asia/Kamchatka',
+  'Asia/Anadyr',
   'UTC',
+  'Europe/Minsk',
+  'Europe/Kyiv',
   'Europe/Berlin',
   'Europe/London',
+  'Europe/Paris',
+  'Europe/Istanbul',
   'Asia/Dubai',
   'Asia/Tbilisi',
+  'Asia/Yerevan',
+  'Asia/Baku',
+  'Asia/Almaty',
+  'Asia/Tashkent',
   'Asia/Bangkok',
   'Asia/Singapore',
   'America/New_York',
   'America/Los_Angeles'
 ];
+
+function normalizeScheduleTimezone(value: string | null | undefined) {
+  const normalized = String(value || '').trim();
+  return commonTimezones.includes(normalized) ? normalized : 'Europe/Moscow';
+}
 
 function normalizeTime(value: string | null | undefined, fallback: string) {
   const match = String(value || '').trim().match(/^(\d{1,2}):(\d{2})$/);
@@ -150,8 +189,8 @@ function buildPlannerConfig({
   channelCheckUsernames: string[];
 }) {
   return {
-    channelChecksIntervalMinutes,
-    channelCheckUsernames,
+    channelChecksIntervalMinutes: MIN_CHANNEL_CHECK_INTERVAL_MINUTES,
+    channelCheckUsernames: [],
     postIntervals: slots
       .filter((slot) => slot.start < slot.end)
       .map((slot) => ({
@@ -243,6 +282,14 @@ export function SchedulePage() {
       })),
     [profiles]
   );
+  const timezoneSelectOptions = useMemo(
+    () =>
+      commonTimezones.map((item) => ({
+        value: item,
+        label: item
+      })),
+    []
+  );
 
   const monitoringSummary = useMemo(
     () =>
@@ -281,7 +328,7 @@ export function SchedulePage() {
       .getSchedule(profileId)
       .then((data) => {
         setSchedule(data);
-        setTimezone(data.timezone);
+        setTimezone(normalizeScheduleTimezone(data.timezone));
         setIsEnabled(data.isEnabled);
 
         const parsed = parsePlannerConfig(data.config || {}, activeSourceChannels);
@@ -364,7 +411,7 @@ export function SchedulePage() {
       }
 
       const saved = await api.updateSchedule(profileId, {
-        timezone: timezone.trim() || 'Europe/Moscow',
+        timezone: normalizeScheduleTimezone(timezone),
         isEnabled,
         config: plannerPreview
       });
@@ -443,19 +490,12 @@ export function SchedulePage() {
             </div>
 
             <div className="create-form-grid create-form-grid--dual">
-              <label className="field-block">
-                <span>{isRu ? 'Часовой пояс' : 'Timezone'}</span>
-                <input
-                  list="schedule-timezones"
-                  value={timezone}
-                  onChange={(event) => setTimezone(event.target.value)}
-                />
-                <datalist id="schedule-timezones">
-                  {commonTimezones.map((item) => (
-                    <option key={item} value={item} />
-                  ))}
-                </datalist>
-              </label>
+              <SelectField
+                label={isRu ? 'Часовой пояс' : 'Timezone'}
+                options={timezoneSelectOptions}
+                value={timezone}
+                onChange={setTimezone}
+              />
             </div>
 
             <label className="toggle-row create-toggle-card create-toggle-card--schedule">
@@ -467,12 +507,13 @@ export function SchedulePage() {
               <span>{isRu ? 'Расписание включено' : 'Planner enabled'}</span>
             </label>
 
-            <section className="context-section context-section--tight schedule-monitoring-card">
-              <div className="panel-heading panel-heading--tight schedule-monitoring-card__head">
-                <div>
-                  <span className="eyebrow">{isRu ? 'Мониторинг' : 'Monitoring'}</span>
-                  <h3>{isRu ? 'Проверка источников' : 'Source checks'}</h3>
-                </div>
+            {MONITORING_CONTROLS_ENABLED && (
+              <section className="context-section context-section--tight schedule-monitoring-card">
+                <div className="panel-heading panel-heading--tight schedule-monitoring-card__head">
+                  <div>
+                    <span className="eyebrow">{isRu ? 'Мониторинг' : 'Monitoring'}</span>
+                    <h3>{isRu ? 'Проверка источников' : 'Source checks'}</h3>
+                  </div>
 
                 <button
                   aria-expanded={isMonitoringInfoOpen}
@@ -588,9 +629,14 @@ export function SchedulePage() {
                   )}
                 </div>
               </div>
-            </section>
+              </section>
+            )}
 
-            <section className="context-section context-section--tight">
+            <section
+              className={`context-section context-section--tight schedule-slots-section${
+                isEnabled ? '' : ' schedule-slots-section--disabled'
+              }`}
+            >
               <div className="panel-heading panel-heading--tight">
                 <div>
                   <span className="eyebrow">{isRu ? 'Слоты постов' : 'Post slots'}</span>
@@ -655,7 +701,11 @@ export function SchedulePage() {
               </div>
             </section>
 
-            <section className="context-section context-section--tight">
+            <section
+              className={`context-section context-section--tight schedule-digest-section${
+                weeklyDigestEnabled ? '' : ' schedule-digest-section--disabled'
+              }`}
+            >
               <div className="panel-heading panel-heading--tight">
                 <div>
                   <span className="eyebrow">{isRu ? 'Недельный дайджест' : 'Weekly digest'}</span>

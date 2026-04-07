@@ -26,12 +26,6 @@ import {
 import { CreatePageSkeleton, SourceListSkeleton } from '../../components/LoadingSkeleton';
 import { useBusyOverlay } from '../../lib/busyOverlay';
 
-const postTypeOptions = [
-  { value: 'post', label: 'Post' },
-  { value: 'alert', label: 'Alert' },
-  { value: 'weekly', label: 'Weekly' }
-] as const;
-
 const SOURCE_POSTS_PAGE_SIZE = 5;
 const sourceLookbackOptions = ['1', '3', '6', '12', '24', '48', '72'];
 const sourceLimitOptions = ['10', '20', '40', '80', '120'];
@@ -66,7 +60,7 @@ function getDefaultSourcePoolWindow(postType: 'post' | 'alert' | 'weekly') {
     return { lookbackHours: 24, limit: 80 };
   }
 
-  return { lookbackHours: 48, limit: 80 };
+  return { lookbackHours: 24, limit: 80 };
 }
 
 function parseOptionalPositiveInt(value: string) {
@@ -248,7 +242,7 @@ function getSourcePoolPresets(postType: 'post' | 'alert' | 'weekly') {
   }
 
   return [
-    { label: 'Recommended', helper: '48 hours, 80 sources', lookbackHours: '', limit: '' },
+    { label: 'Recommended', helper: '24 hours, 80 sources', lookbackHours: '24', limit: '80' },
     { label: 'Focused', helper: '24 hours, 40 sources', lookbackHours: '24', limit: '40' },
     { label: 'Wide', helper: '72 hours, 120 sources', lookbackHours: '72', limit: '120' }
   ];
@@ -375,9 +369,9 @@ export function CreateDraftPage() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [profileId, setProfileId] = useState('');
   const [mode, setMode] = useState<'source_pool' | 'source_post' | 'manual_source'>('source_pool');
-  const [postType, setPostType] = useState<'post' | 'alert' | 'weekly'>('post');
-  const [lookbackHours, setLookbackHours] = useState('');
-  const [limit, setLimit] = useState('');
+  const postType = 'post' as const;
+  const [lookbackHours, setLookbackHours] = useState('24');
+  const [limit, setLimit] = useState('80');
   const [manualText, setManualText] = useState('');
   const channelTitle = 'manual';
   const channelKey = 'manual';
@@ -411,18 +405,6 @@ export function CreateDraftPage() {
     () => sourcePosts.find((sourcePost) => sourcePost.id === selectedSourcePostId) ?? null,
     [selectedSourcePostId, sourcePosts]
   );
-  const localizedPostTypeOptions = useMemo(
-    () => postTypeOptions.map((option) => ({
-      ...option,
-      label:
-        option.value === 'post'
-          ? isRu ? 'Пост' : 'Post'
-          : option.value === 'alert'
-            ? isRu ? 'Алерт' : 'Alert'
-            : isRu ? 'Недельный' : 'Weekly'
-    })),
-    [isRu]
-  );
   const localizedCreationModes = useMemo(
     () => creationModes.map((item) => ({
       ...item,
@@ -436,7 +418,6 @@ export function CreateDraftPage() {
     [isRu]
   );
   const sourcePoolPresets = getSourcePoolPresets(postType);
-  const showPoolWindowDetails = lookbackHours.trim() !== '' || limit.trim() !== '';
   const visibleSourcePosts = sourcePosts.slice(0, visibleSourceCount);
   const canShowMoreSources = visibleSourceCount < sourcePosts.length;
   const refreshSourcePostsLabel = isSourceLoading
@@ -532,14 +513,6 @@ export function CreateDraftPage() {
         label: profile.title
       })),
     [profiles]
-  );
-  const postTypeSelectOptions = useMemo(
-    () =>
-      localizedPostTypeOptions.map((option) => ({
-        value: option.value,
-        label: option.label
-      })),
-    [localizedPostTypeOptions]
   );
   const sourceLookbackSelectOptions = useMemo(
     () =>
@@ -871,12 +844,6 @@ export function CreateDraftPage() {
                 onChange={setProfileId}
               />
 
-              <SelectField
-                label={isRu ? 'Тип' : 'Type'}
-                options={postTypeSelectOptions}
-                value={postType}
-                onChange={(nextValue) => setPostType(nextValue as 'post' | 'alert' | 'weekly')}
-              />
             </div>
 
           </section>
@@ -946,36 +913,6 @@ export function CreateDraftPage() {
                   ))}
                 </div>
 
-                <details className="details-block details-block--subtle" open={showPoolWindowDetails}>
-                  <summary>{isRu ? 'Настроить окно источников' : 'Adjust source window'}</summary>
-                  <div className="details-block__content">
-                    <div className="create-form-grid create-form-grid--dual">
-                      <label className="field-block">
-                        <span>{isRu ? 'Глубина, часов' : 'Lookback hours'}</span>
-                        <input
-                          inputMode="numeric"
-                          placeholder={postType === 'weekly' ? '72' : postType === 'alert' ? '24' : '48'}
-                          value={lookbackHours}
-                          onChange={(event) => setLookbackHours(event.target.value)}
-                        />
-                      </label>
-
-                      <label className="field-block">
-                        <span>{isRu ? 'Лимит источников' : 'Source limit'}</span>
-                        <input
-                          inputMode="numeric"
-                          placeholder={postType === 'weekly' ? '120' : '80'}
-                          value={limit}
-                          onChange={(event) => setLimit(event.target.value)}
-                        />
-                      </label>
-                    </div>
-                  </div>
-                </details>
-
-                <p className="editor-help">
-                  {isRu ? 'Оставьте оба поля пустыми, чтобы использовать рекомендованное окно.' : 'Leave both fields empty to use the recommended window.'}
-                </p>
               </div>
             )}
 
