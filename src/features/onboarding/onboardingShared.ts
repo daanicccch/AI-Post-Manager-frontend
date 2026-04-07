@@ -40,7 +40,7 @@ export function normalizeSourceChannels(items: unknown[] | undefined): SourceCha
         usedForStyle: item.usedForStyle !== false,
         usedForMonitoring: item.usedForMonitoring !== false,
         origin: String(item.origin || '').trim() || undefined,
-        is_check: item.is_check === true,
+        is_check: item.usedForMonitoring !== false || item.is_check === true,
       };
     })
     .filter((item): item is NonNullable<typeof item> => Boolean(item));

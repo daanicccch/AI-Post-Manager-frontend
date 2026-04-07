@@ -89,7 +89,7 @@ function normalizeSourceChannels(channels: unknown[] | undefined) {
         key: username,
         username,
         label: name,
-        isCheck: Boolean(channel.is_check)
+        isCheck: channel.usedForMonitoring !== false || Boolean(channel.is_check)
       };
     })
     .filter((channel): channel is SourceChannelOption => Boolean(channel));

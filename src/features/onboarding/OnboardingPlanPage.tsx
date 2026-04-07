@@ -44,7 +44,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function readChannelCheckUsernames(profile: Profile | null) {
   return (Array.isArray(profile?.sourceChannels) ? profile.sourceChannels : [])
     .map((item) => {
-      if (!isRecord(item) || !item.is_check) {
+      if (!isRecord(item) || (item.usedForMonitoring === false && !item.is_check)) {
         return '';
       }
       return String(item.username || '').trim().replace(/^@+/, '');
