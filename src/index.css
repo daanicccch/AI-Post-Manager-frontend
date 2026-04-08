@@ -7393,10 +7393,6 @@ body.app-lightbox-open .workspace-main {
     padding-bottom: max(0.55rem, calc(0.55rem + var(--safe-bottom-resolved)));
   }
 
-  body.app-keyboard-open .post-links-modal-backdrop {
-    place-items: end center;
-  }
-
   .post-links-modal {
     max-width: calc(100vw - 1.1rem);
     border-radius: 1.1rem;

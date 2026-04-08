@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, type ReactNode } from 'react';
+import { useLayoutEffect, useRef, type ReactNode } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAppLocale } from '../lib/appLocale';
 import { useBusyOverlay } from '../lib/busyOverlay';
@@ -114,17 +114,6 @@ export function AppShell({ children }: AppShellProps) {
     scrollContainerRef.current?.scrollTo({ top: 0, left: 0, behavior: 'auto' });
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
   }, [location.key]);
-
-  useEffect(() => {
-    if (typeof document === 'undefined') {
-      return;
-    }
-
-    document.body.classList.toggle('app-keyboard-open', keyboardOpen);
-    return () => {
-      document.body.classList.remove('app-keyboard-open');
-    };
-  }, [keyboardOpen]);
 
   return (
     <div className={`workspace-shell${keyboardOpen ? ' workspace-shell--keyboard-open' : ''}`}>
