@@ -297,7 +297,7 @@ export function PostFooterLinksEditor({
               <input
                 autoFocus
                 disabled={disabled}
-                placeholder={isRu ? 'Gift News 🎁' : 'Gift News 🎁'}
+                placeholder={isRu ? 'Название ссылки' : 'Link title'}
                 value={editingLink.link.label}
                 onChange={(event) => updateEditingLink({ label: event.target.value })}
               />

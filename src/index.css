@@ -6690,6 +6690,8 @@ body.app-lightbox-open .workspace-main {
 
 .editor-panel--profile .profile-style-editor {
   min-height: min(68vh, 34rem);
+  width: min(90vw, 100%);
+  align-self: center;
 }
 
 .profile-busy-banner {
@@ -6795,12 +6797,17 @@ body.app-lightbox-open .workspace-main {
     padding: 0.76rem;
   }
 
-  .profile-actions-row .primary-button,
-  .profile-actions-row .secondary-button,
   .profile-side-actions .primary-button,
   .profile-side-actions .secondary-button {
     flex-basis: 100%;
     width: 100%;
+    min-width: 0;
+  }
+
+  .profile-actions-row .primary-button,
+  .profile-actions-row .secondary-button {
+    flex: 1 1 calc(50% - 0.25rem);
+    width: calc(50% - 0.25rem);
     min-width: 0;
   }
 

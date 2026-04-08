@@ -350,32 +350,6 @@ export function ProfilePage() {
     };
   }, [isRu, profileId, regenSyncNonce]);
 
-  async function refreshProfile() {
-    if (!profileId) {
-      return;
-    }
-
-    setFeedback(null);
-    setError(null);
-    setIsProfileLoading(true);
-
-    try {
-      const profile = await api.getProfile(profileId);
-      applyProfileDetail(profile);
-      setFeedback(isRu ? 'Стиль загружен.' : 'Saved channel style reloaded.');
-    } catch (refreshError) {
-      setError(
-        refreshError instanceof Error
-          ? refreshError.message
-          : isRu
-            ? 'Не удалось обновить профиль'
-            : 'Failed to refresh profile'
-      );
-    } finally {
-      setIsProfileLoading(false);
-    }
-  }
-
   async function handleRegenerateStyle() {
     if (!profileId) {
       return;
@@ -478,19 +452,11 @@ export function ProfilePage() {
                 className="secondary-button secondary-button--small"
                 type="button"
                 disabled={isProfileLoading || isRegenerating || isSaving}
-                onClick={refreshProfile}
-              >
-                {isRu ? 'Загрузить' : 'Reload saved'}
-              </button>
-              <button
-                className="secondary-button secondary-button--small"
-                type="button"
-                disabled={isProfileLoading || isRegenerating || isSaving}
                 onClick={() => {
                   void handleRegenerateStyle();
                 }}
               >
-                {isRegenerating ? (isRu ? 'Генерируем...' : 'Regenerating...') : isRu ? 'Перегенерировать' : 'Regenerate style'}
+                {isRegenerating ? (isRu ? 'Генерируем...' : 'Regenerating...') : isRu ? 'Обновить стиль' : 'Refresh style'}
               </button>
               <button
                 className="primary-button primary-button--profile"
@@ -549,8 +515,8 @@ export function ProfilePage() {
                 disabled={isRegenerating}
                 placeholder={
                   isRu
-                    ? 'Стиля пока нет. Нажми «Перегенерировать», чтобы собрать его из последних постов.'
-                    : 'No channel style yet. Tap "Regenerate style" to build it from recent source posts.'
+                    ? 'Стиля пока нет. Нажми «Обновить стиль», чтобы собрать его из последних постов.'
+                    : 'No channel style yet. Tap "Refresh style" to build it from recent source posts.'
                 }
                 spellCheck
                 value={styleDraft}
