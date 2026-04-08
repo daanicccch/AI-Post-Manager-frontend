@@ -5367,7 +5367,7 @@ body.app-lightbox-open .workspace-main {
   flex: 1 1 auto;
   height: 100%;
   min-height: 0;
-  padding: 0.48rem 0.72rem 0.1rem;
+  padding: 0.48rem 0.72rem calc(5.8rem + var(--safe-bottom-resolved));
 }
 
 .setup-style-review-editor {
