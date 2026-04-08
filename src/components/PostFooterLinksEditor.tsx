@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   getPostFooterLinksLayoutLabel,
   getVisiblePostFooterLinks,
@@ -103,6 +104,7 @@ export function PostFooterLinksEditor({
 }: PostFooterLinksEditorProps) {
   const normalizedValue = normalizePostFooterLinksConfig(value);
   const [editingLink, setEditingLink] = useState<EditingLinkState | null>(null);
+  const titleInputRef = useRef<HTMLInputElement | null>(null);
   const previewSlotCount = Math.min(
     Math.max(normalizedValue.links.length, getDefaultSlotCount(normalizedValue.layout)),
     12
@@ -117,6 +119,25 @@ export function PostFooterLinksEditor({
     if (editingLink.index >= 12) {
       setEditingLink(null);
     }
+  }, [editingLink]);
+
+  useEffect(() => {
+    if (!editingLink) {
+      return;
+    }
+
+    titleInputRef.current?.focus({ preventScroll: true });
+  }, [editingLink]);
+
+  useEffect(() => {
+    if (!editingLink || typeof document === 'undefined') {
+      return;
+    }
+
+    document.body.classList.add('post-links-modal-open');
+    return () => {
+      document.body.classList.remove('post-links-modal-open');
+    };
   }, [editingLink]);
 
   function openLinkEditor(index: number) {
@@ -257,79 +278,83 @@ export function PostFooterLinksEditor({
         </div>
       </div>
 
-      {editingLink ? (
-        <div
-          className="post-links-modal-backdrop"
-          role="presentation"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) {
-              setEditingLink(null);
-            }
-          }}
-        >
-          <form
-            aria-labelledby="post-links-modal-title"
-            className="post-links-modal"
-            role="dialog"
-            aria-modal="true"
-            onSubmit={(event) => {
-              event.preventDefault();
-              saveEditingLink();
+      {editingLink && typeof document !== 'undefined'
+        ? createPortal(
+          <div
+            className="post-links-modal-backdrop"
+            role="presentation"
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget) {
+                setEditingLink(null);
+              }
             }}
           >
-            <div className="post-links-modal__head">
-              <div>
-                <h4 id="post-links-modal-title">{getSlotTitle(editingLink.index, isRu)}</h4>
-                <p>{isRu ? 'Введи текст, который будет виден под постом, и сам URL.' : 'Enter the visible text and the URL.'}</p>
+            <form
+              aria-labelledby="post-links-modal-title"
+              className="post-links-modal"
+              data-keyboard-scroll="off"
+              role="dialog"
+              aria-modal="true"
+              onSubmit={(event) => {
+                event.preventDefault();
+                saveEditingLink();
+              }}
+            >
+              <div className="post-links-modal__head">
+                <div>
+                  <h4 id="post-links-modal-title">{getSlotTitle(editingLink.index, isRu)}</h4>
+                  <p>{isRu ? 'Введи текст, который будет виден под постом, и сам URL.' : 'Enter the visible text and the URL.'}</p>
+                </div>
+                <button
+                  aria-label={isRu ? 'Закрыть' : 'Close'}
+                  className="post-links-modal__close"
+                  type="button"
+                  onClick={() => setEditingLink(null)}
+                >
+                  ×
+                </button>
               </div>
-              <button
-                aria-label={isRu ? 'Закрыть' : 'Close'}
-                className="post-links-modal__close"
-                type="button"
-                onClick={() => setEditingLink(null)}
-              >
-                ×
-              </button>
-            </div>
 
-            <label className="field-block">
-              <span>{isRu ? 'Текст ссылки' : 'Link text'}</span>
-              <input
-                autoFocus
-                disabled={disabled}
-                placeholder={isRu ? 'Название ссылки' : 'Link title'}
-                value={editingLink.link.label}
-                onChange={(event) => updateEditingLink({ label: event.target.value })}
-              />
-            </label>
+              <label className="field-block">
+                <span>{isRu ? 'Текст ссылки' : 'Link text'}</span>
+                <input
+                  disabled={disabled}
+                  placeholder={isRu ? 'Название ссылки' : 'Link title'}
+                  ref={titleInputRef}
+                  value={editingLink.link.label}
+                  onChange={(event) => updateEditingLink({ label: event.target.value })}
+                />
+              </label>
 
-            <label className="field-block">
-              <span>URL</span>
-              <input
-                disabled={disabled}
-                inputMode="url"
-                placeholder="https://t.me/..."
-                value={editingLink.link.url}
-                onChange={(event) => updateEditingLink({ url: event.target.value })}
-              />
-            </label>
+              <label className="field-block">
+                <span>URL</span>
+                <input
+                  disabled={disabled}
+                  inputMode="url"
+                  placeholder="https://t.me/..."
+                  value={editingLink.link.url}
+                  onChange={(event) => updateEditingLink({ url: event.target.value })}
+                />
+              </label>
 
-            <div className="post-links-modal__actions">
-              <button
-                className="secondary-button secondary-button--small secondary-button--danger"
-                disabled={disabled}
-                type="button"
-                onClick={removeEditingLink}
-              >
-                {isRu ? 'Удалить' : 'Remove'}
-              </button>
-              <button className="primary-button primary-button--small" disabled={disabled} type="submit">
-                {isRu ? 'Сохранить' : 'Save'}
-              </button>
-            </div>
-          </form>
-        </div>
-      ) : null}
+              <div className="post-links-modal__actions">
+                <button
+                  className="secondary-button secondary-button--small secondary-button--danger"
+                  disabled={disabled}
+                  type="button"
+                  onClick={removeEditingLink}
+                >
+                  {isRu ? 'Удалить' : 'Remove'}
+                </button>
+                <button className="primary-button primary-button--small" disabled={disabled} type="submit">
+                  {isRu ? 'Сохранить' : 'Save'}
+                </button>
+              </div>
+            </form>
+          </div>,
+          document.body
+        )
+        : null}
     </section>
   );
 }

@@ -3432,6 +3432,17 @@ body.app-busy {
   touch-action: none;
 }
 
+body.post-links-modal-open {
+  overflow: hidden;
+  touch-action: none;
+}
+
+body.post-links-modal-open .workspace-main-shell,
+body.post-links-modal-open .workspace-main {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
 .workspace-shell--keyboard-open .workspace-main {
   padding-bottom: 0;
 }
@@ -7289,20 +7300,24 @@ body.app-lightbox-open .workspace-main {
   z-index: 45;
   display: grid;
   place-items: center;
-  padding: max(1rem, calc(1rem + var(--safe-top-resolved))) max(1rem, calc(1rem + var(--safe-right-resolved))) max(1rem, calc(1rem + var(--safe-bottom-resolved))) max(1rem, calc(1rem + var(--safe-left-resolved)));
-  background: rgba(15, 23, 42, 0.34);
+  padding: max(0.75rem, calc(0.75rem + var(--safe-top-resolved))) max(0.65rem, calc(0.65rem + var(--safe-right-resolved))) max(0.75rem, calc(0.75rem + var(--safe-bottom-resolved))) max(0.65rem, calc(0.65rem + var(--safe-left-resolved)));
+  background: rgba(15, 23, 42, 0.38);
   backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  overscroll-behavior: none;
 }
 
 .post-links-modal {
   display: grid;
   gap: 0.85rem;
   width: min(100%, 28rem);
+  max-width: calc(100vw - 1.3rem);
   padding: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(121, 131, 171, 0.12);
   border-radius: 1.25rem;
   background: rgba(255, 255, 255, 0.98);
   box-shadow: 0 1.35rem 3.6rem rgba(15, 23, 42, 0.22);
+  touch-action: auto;
 }
 
 .post-links-modal__head,
@@ -7368,6 +7383,19 @@ body.app-lightbox-open .workspace-main {
   .post-links-editor__footer {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .post-links-modal-backdrop {
+    place-items: end center;
+    padding-top: max(0.5rem, calc(0.5rem + var(--safe-top-resolved)));
+    padding-right: max(0.55rem, calc(0.55rem + var(--safe-right-resolved)));
+    padding-left: max(0.55rem, calc(0.55rem + var(--safe-left-resolved)));
+    padding-bottom: max(0.55rem, calc(0.55rem + var(--safe-bottom-resolved)));
+  }
+
+  .post-links-modal {
+    max-width: calc(100vw - 1.1rem);
+    border-radius: 1.1rem;
   }
 
   .post-links-modal__actions .primary-button,

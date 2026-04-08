@@ -58,6 +58,10 @@ function getEditableTarget(target: EventTarget | null) {
   return target.closest<HTMLElement>(EDITABLE_SELECTOR);
 }
 
+function shouldSkipAutoScroll(target: HTMLElement) {
+  return Boolean(target.closest('[data-keyboard-scroll="off"]'));
+}
+
 function shouldKeepFocus(activeElement: HTMLElement, interactionTarget: HTMLElement) {
   if (activeElement === interactionTarget || activeElement.contains(interactionTarget) || interactionTarget.contains(activeElement)) {
     return true;
@@ -260,6 +264,10 @@ export function useTelegramKeyboard() {
     let scrollFrame = 0;
 
     const scheduleScrollIntoView = (target: HTMLElement) => {
+      if (shouldSkipAutoScroll(target)) {
+        return;
+      }
+
       if (scrollFrame) {
         window.cancelAnimationFrame(scrollFrame);
       }
