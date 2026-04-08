@@ -7386,11 +7386,15 @@ body.app-lightbox-open .workspace-main {
   }
 
   .post-links-modal-backdrop {
-    place-items: end center;
+    place-items: center;
     padding-top: max(0.5rem, calc(0.5rem + var(--safe-top-resolved)));
     padding-right: max(0.55rem, calc(0.55rem + var(--safe-right-resolved)));
     padding-left: max(0.55rem, calc(0.55rem + var(--safe-left-resolved)));
     padding-bottom: max(0.55rem, calc(0.55rem + var(--safe-bottom-resolved)));
+  }
+
+  body.app-keyboard-open .post-links-modal-backdrop {
+    place-items: end center;
   }
 
   .post-links-modal {
