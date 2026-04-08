@@ -5367,7 +5367,7 @@ body.app-lightbox-open .workspace-main {
   flex: 1 1 auto;
   height: 100%;
   min-height: 0;
-  padding: 0.48rem 0.72rem calc(5.8rem + var(--safe-bottom-resolved));
+  padding: 0.48rem 0.72rem 0.1rem;
 }
 
 .setup-style-review-editor {
@@ -5375,6 +5375,7 @@ body.app-lightbox-open .workspace-main {
   min-height: 0;
   height: 100%;
   resize: none;
+  padding-bottom: calc(5rem + var(--safe-bottom-resolved));
 }
 
 .setup-generation-panel {
@@ -5885,6 +5886,7 @@ body.app-lightbox-open .workspace-main {
   display: flex;
   flex-direction: column;
   min-height: 100%;
+  padding-bottom: calc(5.8rem + var(--safe-bottom-resolved));
 }
 
 .page-stack--setup .panel-heading--tight {
@@ -6686,6 +6688,10 @@ body.app-lightbox-open .workspace-main {
   color: #1d2940;
   font-size: 0.92rem;
   line-height: 1.55;
+}
+
+.page-stack--setup-review .setup-style-review-editor {
+  padding-bottom: calc(5rem + var(--safe-bottom-resolved));
 }
 
 .editor-panel--profile .profile-style-editor {
