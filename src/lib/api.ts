@@ -1,6 +1,7 @@
 import { handleLocalMockRequest, isLocalMockMediaPath, resolveLocalMockMediaUrl } from './localMockApi';
 import { normalizeBrokenEncoding } from './encoding';
 import { appendTelegramInitData, buildTelegramAuthHeader, getTelegramInitDataRaw } from './telegram';
+import type { PostFooterLinksConfig } from './postFooterLinks';
 
 export interface Profile {
   id: number;
@@ -25,6 +26,7 @@ export interface Profile {
   sourceChannelsConfig?: unknown;
   webSources?: unknown[];
   webSourcesConfig?: unknown;
+  postFooterLinks?: PostFooterLinksConfig | null;
   sourcePostsCount?: number;
   recentSourcePosts72hCount?: number;
   sourcePostsWithMediaCount?: number;
@@ -197,6 +199,7 @@ export interface DraftVersion {
   text: string;
   media: DraftMediaItem[];
   sourceState: unknown;
+  postFooterLinks?: PostFooterLinksConfig | null;
   meta: Record<string, unknown>;
   createdAt: string;
 }
@@ -208,6 +211,8 @@ export interface DraftDetail {
   text: string;
   media: DraftMediaItem[];
   sourceState: unknown;
+  postFooterLinks?: PostFooterLinksConfig | null;
+  profilePostFooterLinks?: PostFooterLinksConfig | null;
   profileId: string;
   profileTitle: string;
   currentVersionId: number | null;
@@ -445,10 +450,11 @@ export const api = {
   updateProfileAssets: (
     profileId: string,
     body: {
-      personaGuideMarkdown?: string;
-      sourceChannelsConfig?: unknown;
-      webSourcesConfig?: unknown;
-    }
+    personaGuideMarkdown?: string;
+    sourceChannelsConfig?: unknown;
+    webSourcesConfig?: unknown;
+    postFooterLinks?: PostFooterLinksConfig | null;
+  }
   ) =>
     request<ProfileAssetsUpdateResult>(`/profiles/${profileId}/assets`, {
       method: 'PUT',
@@ -517,7 +523,7 @@ export const api = {
   },
   getDraft: (draftId: number) => request<DraftDetail>(`/drafts/${draftId}`),
   getDraftVersions: (draftId: number) => request<DraftVersion[]>(`/drafts/${draftId}/versions`),
-  saveDraft: (draftId: number, body: { text: string; mediaState: unknown[]; sourceState: unknown; meta?: Record<string, unknown> }) =>
+  saveDraft: (draftId: number, body: { text: string; mediaState: unknown[]; sourceState: unknown; meta?: Record<string, unknown>; postFooterLinks?: PostFooterLinksConfig | null }) =>
     request(`/drafts/${draftId}/save`, {
       method: 'POST',
       body: JSON.stringify(body)

@@ -1,8 +1,14 @@
 import { startTransition, useEffect, useMemo, useState, useTransition } from 'react';
 import { ProfilePageSkeleton } from '../../components/LoadingSkeleton';
+import { PostFooterLinksEditor } from '../../components/PostFooterLinksEditor';
 import { SelectField } from '../../components/SelectField';
 import { api, type Profile } from '../../lib/api';
 import { useAppLocale } from '../../lib/appLocale';
+import {
+  normalizePostFooterLinksConfig,
+  serializePostFooterLinksConfig,
+  type PostFooterLinksConfig,
+} from '../../lib/postFooterLinks';
 import {
   clearStoredProfileRegeneration,
   ensureProfileRegeneration,
@@ -54,6 +60,9 @@ export function ProfilePage() {
   const [profileId, setProfileId] = useState(() => getStoredProfileId());
   const [profileDetail, setProfileDetail] = useState<Profile | null>(null);
   const [styleDraft, setStyleDraft] = useState('');
+  const [postFooterLinksDraft, setPostFooterLinksDraft] = useState<PostFooterLinksConfig>(() =>
+    normalizePostFooterLinksConfig(null)
+  );
   const [isStyleCorrupted, setIsStyleCorrupted] = useState(false);
   const [isBootLoading, setIsBootLoading] = useState(true);
   const [isProfileLoading, setIsProfileLoading] = useState(false);
@@ -75,7 +84,19 @@ export function ProfilePage() {
     () => normalizeStyleValue(profileDetail?.personaGuideMarkdown).value,
     [profileDetail?.personaGuideMarkdown]
   );
-  const hasDirtyChanges = styleDraft !== savedStyleValue;
+  const savedPostFooterLinksValue = useMemo(
+    () => normalizePostFooterLinksConfig(profileDetail?.postFooterLinks),
+    [profileDetail?.postFooterLinks]
+  );
+  const postFooterLinksDraftSignature = useMemo(
+    () => serializePostFooterLinksConfig(postFooterLinksDraft),
+    [postFooterLinksDraft]
+  );
+  const savedPostFooterLinksSignature = useMemo(
+    () => serializePostFooterLinksConfig(savedPostFooterLinksValue),
+    [savedPostFooterLinksValue]
+  );
+  const hasDirtyChanges = styleDraft !== savedStyleValue || postFooterLinksDraftSignature !== savedPostFooterLinksSignature;
   const regenRemainingMinutes = useMemo(() => {
     const remainingRatio = Math.max(0, 1 - regenProgress / 100);
     const estimatedSeconds = Math.max(15, Math.round(remainingRatio * 120));
@@ -101,6 +122,7 @@ export function ProfilePage() {
     const normalizedStyle = normalizeStyleValue(nextProfile.personaGuideMarkdown);
     setProfileDetail(nextProfile);
     setStyleDraft(normalizedStyle.value);
+    setPostFooterLinksDraft(normalizePostFooterLinksConfig(nextProfile.postFooterLinks));
     setIsStyleCorrupted(normalizedStyle.isLikelyCorrupted);
     setProfiles((currentProfiles) =>
       currentProfiles.map((currentProfile) =>
@@ -387,7 +409,8 @@ export function ProfilePage() {
     void (async () => {
       try {
         const result = await api.updateProfileAssets(profileId, {
-          personaGuideMarkdown: styleDraft
+          personaGuideMarkdown: styleDraft,
+          postFooterLinks: postFooterLinksDraft
         });
         applyProfileDetail(result.profile);
         setFeedback(isRu ? 'Стиль сохранён.' : 'Channel style saved.');
@@ -532,6 +555,15 @@ export function ProfilePage() {
                 spellCheck
                 value={styleDraft}
                 onChange={(event) => setStyleDraft(event.target.value)}
+              />
+            </div>
+
+            <div className="context-section context-section--tight profile-editor-surface">
+              <PostFooterLinksEditor
+                disabled={isProfileLoading || isRegenerating || isSaving}
+                isRu={isRu}
+                value={postFooterLinksDraft}
+                onChange={setPostFooterLinksDraft}
               />
             </div>
           </section>

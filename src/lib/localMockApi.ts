@@ -23,6 +23,11 @@ import type {
   WebSourceOption
 } from './api';
 import { normalizeBrokenEncoding } from './encoding';
+import {
+  getEffectivePostFooterLinksConfig,
+  getVisiblePostFooterLinks,
+  type PostFooterLinksConfig
+} from './postFooterLinks';
 
 type MockDb = {
   drafts: DraftDetail[];
@@ -96,6 +101,33 @@ function stripHtml(value: string | null | undefined) {
 function summarize(value: string | null | undefined, maxLength = 180) {
   const plain = stripHtml(value);
   return plain.length > maxLength ? `${plain.slice(0, maxLength).trimEnd()}...` : plain;
+}
+
+function renderPostFooterLinksText(config: PostFooterLinksConfig | null | undefined) {
+  const normalized = getEffectivePostFooterLinksConfig(config, null);
+  const links = getVisiblePostFooterLinks(normalized);
+  if (!normalized.enabled || links.length === 0) {
+    return '';
+  }
+
+  if (normalized.layout === 'one_column') {
+    return links.map((link) => link.label).join('\n');
+  }
+
+  if (normalized.layout === 'inline') {
+    return links.map((link) => link.label).join('     ');
+  }
+
+  const rows: string[] = [];
+  for (let index = 0; index < links.length; index += 2) {
+    rows.push(
+      links
+        .slice(index, index + 2)
+        .map((link) => link.label)
+        .join('           ')
+    );
+  }
+  return rows.join('\n');
 }
 
 function deriveDraftTitle(text: string, fallback = 'Untitled draft') {
@@ -274,6 +306,16 @@ function createInitialProfiles(): Profile[] {
       sourceChannelsConfig: { channels: ['marketpulse', 'chainwire', 'macrodesk'] },
       webSources: [{ url: 'https://example.com' }],
       webSourcesConfig: { enabled: true },
+      postFooterLinks: {
+        enabled: true,
+        layout: 'two_columns',
+        links: [
+          { id: 'gift-news', label: 'Gift News 🎁', url: 'https://t.me/gift_newstg', enabled: true },
+          { id: 'portals', label: 'Portals ❤️', url: 'https://t.me/portals/market?startapp=giftnews', enabled: true },
+          { id: 'tonnel', label: 'Buy/sell Gifts 🥈', url: 'https://t.me/tonnel_network_bot/gifts?startapp=ref_1647444010', enabled: true },
+          { id: 'floorprice', label: 'Floorprice 📊', url: 'https://t.me/floorpricegift', enabled: true },
+        ],
+      },
       sourcePostsCount: 12,
       recentSourcePosts72hCount: 7,
       sourcePostsWithMediaCount: 5,
@@ -316,6 +358,11 @@ function createInitialProfiles(): Profile[] {
       sourceChannelsConfig: { channels: ['productradar', 'teamnotes'] },
       webSources: [],
       webSourcesConfig: { enabled: false },
+      postFooterLinks: {
+        enabled: false,
+        layout: 'two_columns',
+        links: [],
+      },
       sourcePostsCount: 8,
       recentSourcePosts72hCount: 4,
       sourcePostsWithMediaCount: 2,
@@ -708,6 +755,7 @@ function getDraftById(db: MockDb, draftId: number) {
     throw new Error(`Draft not found: ${draftId}`);
   }
 
+  draft.profilePostFooterLinks = getProfileBySlug(db, draft.profileId).postFooterLinks || null;
   return draft;
 }
 
@@ -822,6 +870,8 @@ function createDraftFromText(
     text,
     media,
     sourceState,
+    postFooterLinks: null,
+    profilePostFooterLinks: profile.postFooterLinks || null,
     profileId: profile.slug,
     profileTitle: profile.title,
     currentVersionId: null,
@@ -1262,6 +1312,10 @@ export async function handleLocalMockRequest<T>(path: string, init?: RequestInit
     draft.title = deriveDraftTitle(draft.text, draft.title || 'Untitled draft');
     draft.media = normalizeMediaItems(body.mediaState);
     draft.sourceState = body.sourceState ?? draft.sourceState;
+    if (Object.prototype.hasOwnProperty.call(body, 'postFooterLinks')) {
+      draft.postFooterLinks = body.postFooterLinks as PostFooterLinksConfig | null;
+    }
+    draft.profilePostFooterLinks = getProfileBySlug(db, draft.profileId).postFooterLinks || null;
     draft.updatedAt = nowIso();
     if (draft.status !== 'published' && draft.status !== 'cancelled') {
       draft.status = draft.scheduledFor ? 'scheduled' : 'editing';
@@ -1293,13 +1347,19 @@ export async function handleLocalMockRequest<T>(path: string, init?: RequestInit
     draft.scheduledFor = null;
     draft.telegramMessageId = draft.telegramMessageId || 5000 + draft.id;
     draft.updatedAt = nowIso();
+    const footerText = renderPostFooterLinksText(
+      getEffectivePostFooterLinksConfig(
+        draft.postFooterLinks,
+        getProfileBySlug(db, draft.profileId).postFooterLinks
+      )
+    );
     draft.publications.unshift({
       id: db.nextPublicationId++,
       status: 'published',
       telegramMessageId: draft.telegramMessageId,
       targetChannelId: getProfileBySlug(db, draft.profileId).telegramChannelId,
       publishedAt: draft.publishedAt,
-      text: stripHtml(draft.text),
+      text: stripHtml(footerText ? `${draft.text}\n\n${footerText}` : draft.text),
       media: clone(draft.media),
       errorText: null
     });

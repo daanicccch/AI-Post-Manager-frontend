@@ -1,6 +1,7 @@
 ﻿import { lazy, Suspense, useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { DraftPageSkeleton, EditorComposerSkeleton } from '../../components/LoadingSkeleton';
+import { PostFooterLinksEditor, PostFooterLinksPreview } from '../../components/PostFooterLinksEditor';
 import { StatusPill } from '../../components/StatusPill';
 import { CreateMediaManager } from '../create/CreateMediaManager';
 import {
@@ -11,6 +12,11 @@ import {
 } from '../../lib/api';
 import { useAppLocale } from '../../lib/appLocale';
 import { formatDate, isImagePath, isVideoPath, summarizeRichText, toDateTimeLocalInput } from '../../lib/formatters';
+import {
+  getEffectivePostFooterLinksConfig,
+  serializePostFooterLinksConfig,
+  type PostFooterLinksConfig
+} from '../../lib/postFooterLinks';
 import { normalizeRichTextHtml } from '../../lib/richText';
 
 const reviewSectionKeys = ['preview', 'compose'] as const;
@@ -187,6 +193,9 @@ export function DraftPage() {
   const [draft, setDraft] = useState<DraftDetail | null>(null);
   const [draftText, setDraftText] = useState('');
   const [mediaDraft, setMediaDraft] = useState<DraftMediaItem[]>([]);
+  const [postFooterLinksDraft, setPostFooterLinksDraft] = useState<PostFooterLinksConfig>(() =>
+    getEffectivePostFooterLinksConfig(null, null)
+  );
   const [scheduleValue, setScheduleValue] = useState('');
   const [activeSection, setActiveSection] = useState<ReviewSectionKey>('preview');
   const [mediaOverrideEnabled, setMediaOverrideEnabled] = useState(false);
@@ -232,13 +241,29 @@ export function DraftPage() {
   const previewHtml = useMemo(() => normalizeRichTextHtml(deferredText), [deferredText]);
   const mediaDraftSignature = useMemo(() => JSON.stringify(mediaDraft), [mediaDraft]);
   const draftMediaSignature = useMemo(() => JSON.stringify(draft?.media || []), [draft?.media]);
+  const savedPostFooterLinksValue = useMemo(
+    () => getEffectivePostFooterLinksConfig(draft?.postFooterLinks, draft?.profilePostFooterLinks),
+    [draft?.postFooterLinks, draft?.profilePostFooterLinks]
+  );
+  const postFooterLinksDraftSignature = useMemo(
+    () => serializePostFooterLinksConfig(postFooterLinksDraft),
+    [postFooterLinksDraft]
+  );
+  const savedPostFooterLinksSignature = useMemo(
+    () => serializePostFooterLinksConfig(savedPostFooterLinksValue),
+    [savedPostFooterLinksValue]
+  );
   const currentSection = reviewSections.find((section) => section.key === activeSection) ?? reviewSections[0];
   const isLocked =
     draft?.status === 'published' ||
     draft?.status === 'cancelled' ||
     draft?.status === 'publishing';
   const canDeleteFromHistory = draft?.status === 'published' || draft?.status === 'cancelled';
-  const isDirty = Boolean(draft && (draftText !== normalizedSavedText || mediaDraftSignature !== draftMediaSignature));
+  const isDirty = Boolean(draft && (
+    draftText !== normalizedSavedText ||
+    mediaDraftSignature !== draftMediaSignature ||
+    postFooterLinksDraftSignature !== savedPostFooterLinksSignature
+  ));
   const isWorking = activeAction !== null;
   const previewTimestamp = draft?.publishedAt || draft?.scheduledFor || draft?.updatedAt || null;
   const previewDayLabel = formatTelegramDayLabel(previewTimestamp, isRu);
@@ -280,6 +305,7 @@ export function DraftPage() {
       setDraft(detail);
       setDraftText(normalizedText);
       setMediaDraft(normalizeMediaState(detail.media));
+      setPostFooterLinksDraft(getEffectivePostFooterLinksConfig(detail.postFooterLinks, detail.profilePostFooterLinks));
       setScheduleValue(toDateTimeLocalInput(detail.scheduledFor));
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : isRu ? 'Не удалось загрузить черновик' : 'Failed to load draft');
@@ -302,15 +328,19 @@ export function DraftPage() {
     const normalizedMediaDraft = normalizeMediaState(mediaDraft);
     const hasTextChange = draftText !== normalizeRichTextHtml(currentDraft.text);
     const hasMediaChange = JSON.stringify(normalizedMediaDraft) !== JSON.stringify(currentDraft.media || []);
+    const hasPostFooterLinksChange = postFooterLinksDraftSignature !== serializePostFooterLinksConfig(
+      getEffectivePostFooterLinksConfig(currentDraft.postFooterLinks, currentDraft.profilePostFooterLinks)
+    );
 
-    if (!hasTextChange && !hasMediaChange) {
+    if (!hasTextChange && !hasMediaChange && !hasPostFooterLinksChange) {
       return;
     }
 
     await api.saveDraft(currentDraft.id, {
       text: draftText,
       mediaState: normalizedMediaDraft,
-      sourceState: currentDraft.sourceState
+      sourceState: currentDraft.sourceState,
+      postFooterLinks: postFooterLinksDraft
     });
   }
 
@@ -336,7 +366,8 @@ export function DraftPage() {
       await api.saveDraft(draft.id, {
         text: draftText,
         mediaState: normalizeMediaState(mediaDraft),
-        sourceState: draft.sourceState
+        sourceState: draft.sourceState,
+        postFooterLinks: postFooterLinksDraft
       });
       if (scheduleValue) {
         await api.scheduleDraft(draft.id, {
@@ -539,6 +570,14 @@ export function DraftPage() {
                 />
               </Suspense>
             </div>
+
+            <PostFooterLinksEditor
+              compact
+              disabled={isLocked || isWorking}
+              isRu={isRu}
+              value={postFooterLinksDraft}
+              onChange={setPostFooterLinksDraft}
+            />
           </div>
         )}
 
@@ -575,6 +614,7 @@ export function DraftPage() {
 
                   <div className="telegram-post__body">
                     <div className="telegram-render" dangerouslySetInnerHTML={{ __html: previewHtml }} />
+                    <PostFooterLinksPreview config={postFooterLinksDraft} isRu={isRu} />
                   </div>
 
                   <div className="telegram-post__footer">
