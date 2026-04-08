@@ -50,6 +50,7 @@
 * {
   box-sizing: border-box;
   scrollbar-width: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 html,
@@ -99,13 +100,11 @@ textarea {
 a {
   color: inherit;
   text-decoration: none;
-  -webkit-tap-highlight-color: transparent;
 }
 
 button {
   cursor: pointer;
   touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
   -webkit-touch-callout: none;
 }
 
