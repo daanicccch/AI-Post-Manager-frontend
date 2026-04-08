@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   getPostFooterLinksLayoutLabel,
@@ -104,7 +104,6 @@ export function PostFooterLinksEditor({
 }: PostFooterLinksEditorProps) {
   const normalizedValue = normalizePostFooterLinksConfig(value);
   const [editingLink, setEditingLink] = useState<EditingLinkState | null>(null);
-  const titleInputRef = useRef<HTMLInputElement | null>(null);
   const previewSlotCount = Math.min(
     Math.max(normalizedValue.links.length, getDefaultSlotCount(normalizedValue.layout)),
     12
@@ -119,14 +118,6 @@ export function PostFooterLinksEditor({
     if (editingLink.index >= 12) {
       setEditingLink(null);
     }
-  }, [editingLink]);
-
-  useEffect(() => {
-    if (!editingLink) {
-      return;
-    }
-
-    titleInputRef.current?.focus({ preventScroll: true });
   }, [editingLink]);
 
   useEffect(() => {
@@ -320,7 +311,6 @@ export function PostFooterLinksEditor({
                 <input
                   disabled={disabled}
                   placeholder={isRu ? 'Название ссылки' : 'Link title'}
-                  ref={titleInputRef}
                   value={editingLink.link.label}
                   onChange={(event) => updateEditingLink({ label: event.target.value })}
                 />

@@ -67,7 +67,7 @@ function shouldKeepFocus(activeElement: HTMLElement, interactionTarget: HTMLElem
     return true;
   }
 
-  const richTextRegion = activeElement.closest('.rich-text-dialog, .rich-text-editor-shell');
+  const richTextRegion = activeElement.closest('.rich-text-dialog, .rich-text-editor-shell, .post-links-modal');
   if (richTextRegion?.contains(interactionTarget)) {
     return true;
   }
