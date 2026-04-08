@@ -6690,6 +6690,9 @@ body.app-lightbox-open .workspace-main {
 
 .editor-panel--profile .profile-style-editor {
   min-height: min(68vh, 34rem);
+}
+
+.page-stack--profile .editor-panel--profile .profile-style-editor {
   width: min(90vw, 100%);
   align-self: center;
 }
