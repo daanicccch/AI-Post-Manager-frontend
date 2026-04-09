@@ -27,8 +27,8 @@ import { CreatePageSkeleton, SourceListSkeleton } from '../../components/Loading
 import { useBusyOverlay } from '../../lib/busyOverlay';
 
 const SOURCE_POSTS_PAGE_SIZE = 5;
+const SOURCE_POST_PICK_LIMIT = 120;
 const sourceLookbackOptions = ['1', '3', '6', '12', '24', '48', '72'];
-const sourceLimitOptions = ['10', '20', '40', '80', '120'];
 
 const creationModes = [
   {
@@ -50,18 +50,6 @@ const creationModes = [
     description: 'Best for reply or import flows when the source is not already in the store.'
   }
 ] as const;
-
-function getDefaultSourcePoolWindow(postType: 'post' | 'alert' | 'weekly') {
-  if (postType === 'weekly') {
-    return { lookbackHours: 72, limit: 120 };
-  }
-
-  if (postType === 'alert') {
-    return { lookbackHours: 24, limit: 80 };
-  }
-
-  return { lookbackHours: 24, limit: 80 };
-}
 
 function parseOptionalPositiveInt(value: string) {
   const normalized = value.trim();
@@ -224,30 +212,6 @@ function RefreshIcon() {
   );
 }
 
-function getSourcePoolPresets(postType: 'post' | 'alert' | 'weekly') {
-  if (postType === 'weekly') {
-    return [
-      { label: 'Recommended', helper: '72 hours, 120 sources', lookbackHours: '', limit: '' },
-      { label: 'Focused', helper: '48 hours, 80 sources', lookbackHours: '48', limit: '80' },
-      { label: 'Fast', helper: '24 hours, 40 sources', lookbackHours: '24', limit: '40' }
-    ];
-  }
-
-  if (postType === 'alert') {
-    return [
-      { label: 'Recommended', helper: '24 hours, 80 sources', lookbackHours: '', limit: '' },
-      { label: 'Fast', helper: '12 hours, 40 sources', lookbackHours: '12', limit: '40' },
-      { label: 'Wide', helper: '36 hours, 120 sources', lookbackHours: '36', limit: '120' }
-    ];
-  }
-
-  return [
-    { label: 'Recommended', helper: '24 hours, 80 sources', lookbackHours: '24', limit: '80' },
-    { label: 'Focused', helper: '24 hours, 40 sources', lookbackHours: '24', limit: '40' },
-    { label: 'Wide', helper: '72 hours, 120 sources', lookbackHours: '72', limit: '120' }
-  ];
-}
-
 function formatCreateError(message: string, mode: 'source_pool' | 'source_post' | 'manual_source') {
   if (
     mode === 'source_pool' &&
@@ -371,7 +335,6 @@ export function CreateDraftPage() {
   const [mode, setMode] = useState<'source_pool' | 'source_post' | 'manual_source'>('source_pool');
   const postType = 'post' as const;
   const [lookbackHours, setLookbackHours] = useState('24');
-  const [limit, setLimit] = useState('80');
   const [manualText, setManualText] = useState('');
   const channelTitle = 'manual';
   const channelKey = 'manual';
@@ -380,7 +343,6 @@ export function CreateDraftPage() {
   const [sourcePosts, setSourcePosts] = useState<SourcePost[]>([]);
   const [sourceSearch, setSourceSearch] = useState('');
   const [sourceLookbackHours, setSourceLookbackHours] = useState('24');
-  const [sourceLimit, setSourceLimit] = useState('20');
   const [sourceMediaOnly, setSourceMediaOnly] = useState(false);
   const [selectedSourcePostId, setSelectedSourcePostId] = useState<number | null>(null);
   const [poolMediaDraft, setPoolMediaDraft] = useState<DraftMediaItem[]>([]);
@@ -417,15 +379,14 @@ export function CreateDraftPage() {
     })),
     [isRu]
   );
-  const sourcePoolPresets = getSourcePoolPresets(postType);
   const visibleSourcePosts = sourcePosts.slice(0, visibleSourceCount);
   const canShowMoreSources = visibleSourceCount < sourcePosts.length;
   const refreshSourcePostsLabel = isSourceLoading
     ? isRu ? 'Обновляем источники' : 'Refreshing sources'
     : isRu ? 'Обновить источники' : 'Refresh sources';
+  const poolFilterSummary = isRu ? `За последние ${lookbackHours} ч` : `Last ${lookbackHours}h`;
   const pickFilterSummary = [
     `${sourceLookbackHours}${isRu ? 'ч' : 'h'}`,
-    `${sourceLimit} ${isRu ? 'постов' : 'posts'}`,
     sourceMediaOnly ? (isRu ? 'только медиа' : 'media only') : null
   ]
     .filter(Boolean)
@@ -460,12 +421,11 @@ export function CreateDraftPage() {
     setIsSourceLoading(true);
 
     const parsedLookbackHours = parseOptionalPositiveInt(sourceLookbackHours);
-    const parsedLimit = parseOptionalPositiveInt(sourceLimit);
 
     try {
       const items = await api.listSourcePosts(profileId, {
         lookbackHours: Number.isNaN(parsedLookbackHours) ? undefined : parsedLookbackHours,
-        limit: Number.isNaN(parsedLimit) ? undefined : parsedLimit ?? 20,
+        limit: SOURCE_POST_PICK_LIMIT,
         search: deferredSourceSearch.trim() || undefined,
         mediaOnly: sourceMediaOnly,
         refresh
@@ -514,21 +474,13 @@ export function CreateDraftPage() {
       })),
     [profiles]
   );
-  const sourceLookbackSelectOptions = useMemo(
+  const sourcePoolLookbackChips = useMemo(
     () =>
       sourceLookbackOptions.map((option) => ({
         value: option,
-        label: `${option} hours`
+        label: isRu ? `${option} ч` : `${option}h`
       })),
-    []
-  );
-  const sourceLimitSelectOptions = useMemo(
-    () =>
-      sourceLimitOptions.map((option) => ({
-        value: option,
-        label: `${option} posts`
-      })),
-    []
+    [isRu]
   );
 
   useEffect(() => {
@@ -572,7 +524,7 @@ export function CreateDraftPage() {
       clearSourceHydrationTimer();
       sourceFetchRequestIdRef.current += 1;
     };
-  }, [deferredSourceSearch, mode, profileId, sourceLimit, sourceLookbackHours, sourceMediaOnly]);
+  }, [deferredSourceSearch, mode, profileId, sourceLookbackHours, sourceMediaOnly]);
 
   useEffect(() => {
     if (mode !== 'source_post') {
@@ -580,7 +532,7 @@ export function CreateDraftPage() {
     }
 
     setVisibleSourceCount(SOURCE_POSTS_PAGE_SIZE);
-  }, [mode, profileId, deferredSourceSearch, sourceLimit, sourceLookbackHours, sourceMediaOnly]);
+  }, [mode, profileId, deferredSourceSearch, sourceLookbackHours, sourceMediaOnly]);
 
   useEffect(() => {
     if (!selectedSourcePost) {
@@ -658,22 +610,15 @@ export function CreateDraftPage() {
 
         if (mode === 'source_pool') {
           const parsedLookback = parseOptionalPositiveInt(lookbackHours);
-          const parsedLimit = parseOptionalPositiveInt(limit);
-          const hasOverride = lookbackHours.trim() !== '' || limit.trim() !== '';
-          const defaults = getDefaultSourcePoolWindow(postType);
+          const hasOverride = lookbackHours.trim() !== '';
 
           if (Number.isNaN(parsedLookback)) {
             throw new Error('Lookback hours must be a positive integer.');
           }
 
-          if (Number.isNaN(parsedLimit)) {
-            throw new Error('Limit must be a positive integer.');
-          }
-
           const createdDraft = await api.generateDraft(profileId, {
             type: postType,
-            lookbackHours: hasOverride ? (parsedLookback ?? defaults.lookbackHours) : undefined,
-            limit: hasOverride ? (parsedLimit ?? defaults.limit) : undefined
+            lookbackHours: hasOverride ? parsedLookback ?? undefined : undefined
           });
           const draft = await persistCreatedDraftMedia(
             createdDraft,
@@ -871,46 +816,33 @@ export function CreateDraftPage() {
 
             {mode === 'source_pool' && (
               <div className="context-section context-section--tight create-selected-panel">
-                <div className="create-preset-row">
-                  {sourcePoolPresets.map((preset) => (
-                    <button
-                      key={preset.label}
-                      className={`create-preset-chip${
-                        lookbackHours === preset.lookbackHours && limit === preset.limit ? ' mode-card--active' : ''
-                      }`}
-                      type="button"
-                      onClick={() => {
-                        setLookbackHours(preset.lookbackHours);
-                        setLimit(preset.limit);
-                      }}
-                    >
-                      <strong>
-                        {isRu
-                          ? (
-                              preset.label === 'Recommended'
-                                ? 'Рекомендовано'
-                                : preset.label === 'Focused'
-                                  ? 'Фокус'
-                                  : preset.label === 'Fast'
-                                    ? 'Быстро'
-                                    : preset.label === 'Wide'
-                                      ? 'Широко'
-                                      : preset.label
-                            )
-                          : preset.label}
-                      </strong>
-                      <p>
-                        {isRu
-                          ? preset.helper
-                              .replace(' days', ' дней')
-                              .replace(' day', ' день')
-                              .replace(' hours', ' часов')
-                              .replace(' hour', ' час')
-                              .replace(' sources', ' источников')
-                          : preset.helper}
-                      </p>
-                    </button>
-                  ))}
+                <div className="create-pool-preset-panel">
+                  <div className="create-pool-summary" aria-live="polite">
+                    <div className="create-pool-summary__copy">
+                      <span>{isRu ? 'Пул источников' : 'Source pool'}</span>
+                      <strong>{poolFilterSummary}</strong>
+                    </div>
+                  </div>
+
+                  <div className="create-pool-control-group">
+                    <div className="create-pool-control-group__head">
+                      <span>{isRu ? 'Свежесть' : 'Freshness'}</span>
+                      <strong>{isRu ? `${lookbackHours} ч` : `${lookbackHours}h`}</strong>
+                    </div>
+                    <div className="create-pool-chip-row" role="list" aria-label={isRu ? 'Пресеты глубины' : 'Lookback presets'}>
+                      {sourcePoolLookbackChips.map((option) => (
+                        <button
+                          key={option.value}
+                          aria-pressed={lookbackHours === option.value}
+                          className={`create-pool-chip${lookbackHours === option.value ? ' create-pool-chip--active' : ''}`}
+                          type="button"
+                          onClick={() => setLookbackHours(option.value)}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
 
               </div>
@@ -918,43 +850,47 @@ export function CreateDraftPage() {
 
             {mode === 'source_post' && (
               <div className="context-section context-section--tight create-selected-panel">
-                <details className="create-filter-drawer">
-                  <summary className="create-filter-drawer__summary">
-                    <span>{isRu ? 'Фильтры выбора' : 'Pick filters'}</span>
-                    <small>{pickFilterSummary}</small>
-                  </summary>
-
-                  <div className="create-filter-drawer__content">
-                    <div className="create-source-rail create-source-rail--compact">
-                      <div className="create-source-rail__actions">
-                        <button
-                          aria-pressed={sourceMediaOnly}
-                          className={`create-filter-pill${sourceMediaOnly ? ' create-filter-pill--active' : ''}`}
-                          type="button"
-                          onClick={() => setSourceMediaOnly((current) => !current)}
-                        >
-                          {isRu ? 'Только медиа' : 'Media only'}
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="create-picker-filters create-picker-filters--drawer">
-                      <SelectField
-                        label={isRu ? 'Глубина' : 'Lookback'}
-                        options={sourceLookbackSelectOptions}
-                        value={sourceLookbackHours}
-                        onChange={setSourceLookbackHours}
-                      />
-
-                      <SelectField
-                        label={isRu ? 'Лимит' : 'Limit'}
-                        options={sourceLimitSelectOptions}
-                        value={sourceLimit}
-                        onChange={setSourceLimit}
-                      />
+                <div className="create-pool-preset-panel">
+                  <div className="create-pool-summary" aria-live="polite">
+                    <div className="create-pool-summary__copy">
+                      <span>{isRu ? 'Выбор источника' : 'Source pick'}</span>
+                      <strong>{pickFilterSummary}</strong>
                     </div>
                   </div>
-                </details>
+
+                  <div className="create-pool-control-group">
+                    <div className="create-pool-control-group__head">
+                      <span>{isRu ? 'Свежесть' : 'Freshness'}</span>
+                      <strong>{isRu ? `${sourceLookbackHours} ч` : `${sourceLookbackHours}h`}</strong>
+                    </div>
+                    <div className="create-pool-chip-row" role="list" aria-label={isRu ? 'Пресеты глубины' : 'Lookback presets'}>
+                      {sourcePoolLookbackChips.map((option) => (
+                        <button
+                          key={`pick-${option.value}`}
+                          aria-pressed={sourceLookbackHours === option.value}
+                          className={`create-pool-chip${sourceLookbackHours === option.value ? ' create-pool-chip--active' : ''}`}
+                          type="button"
+                          onClick={() => setSourceLookbackHours(option.value)}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="create-source-rail create-source-rail--compact">
+                    <div className="create-source-rail__actions">
+                      <button
+                        aria-pressed={sourceMediaOnly}
+                        className={`create-filter-pill${sourceMediaOnly ? ' create-filter-pill--active' : ''}`}
+                        type="button"
+                        onClick={() => setSourceMediaOnly((current) => !current)}
+                      >
+                        {isRu ? 'Только медиа' : 'Media only'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
 
                 <div className="create-source-toolbar">
                   <label className="field-block create-search-field create-search-field--inline">
