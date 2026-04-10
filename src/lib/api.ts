@@ -1,4 +1,5 @@
 import { handleLocalMockRequest, isLocalMockMediaPath, resolveLocalMockMediaUrl } from './localMockApi';
+import { publishAiQuotaNotice, type AiQuotaNoticeDetails } from './aiQuotaNotice';
 import { normalizeBrokenEncoding } from './encoding';
 import { appendTelegramInitData, buildTelegramAuthHeader, getTelegramInitDataRaw } from './telegram';
 import type { PostFooterLinksConfig } from './postFooterLinks';
@@ -310,6 +311,18 @@ export interface ScheduleDetail {
   updatedAt: string;
 }
 
+export class ApiRequestError extends Error {
+  status: number;
+  details: unknown;
+
+  constructor(message: string, status: number, details: unknown = null) {
+    super(message);
+    this.name = 'ApiRequestError';
+    this.status = status;
+    this.details = details;
+  }
+}
+
 function getDefaultApiBaseUrl() {
   if (typeof window === 'undefined') {
     return 'http://localhost:3011/api';
@@ -405,9 +418,18 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   });
 
   if (!response.ok) {
-    const errorPayload = await response.json().catch(() => null);
+    const errorPayload = normalizeBrokenEncoding(await response.json().catch(() => null));
     const message = errorPayload?.error?.message || `Request failed: ${response.status}`;
-    throw new Error(message);
+    const details =
+      errorPayload?.error?.details && typeof errorPayload.error.details === 'object'
+        ? (errorPayload.error.details as AiQuotaNoticeDetails)
+        : null;
+
+    if (details?.code === 'AI_DAILY_LIMIT_REACHED') {
+      publishAiQuotaNotice(message, details);
+    }
+
+    throw new ApiRequestError(message, response.status, details);
   }
 
   const payload = await response.json();

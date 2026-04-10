@@ -3,6 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { useAppLocale } from '../lib/appLocale';
 import { useBusyOverlay } from '../lib/busyOverlay';
 import { useTelegramKeyboard } from '../lib/useTelegramKeyboard';
+import { AiQuotaTopNotice } from './AiQuotaTopNotice';
 
 interface AppShellProps {
   children: ReactNode;
@@ -130,6 +131,8 @@ export function AppShell({ children }: AppShellProps) {
               <h1>{title}</h1>
             </div>
           </header>
+
+          <AiQuotaTopNotice />
 
           <main className={`workspace-main${isOnboardingFlow ? ' workspace-main--onboarding' : ''}`}>{children}</main>
         </div>
