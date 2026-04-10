@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { formatAiErrorMessage } from '../../lib/aiError';
 import { useAppLocale } from '../../lib/appLocale';
 import {
   clearStoredProfileRegeneration,
@@ -13,6 +14,14 @@ import {
 import { OnboardingFooter } from './OnboardingFooter';
 
 const ONBOARDING_STYLE_TIMEOUT_MS = 10 * 60 * 1000;
+
+function getStyleReviewErrorMessage(message: string | null | undefined, isRu: boolean) {
+  return formatAiErrorMessage(message, {
+    isRu,
+    fallbackRu: 'Не удалось сгенерировать стиль канала.',
+    fallbackEn: 'Failed to generate the channel style.',
+  });
+}
 
 export function OnboardingStyleReviewPage() {
   const { language } = useAppLocale();
@@ -126,10 +135,7 @@ export function OnboardingStyleReviewPage() {
         if (status.status === 'failed') {
           clearStoredProfileRegeneration(profileId);
           stopGeneration();
-          setError(
-            status.errorMessage
-              || (isRu ? 'Не удалось сгенерировать стиль' : 'Failed to generate style'),
-          );
+          setError(getStyleReviewErrorMessage(status.errorMessage, isRu));
           return;
         }
 
@@ -153,7 +159,12 @@ export function OnboardingStyleReviewPage() {
 
         setIsGenerating(true);
         if (attempt >= 4) {
-          setError(statusError instanceof Error ? statusError.message : 'Failed to load style status');
+          setError(
+            getStyleReviewErrorMessage(
+              statusError instanceof Error ? statusError.message : 'Failed to load style status',
+              isRu,
+            ),
+          );
         } else {
           scheduleNextPoll();
         }
@@ -185,7 +196,12 @@ export function OnboardingStyleReviewPage() {
       await api.confirmOnboardingStyle(profile.slug);
       window.location.assign(buildOnboardingUrl('plan', profile.slug));
     } catch (confirmError) {
-      setError(confirmError instanceof Error ? confirmError.message : 'Failed to continue');
+      setError(
+        getStyleReviewErrorMessage(
+          confirmError instanceof Error ? confirmError.message : 'Failed to continue',
+          isRu,
+        ),
+      );
     } finally {
       setIsSaving(false);
     }

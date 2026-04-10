@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api, type PersonaSource } from '../../lib/api';
+import { formatAiErrorMessage } from '../../lib/aiError';
 import { useAppLocale } from '../../lib/appLocale';
 import { storeProfileRegeneration } from '../profiles/profileRegenerationTracker';
 import { buildOnboardingUrl, getDefaultPersonaSource, normalizeSourceChannels, normalizeWebSources, useOnboardingData } from './onboardingShared';
@@ -25,7 +26,11 @@ function formatStyleError(message: string, isRu: boolean, personaSource: Persona
       : 'There are not enough posts in the selected channels yet. Add channels that already have published posts.';
   }
 
-  return message;
+  return formatAiErrorMessage(message, {
+    isRu,
+    fallbackRu: 'Не удалось сгенерировать стиль канала.',
+    fallbackEn: 'Failed to generate the channel style.',
+  });
 }
 
 export function OnboardingStylePage() {
