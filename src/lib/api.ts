@@ -257,7 +257,7 @@ export interface SourcePost {
 }
 
 export interface GenerateDraftFromPoolInput {
-  type: 'post' | 'alert' | 'weekly';
+  type: 'post' | 'weekly';
   lookbackHours?: number | null;
   limit?: number | null;
 }
@@ -268,7 +268,7 @@ export interface UploadedMediaFile {
 }
 
 export interface GenerateDraftFromManualSourceInput {
-  type: 'post' | 'alert' | 'weekly';
+  type: 'post' | 'weekly';
   text: string;
   channelTitle?: string;
   channelKey?: string;
