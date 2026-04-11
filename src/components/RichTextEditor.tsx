@@ -54,10 +54,12 @@ const TelegramEmoji = Node.create({
   addAttributes() {
     return {
       emojiId: {
-        default: ''
+        default: '',
+        parseHTML: (element) => String((element as HTMLElement).getAttribute('emoji-id') || '').trim()
       },
       fallback: {
-        default: ':)'
+        default: '',
+        parseHTML: (element) => String((element as HTMLElement).textContent || '')
       }
     };
   },
@@ -65,7 +67,7 @@ const TelegramEmoji = Node.create({
     return [{ tag: 'tg-emoji' }];
   },
   renderHTML({ HTMLAttributes }) {
-    return ['tg-emoji', { 'emoji-id': HTMLAttributes.emojiId }, HTMLAttributes.fallback || ':)'];
+    return ['tg-emoji', { 'emoji-id': HTMLAttributes.emojiId }, HTMLAttributes.fallback || ''];
   }
 });
 
