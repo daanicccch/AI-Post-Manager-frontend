@@ -155,6 +155,7 @@ export function RichTextEditor({
   const editorHtml = richTextToEditorHtml(normalizedValue);
   const [linkDialog, setLinkDialog] = useState<LinkDialogState | null>(null);
   const [linkValue, setLinkValue] = useState('');
+  const editorRootRef = useRef<HTMLDivElement | null>(null);
   const linkInputRef = useRef<HTMLInputElement | null>(null);
 
   const editor = useEditor({
@@ -222,12 +223,12 @@ export function RichTextEditor({
   }, [editor, editorHtml, normalizedValue]);
 
   useEffect(() => {
-    if (!editor) {
+    const root = editorRootRef.current?.querySelector('.rich-text-editor__content');
+    if (!(root instanceof HTMLElement)) {
       return;
     }
 
     const previewMap = new Map(customEmojiPreviews.map((preview) => [preview.customEmojiId, preview]));
-    const root = editor.view.dom;
     const customEmojiNodes = Array.from(root.querySelectorAll('tg-emoji'));
 
     for (const node of customEmojiNodes) {
@@ -274,7 +275,7 @@ export function RichTextEditor({
 
       node.replaceChildren(assetContainer);
     }
-  }, [customEmojiPreviews, editor, normalizedValue]);
+  }, [customEmojiPreviews, normalizedValue]);
 
   useEffect(() => {
     if (!linkDialog) {
@@ -332,7 +333,7 @@ export function RichTextEditor({
         <ToolbarButton active={editor.isActive('link')} ariaLabel={isRu ? 'Ссылка' : 'Link'} disabled={readOnly} label="LINK" onClick={openLinkDialog} />
       </div>
 
-      <div className="draft-editor rich-text-editor">
+      <div ref={editorRootRef} className="draft-editor rich-text-editor">
         <EditorContent editor={editor} />
       </div>
 
