@@ -12,6 +12,7 @@ declare global {
         onEvent?: (eventType: string, eventHandler: () => void) => void;
         offEvent?: (eventType: string, eventHandler: () => void) => void;
         colorScheme?: 'light' | 'dark';
+        themeParams?: Record<string, string | undefined>;
         platform?: string;
         isFullscreen?: boolean;
         viewportHeight?: number;
@@ -51,6 +52,32 @@ function setCssVar(name: string, value: number | undefined) {
   }
 
   document.documentElement.style.setProperty(name, `${Math.max(0, value)}px`);
+}
+
+function syncTelegramThemeVars() {
+  const webApp = window.Telegram?.WebApp;
+  if (!webApp || typeof document === 'undefined') {
+    return;
+  }
+
+  const themeParams = webApp.themeParams || {};
+  Object.entries(themeParams).forEach(([key, value]) => {
+    const normalizedValue = String(value || '').trim();
+    if (!normalizedValue) {
+      return;
+    }
+
+    const normalizedKey = String(key || '').trim().replace(/_/g, '-');
+    if (!normalizedKey) {
+      return;
+    }
+
+    document.documentElement.style.setProperty(`--tg-theme-${normalizedKey}`, normalizedValue);
+  });
+
+  if (webApp.colorScheme) {
+    document.documentElement.style.setProperty('--tg-color-scheme', webApp.colorScheme);
+  }
 }
 
 function syncTelegramViewportVars() {
@@ -121,7 +148,10 @@ export function initTelegramWebApp() {
     return () => {};
   }
 
-  const sync = () => syncTelegramViewportVars();
+  const sync = () => {
+    syncTelegramViewportVars();
+    syncTelegramThemeVars();
+  };
   const shouldUseImmersiveMode = shouldUseTelegramImmersiveMode(webApp);
 
   sync();
@@ -139,12 +169,14 @@ export function initTelegramWebApp() {
   webApp.onEvent?.('contentSafeAreaChanged', sync);
   webApp.onEvent?.('viewportChanged', sync);
   webApp.onEvent?.('fullscreenChanged', sync);
+  webApp.onEvent?.('themeChanged', sync);
 
   return () => {
     webApp.offEvent?.('safeAreaChanged', sync);
     webApp.offEvent?.('contentSafeAreaChanged', sync);
     webApp.offEvent?.('viewportChanged', sync);
     webApp.offEvent?.('fullscreenChanged', sync);
+    webApp.offEvent?.('themeChanged', sync);
   };
 }
 

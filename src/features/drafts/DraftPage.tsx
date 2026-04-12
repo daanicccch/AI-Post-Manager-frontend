@@ -8,7 +8,6 @@ import { TelegramRichTextPreview } from '../../components/TelegramRichTextPrevie
 import { CreateMediaManager } from '../create/CreateMediaManager';
 import {
   api,
-  type DraftCustomEmojiImportSession,
   type DraftCustomEmojiPreview,
   getMediaPreviewUrl,
   type DraftDetail,
@@ -210,7 +209,6 @@ export function DraftPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [expandedPreview, setExpandedPreview] = useState<ExpandedPreview>(null);
-  const [customEmojiImportSession, setCustomEmojiImportSession] = useState<DraftCustomEmojiImportSession | null>(null);
   const [customEmojiPreviews, setCustomEmojiPreviews] = useState<DraftCustomEmojiPreview[]>([]);
   const [isStartingEmojiImport, setIsStartingEmojiImport] = useState(false);
   const [isRefreshingEmojiPreview, setIsRefreshingEmojiPreview] = useState(false);
@@ -346,7 +344,6 @@ export function DraftPage() {
     }
 
     setHasFreshEmojiImport(true);
-    setCustomEmojiImportSession(null);
     setIsRefreshingEmojiPreview(true);
     setNotice(isRu ? 'Premium emoji импортированы. Обновляю превью...' : 'Premium emoji imported. Refreshing preview...');
 
@@ -486,34 +483,13 @@ export function DraftPage() {
 
     try {
       const session = await api.startDraftCustomEmojiImport(draft.id);
-      setCustomEmojiImportSession(session);
-      setNotice(isRu ? 'Текст готов. Скопируй его и открой бота для вставки premium emoji.' : 'The text is ready. Copy it and open the bot to place premium emoji.');
+      await navigator.clipboard.writeText(session.copyText);
+      openTelegramLinkAndClose(session.botUrl);
     } catch (startError) {
       setError(startError instanceof Error ? startError.message : isRu ? 'Не удалось подготовить импорт premium emoji' : 'Failed to prepare premium emoji import');
     } finally {
       setIsStartingEmojiImport(false);
     }
-  }
-
-  async function handleCopyCustomEmojiSeedText() {
-    if (!customEmojiImportSession?.copyText) {
-      return;
-    }
-
-    try {
-      await navigator.clipboard.writeText(customEmojiImportSession.copyText);
-      setNotice(isRu ? 'Текст скопирован. Теперь открой бота и отправь сообщение с premium emoji.' : 'The text has been copied. Now open the bot and send the message with premium emoji.');
-    } catch (copyError) {
-      setError(copyError instanceof Error ? copyError.message : isRu ? 'Не удалось скопировать текст' : 'Failed to copy the text');
-    }
-  }
-
-  function handleOpenCustomEmojiBot() {
-    if (!customEmojiImportSession?.botUrl) {
-      return;
-    }
-
-    openTelegramLinkAndClose(customEmojiImportSession.botUrl);
   }
 
   if (isLoading) {
@@ -651,14 +627,10 @@ export function DraftPage() {
             </div>
 
             <DraftCustomEmojiImportCard
-              copyText={customEmojiImportSession?.copyText || ''}
               hasSuccess={hasFreshEmojiImport}
               isRefreshing={isRefreshingEmojiPreview}
               isRu={isRu}
-              isSessionReady={Boolean(customEmojiImportSession)}
               isStarting={isStartingEmojiImport}
-              onCopy={handleCopyCustomEmojiSeedText}
-              onOpenBot={handleOpenCustomEmojiBot}
               onStart={handleStartCustomEmojiImport}
             />
 
