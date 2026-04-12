@@ -528,20 +528,8 @@ export function DraftPage() {
     setIsStartingEmojiImport(true);
 
     try {
-      const localCopyText = buildDraftCopyText(draftText || draft.text || '');
-      let copied = localCopyText ? await copyTextToClipboard(localCopyText) : false;
       const session = await api.startDraftCustomEmojiImport(draft.id);
-      if (!copied && session.copyText) {
-        copied = await copyTextToClipboard(session.copyText);
-      }
       openTelegramLinkAndClose(session.botUrl);
-      if (!copied) {
-        setNotice(
-          isRu
-            ? 'Если текст не скопировался автоматически, попробуй вставить его вручную после перехода.'
-            : 'If the text did not copy automatically, try pasting it manually after the redirect.'
-        );
-      }
     } catch (startError) {
       setError(startError instanceof Error ? startError.message : isRu ? 'Не удалось подготовить импорт premium emoji' : 'Failed to prepare premium emoji import');
     } finally {
