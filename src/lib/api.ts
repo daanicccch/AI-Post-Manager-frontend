@@ -205,6 +205,28 @@ export interface DraftVersion {
   createdAt: string;
 }
 
+export interface DraftCustomEmojiPreview {
+  customEmojiId: string;
+  filePath: string;
+  previewUrl: string | null;
+  previewKind: 'image' | 'video';
+  sourceKind: 'document' | 'thumb';
+  mimeType: string;
+  altText: string;
+  isAnimated: boolean;
+  isVideo: boolean;
+  width: number | null;
+  height: number | null;
+  meta: Record<string, unknown>;
+}
+
+export interface DraftCustomEmojiImportSession {
+  sessionId: string | null;
+  copyText: string;
+  botUrl: string;
+  expiresAt: string | null;
+}
+
 export interface DraftDetail {
   id: number;
   status: string;
@@ -545,6 +567,13 @@ export const api = {
   },
   getDraft: (draftId: number) => request<DraftDetail>(`/drafts/${draftId}`),
   getDraftVersions: (draftId: number) => request<DraftVersion[]>(`/drafts/${draftId}/versions`),
+  getDraftCustomEmojiPreviews: (draftId: number) =>
+    request<DraftCustomEmojiPreview[]>(`/drafts/${draftId}/custom-emoji-preview`),
+  startDraftCustomEmojiImport: (draftId: number) =>
+    request<DraftCustomEmojiImportSession>(`/drafts/${draftId}/custom-emoji-import/start`, {
+      method: 'POST',
+      body: JSON.stringify({})
+    }),
   saveDraft: (draftId: number, body: { text: string; mediaState: unknown[]; sourceState: unknown; meta?: Record<string, unknown>; postFooterLinks?: PostFooterLinksConfig | null }) =>
     request(`/drafts/${draftId}/save`, {
       method: 'POST',

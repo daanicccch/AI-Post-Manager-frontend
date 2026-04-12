@@ -1,11 +1,15 @@
 ﻿import { lazy, Suspense, useDeferredValue, useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { DraftCustomEmojiImportCard } from '../../components/DraftCustomEmojiImportCard';
 import { DraftPageSkeleton, EditorComposerSkeleton } from '../../components/LoadingSkeleton';
 import { PostFooterLinksEditor, PostFooterLinksPreview } from '../../components/PostFooterLinksEditor';
 import { StatusPill } from '../../components/StatusPill';
+import { TelegramRichTextPreview } from '../../components/TelegramRichTextPreview';
 import { CreateMediaManager } from '../create/CreateMediaManager';
 import {
   api,
+  type DraftCustomEmojiImportSession,
+  type DraftCustomEmojiPreview,
   getMediaPreviewUrl,
   type DraftDetail,
   type DraftMediaItem
@@ -18,6 +22,7 @@ import {
   type PostFooterLinksConfig
 } from '../../lib/postFooterLinks';
 import { normalizeRichTextHtml } from '../../lib/richText';
+import { openTelegramLinkAndClose } from '../../lib/telegram';
 
 const reviewSectionKeys = ['preview', 'compose'] as const;
 const RichTextEditor = lazy(() =>
@@ -187,6 +192,7 @@ function normalizeMediaState(items: DraftMediaItem[]) {
 export function DraftPage() {
   const { language } = useAppLocale();
   const isRu = language === 'ru';
+  const location = useLocation();
   const navigate = useNavigate();
   const { draftId } = useParams();
   const numericDraftId = Number(draftId);
@@ -204,6 +210,11 @@ export function DraftPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [expandedPreview, setExpandedPreview] = useState<ExpandedPreview>(null);
+  const [customEmojiImportSession, setCustomEmojiImportSession] = useState<DraftCustomEmojiImportSession | null>(null);
+  const [customEmojiPreviews, setCustomEmojiPreviews] = useState<DraftCustomEmojiPreview[]>([]);
+  const [isStartingEmojiImport, setIsStartingEmojiImport] = useState(false);
+  const [isRefreshingEmojiPreview, setIsRefreshingEmojiPreview] = useState(false);
+  const [hasFreshEmojiImport, setHasFreshEmojiImport] = useState(false);
   const latestPublicationError = draft?.publications.find((publication) => publication.status === 'failed')?.errorText || null;
   const canEditDraft =
     draft?.status !== 'cancelled' &&
@@ -300,13 +311,17 @@ export function DraftPage() {
     setError(null);
 
     try {
-      const detail = await api.getDraft(numericDraftId);
+      const [detail, emojiPreviewPayload] = await Promise.all([
+        api.getDraft(numericDraftId),
+        api.getDraftCustomEmojiPreviews(numericDraftId).catch(() => []),
+      ]);
       const normalizedText = normalizeRichTextHtml(detail.text);
       setDraft(detail);
       setDraftText(normalizedText);
       setMediaDraft(normalizeMediaState(detail.media));
       setPostFooterLinksDraft(getEffectivePostFooterLinksConfig(detail.postFooterLinks, detail.profilePostFooterLinks));
       setScheduleValue(toDateTimeLocalInput(detail.scheduledFor));
+      setCustomEmojiPreviews(emojiPreviewPayload);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : isRu ? 'Не удалось загрузить черновик' : 'Failed to load draft');
     } finally {
@@ -323,6 +338,27 @@ export function DraftPage() {
 
     void loadDraft();
   }, [numericDraftId]);
+
+  useEffect(() => {
+    const search = new URLSearchParams(location.search);
+    if (search.get('emojiImport') !== '1' || !Number.isFinite(numericDraftId)) {
+      return;
+    }
+
+    setHasFreshEmojiImport(true);
+    setCustomEmojiImportSession(null);
+    setIsRefreshingEmojiPreview(true);
+    setNotice(isRu ? 'Premium emoji импортированы. Обновляю превью...' : 'Premium emoji imported. Refreshing preview...');
+
+    void loadDraft().finally(() => {
+      setIsRefreshingEmojiPreview(false);
+      setNotice(isRu ? 'Premium emoji импортированы. Превью обновлено.' : 'Premium emoji imported. The preview has been refreshed.');
+    });
+
+    search.delete('emojiImport');
+    const nextSearch = search.toString();
+    navigate(`${location.pathname}${nextSearch ? `?${nextSearch}` : ''}`, { replace: true });
+  }, [isRu, location.pathname, location.search, navigate, numericDraftId]);
 
   async function persistDraftStateIfNeeded(currentDraft: DraftDetail) {
     const normalizedMediaDraft = normalizeMediaState(mediaDraft);
@@ -437,6 +473,49 @@ export function DraftPage() {
       await api.regenerateDraft(draft.id);
     }, isRu ? 'Новая версия сгенерирована' : 'New version generated');
   }
+
+  async function handleStartCustomEmojiImport() {
+    if (!draft || isLocked || isWorking) {
+      return;
+    }
+
+    setError(null);
+    setNotice(null);
+    setHasFreshEmojiImport(false);
+    setIsStartingEmojiImport(true);
+
+    try {
+      const session = await api.startDraftCustomEmojiImport(draft.id);
+      setCustomEmojiImportSession(session);
+      setNotice(isRu ? 'Текст готов. Скопируй его и открой бота для вставки premium emoji.' : 'The text is ready. Copy it and open the bot to place premium emoji.');
+    } catch (startError) {
+      setError(startError instanceof Error ? startError.message : isRu ? 'Не удалось подготовить импорт premium emoji' : 'Failed to prepare premium emoji import');
+    } finally {
+      setIsStartingEmojiImport(false);
+    }
+  }
+
+  async function handleCopyCustomEmojiSeedText() {
+    if (!customEmojiImportSession?.copyText) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(customEmojiImportSession.copyText);
+      setNotice(isRu ? 'Текст скопирован. Теперь открой бота и отправь сообщение с premium emoji.' : 'The text has been copied. Now open the bot and send the message with premium emoji.');
+    } catch (copyError) {
+      setError(copyError instanceof Error ? copyError.message : isRu ? 'Не удалось скопировать текст' : 'Failed to copy the text');
+    }
+  }
+
+  function handleOpenCustomEmojiBot() {
+    if (!customEmojiImportSession?.botUrl) {
+      return;
+    }
+
+    openTelegramLinkAndClose(customEmojiImportSession.botUrl);
+  }
+
   if (isLoading) {
     return <DraftPageSkeleton />;
   }
@@ -571,6 +650,18 @@ export function DraftPage() {
               </Suspense>
             </div>
 
+            <DraftCustomEmojiImportCard
+              copyText={customEmojiImportSession?.copyText || ''}
+              hasSuccess={hasFreshEmojiImport}
+              isRefreshing={isRefreshingEmojiPreview}
+              isRu={isRu}
+              isSessionReady={Boolean(customEmojiImportSession)}
+              isStarting={isStartingEmojiImport}
+              onCopy={handleCopyCustomEmojiSeedText}
+              onOpenBot={handleOpenCustomEmojiBot}
+              onStart={handleStartCustomEmojiImport}
+            />
+
             <PostFooterLinksEditor
               compact
               disabled={isLocked || isWorking}
@@ -613,7 +704,7 @@ export function DraftPage() {
                   {renderTelegramMediaGallery(mediaDraft, draft.profileTitle, setExpandedPreview)}
 
                   <div className="telegram-post__body">
-                    <div className="telegram-render" dangerouslySetInnerHTML={{ __html: previewHtml }} />
+                    <TelegramRichTextPreview customEmojiPreviews={customEmojiPreviews} html={previewHtml} />
                     <PostFooterLinksPreview config={postFooterLinksDraft} isRu={isRu} />
                   </div>
 

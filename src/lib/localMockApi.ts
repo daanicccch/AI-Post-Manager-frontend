@@ -1,5 +1,7 @@
 import type {
   DraftDetail,
+  DraftCustomEmojiImportSession,
+  DraftCustomEmojiPreview,
   DraftMediaItem,
   DraftSource,
   DraftVersion,
@@ -144,6 +146,42 @@ function buildMockMediaLabel(path: string) {
       .replace(/[-_]+/g, ' ')
       .trim() || 'preview'
   );
+}
+
+function buildMockCustomEmojiPreview(customEmojiId: string): DraftCustomEmojiPreview {
+  const normalizedId = String(customEmojiId || '').trim() || '0';
+  const hue = Array.from(normalizedId).reduce((sum, char) => sum + char.charCodeAt(0), 0) % 360;
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96">
+      <defs>
+        <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="hsl(${hue} 92% 74%)" />
+          <stop offset="100%" stop-color="hsl(${(hue + 42) % 360} 88% 64%)" />
+        </linearGradient>
+      </defs>
+      <rect width="96" height="96" rx="26" fill="url(#bg)" />
+      <circle cx="31" cy="34" r="7" fill="rgba(255,255,255,0.88)" />
+      <circle cx="64" cy="34" r="7" fill="rgba(255,255,255,0.88)" />
+      <path d="M27 58c6 8 13 12 21 12s15-4 21-12" fill="none" stroke="rgba(255,255,255,0.92)" stroke-linecap="round" stroke-width="7" />
+    </svg>
+  `;
+
+  return {
+    customEmojiId: normalizedId,
+    filePath: `mock-media/custom-emoji/${normalizedId}.svg`,
+    previewUrl: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+    previewKind: 'image',
+    sourceKind: 'thumb',
+    mimeType: 'image/svg+xml',
+    altText: 'mock premium emoji',
+    isAnimated: false,
+    isVideo: false,
+    width: 96,
+    height: 96,
+    meta: {
+      mock: true,
+    },
+  };
 }
 
 export function isLocalMockMediaPath(path: string) {
@@ -1302,6 +1340,39 @@ export async function handleLocalMockRequest<T>(path: string, init?: RequestInit
   const draftVersionsMatch = pathname.match(/^\/drafts\/(\d+)\/versions$/);
   if (method === 'GET' && draftVersionsMatch) {
     return clone(getDraftById(db, Number(draftVersionsMatch[1])).versions) as T;
+  }
+
+  const draftCustomEmojiPreviewMatch = pathname.match(/^\/drafts\/(\d+)\/custom-emoji-preview$/);
+  if (method === 'GET' && draftCustomEmojiPreviewMatch) {
+    const draft = getDraftById(db, Number(draftCustomEmojiPreviewMatch[1]));
+    const customEmojiIds = Array.from(
+      new Set(
+        Array.from(String(draft.text || '').matchAll(/emoji-id="(\d+)"/g)).map((match) => match[1])
+      )
+    );
+
+    return clone(customEmojiIds.map((customEmojiId) => buildMockCustomEmojiPreview(customEmojiId))) as T;
+  }
+
+  const draftCustomEmojiImportStartMatch = pathname.match(/^\/drafts\/(\d+)\/custom-emoji-import\/start$/);
+  if (method === 'POST' && draftCustomEmojiImportStartMatch) {
+    const draft = getDraftById(db, Number(draftCustomEmojiImportStartMatch[1]));
+    if (!/tg-emoji/i.test(draft.text)) {
+      draft.text = `${draft.text}<p><tg-emoji emoji-id="5368324170671202286">😎</tg-emoji> Mock premium emoji preview is ready to inspect locally.</p>`;
+      draft.updatedAt = nowIso();
+      appendDraftVersion(db, draft, 'emoji-import');
+      syncProfileStats(db);
+      saveDb(db);
+    }
+
+    const response: DraftCustomEmojiImportSession = {
+      sessionId: `mock-emoji-import-${draft.id}`,
+      copyText: stripHtml(draft.text),
+      botUrl: 'https://t.me/postixmanager_bot?start=mock_emoji_import',
+      expiresAt: nowIso(90),
+    };
+
+    return clone(response) as T;
   }
 
   const saveDraftMatch = pathname.match(/^\/drafts\/(\d+)\/save$/);
