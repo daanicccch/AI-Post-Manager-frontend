@@ -16,11 +16,8 @@ export function DraftCustomEmojiImportCard({
   const title = isRu ? 'Premium emoji' : 'Premium emoji';
   const eyebrow = isRu ? 'Telegram import' : 'Telegram import';
   const description = isRu
-    ? 'Импортируй premium emoji через бота и сразу возвращайся в mini app с готовым preview.'
-    : 'Import premium emoji through the bot and come back to the mini app with the preview ready.';
-  const warningText = isRu
-    ? 'Не переписывай текст в боте: добавь emoji в нужные места и отправь сообщение как есть.'
-    : 'Do not rewrite the text in the bot: only place emoji where you need them and send it back.';
+    ? 'Добавь premium emoji в чате с ботом.'
+    : 'Add premium emoji in the bot chat.';
   const successText = isRu
     ? 'Черновик обновился. Preview уже использует подкачанные premium emoji.'
     : 'The draft has been updated. The preview now uses the fetched premium emoji assets.';
@@ -65,8 +62,6 @@ export function DraftCustomEmojiImportCard({
             : 'After tapping, the mini app copies the text, closes, and opens the bot immediately.'}
         </p>
       </div>
-
-      <p className="emoji-import-card__warning">{warningText}</p>
 
       {(hasSuccess || isRefreshing) && (
         <div className="emoji-import-card__success-banner">
