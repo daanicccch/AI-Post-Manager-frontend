@@ -526,10 +526,14 @@ export function DraftPage() {
     try {
       const session = await api.startDraftCustomEmojiImport(draft.id);
       const copied = await copyTextToClipboard(session.copyText);
-      if (!copied) {
-        throw new Error(isRu ? 'Не удалось скопировать текст. Разреши доступ к буферу обмена и попробуй ещё раз.' : 'Failed to copy the text. Allow clipboard access and try again.');
-      }
       openTelegramLinkAndClose(session.botUrl);
+      if (!copied) {
+        setNotice(
+          isRu
+            ? 'Если текст не скопировался автоматически, бот сейчас пришлёт его в чат.'
+            : 'If the text did not copy automatically, the bot will send it in the chat.'
+        );
+      }
     } catch (startError) {
       setError(startError instanceof Error ? startError.message : isRu ? 'Не удалось подготовить импорт premium emoji' : 'Failed to prepare premium emoji import');
     } finally {
