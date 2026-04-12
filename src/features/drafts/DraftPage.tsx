@@ -34,6 +34,48 @@ type ExpandedPreview = {
   src: string;
 } | null;
 
+async function copyTextToClipboard(value: string) {
+  const text = String(value || '');
+  if (!text) {
+    return false;
+  }
+
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      // Fall through to a DOM-based copy for Telegram mobile webviews.
+    }
+  }
+
+  if (typeof document === 'undefined') {
+    return false;
+  }
+
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.setAttribute('readonly', 'true');
+  textarea.setAttribute('aria-hidden', 'true');
+  textarea.style.position = 'fixed';
+  textarea.style.top = '-9999px';
+  textarea.style.left = '-9999px';
+  textarea.style.opacity = '0';
+
+  document.body.append(textarea);
+  textarea.focus();
+  textarea.select();
+  textarea.setSelectionRange(0, textarea.value.length);
+
+  try {
+    return document.execCommand('copy');
+  } catch {
+    return false;
+  } finally {
+    textarea.remove();
+  }
+}
+
 function formatTelegramClock(value?: string | null, isRu = false) {
   if (!value) {
     return isRu ? 'сейчас' : 'now';
@@ -483,7 +525,10 @@ export function DraftPage() {
 
     try {
       const session = await api.startDraftCustomEmojiImport(draft.id);
-      await navigator.clipboard.writeText(session.copyText);
+      const copied = await copyTextToClipboard(session.copyText);
+      if (!copied) {
+        throw new Error(isRu ? 'Не удалось скопировать текст. Разреши доступ к буферу обмена и попробуй ещё раз.' : 'Failed to copy the text. Allow clipboard access and try again.');
+      }
       openTelegramLinkAndClose(session.botUrl);
     } catch (startError) {
       setError(startError instanceof Error ? startError.message : isRu ? 'Не удалось подготовить импорт premium emoji' : 'Failed to prepare premium emoji import');
