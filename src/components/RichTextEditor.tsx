@@ -24,6 +24,33 @@ interface LinkDialogState {
   to: number;
 }
 
+function escapeAttribute(value: string) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function decorateEditorHtmlWithCustomEmojiPreviews(
+  html: string,
+  customEmojiPreviews: DraftCustomEmojiPreview[]
+) {
+  const previewMap = new Map(customEmojiPreviews.map((preview) => [preview.customEmojiId, preview]));
+
+  return String(html || '').replace(
+    /<tg-emoji\s+emoji-id="(\d+)"(?:[^>]*)>([\s\S]*?)<\/tg-emoji>/gi,
+    (match, emojiId, fallback) => {
+      const preview = previewMap.get(String(emojiId || '').trim());
+      if (!preview?.previewUrl) {
+        return match;
+      }
+
+      return `<tg-emoji emoji-id="${escapeAttribute(emojiId)}" data-preview-url="${escapeAttribute(preview.previewUrl)}" data-preview-kind="${escapeAttribute(preview.previewKind)}">${fallback}</tg-emoji>`;
+    }
+  );
+}
+
 const TelegramSpoiler = Mark.create({
   name: 'telegramSpoiler',
   parseHTML() {
@@ -62,6 +89,14 @@ const TelegramEmoji = Node.create({
       fallback: {
         default: '',
         parseHTML: (element) => String((element as HTMLElement).textContent || '')
+      },
+      previewUrl: {
+        default: '',
+        parseHTML: (element) => String((element as HTMLElement).getAttribute('data-preview-url') || '').trim()
+      },
+      previewKind: {
+        default: 'image',
+        parseHTML: (element) => String((element as HTMLElement).getAttribute('data-preview-kind') || 'image').trim()
       }
     };
   },
@@ -69,7 +104,44 @@ const TelegramEmoji = Node.create({
     return [{ tag: 'tg-emoji' }];
   },
   renderHTML({ HTMLAttributes }) {
-    return ['tg-emoji', { 'emoji-id': HTMLAttributes.emojiId }, HTMLAttributes.fallback || ''];
+    const fallback = HTMLAttributes.fallback || '';
+    const emojiId = HTMLAttributes.emojiId || '';
+    const previewUrl = String(HTMLAttributes.previewUrl || '').trim();
+    const previewKind = String(HTMLAttributes.previewKind || 'image').trim();
+
+    if (!previewUrl) {
+      return ['tg-emoji', { 'emoji-id': emojiId }, fallback];
+    }
+
+    const assetNode = previewKind === 'video'
+      ? ['video', {
+          autoplay: 'true',
+          class: 'telegram-custom-emoji__asset',
+          loop: 'true',
+          muted: 'true',
+          playsinline: 'true',
+          src: previewUrl,
+        }]
+      : ['img', {
+          alt: fallback || 'premium emoji',
+          class: 'telegram-custom-emoji__asset',
+          src: previewUrl,
+        }];
+
+    return [
+      'tg-emoji',
+      {
+        'emoji-id': emojiId,
+        'data-fallback-text': fallback,
+        class: 'telegram-custom-emoji',
+      },
+      [
+        'span',
+        { class: 'telegram-custom-emoji__inner' },
+        assetNode,
+        ['span', { class: 'telegram-custom-emoji__fallback' }, fallback || 'premium emoji'],
+      ],
+    ];
   }
 });
 
@@ -152,10 +224,12 @@ export function RichTextEditor({
   value
 }: RichTextEditorProps) {
   const normalizedValue = normalizeRichTextHtml(value);
-  const editorHtml = richTextToEditorHtml(normalizedValue);
+  const editorHtml = decorateEditorHtmlWithCustomEmojiPreviews(
+    richTextToEditorHtml(normalizedValue),
+    customEmojiPreviews
+  );
   const [linkDialog, setLinkDialog] = useState<LinkDialogState | null>(null);
   const [linkValue, setLinkValue] = useState('');
-  const editorRootRef = useRef<HTMLDivElement | null>(null);
   const linkInputRef = useRef<HTMLInputElement | null>(null);
 
   const editor = useEditor({
@@ -223,61 +297,6 @@ export function RichTextEditor({
   }, [editor, editorHtml, normalizedValue]);
 
   useEffect(() => {
-    const root = editorRootRef.current?.querySelector('.rich-text-editor__content');
-    if (!(root instanceof HTMLElement)) {
-      return;
-    }
-
-    const previewMap = new Map(customEmojiPreviews.map((preview) => [preview.customEmojiId, preview]));
-    const customEmojiNodes = Array.from(root.querySelectorAll('tg-emoji'));
-
-    for (const node of customEmojiNodes) {
-      const emojiId = String(node.getAttribute('emoji-id') || '').trim();
-      const preview = previewMap.get(emojiId);
-      const fallbackText = String(node.getAttribute('data-fallback-text') || node.textContent || '');
-
-      node.setAttribute('data-fallback-text', fallbackText);
-
-      if (!preview?.previewUrl) {
-        node.classList.remove('telegram-custom-emoji');
-        node.textContent = fallbackText;
-        continue;
-      }
-
-      node.classList.add('telegram-custom-emoji');
-
-      const assetContainer = document.createElement('span');
-      assetContainer.className = 'telegram-custom-emoji__inner';
-
-      if (preview.previewKind === 'video') {
-        const video = document.createElement('video');
-        video.autoplay = true;
-        video.className = 'telegram-custom-emoji__asset';
-        video.loop = true;
-        video.muted = true;
-        video.playsInline = true;
-        video.src = preview.previewUrl;
-        assetContainer.append(video);
-      } else {
-        const image = document.createElement('img');
-        image.alt = preview.altText || fallbackText || 'premium emoji';
-        image.className = 'telegram-custom-emoji__asset';
-        image.decoding = 'async';
-        image.loading = 'lazy';
-        image.src = preview.previewUrl;
-        assetContainer.append(image);
-      }
-
-      const accessibleFallback = document.createElement('span');
-      accessibleFallback.className = 'telegram-custom-emoji__fallback';
-      accessibleFallback.textContent = fallbackText || preview.altText || 'premium emoji';
-      assetContainer.append(accessibleFallback);
-
-      node.replaceChildren(assetContainer);
-    }
-  }, [customEmojiPreviews, normalizedValue]);
-
-  useEffect(() => {
     if (!linkDialog) {
       return;
     }
@@ -333,7 +352,7 @@ export function RichTextEditor({
         <ToolbarButton active={editor.isActive('link')} ariaLabel={isRu ? 'Ссылка' : 'Link'} disabled={readOnly} label="LINK" onClick={openLinkDialog} />
       </div>
 
-      <div ref={editorRootRef} className="draft-editor rich-text-editor">
+      <div className="draft-editor rich-text-editor">
         <EditorContent editor={editor} />
       </div>
 

@@ -14,7 +14,7 @@ import {
   type DraftMediaItem
 } from '../../lib/api';
 import { useAppLocale } from '../../lib/appLocale';
-import { formatDate, isImagePath, isVideoPath, summarizeRichText, toDateTimeLocalInput } from '../../lib/formatters';
+import { formatDate, isImagePath, isVideoPath, stripHtml, summarizeRichText, toDateTimeLocalInput } from '../../lib/formatters';
 import {
   getEffectivePostFooterLinksConfig,
   serializePostFooterLinksConfig,
@@ -74,6 +74,10 @@ async function copyTextToClipboard(value: string) {
   } finally {
     textarea.remove();
   }
+}
+
+function buildDraftCopyText(value: string) {
+  return stripHtml(normalizeRichTextHtml(value));
 }
 
 function formatTelegramClock(value?: string | null, isRu = false) {
@@ -524,14 +528,18 @@ export function DraftPage() {
     setIsStartingEmojiImport(true);
 
     try {
+      const localCopyText = buildDraftCopyText(draftText || draft.text || '');
+      let copied = localCopyText ? await copyTextToClipboard(localCopyText) : false;
       const session = await api.startDraftCustomEmojiImport(draft.id);
-      const copied = await copyTextToClipboard(session.copyText);
+      if (!copied && session.copyText) {
+        copied = await copyTextToClipboard(session.copyText);
+      }
       openTelegramLinkAndClose(session.botUrl);
       if (!copied) {
         setNotice(
           isRu
-            ? 'Если текст не скопировался автоматически, бот сейчас пришлёт его в чат.'
-            : 'If the text did not copy automatically, the bot will send it in the chat.'
+            ? 'Если текст не скопировался автоматически, попробуй вставить его вручную после перехода.'
+            : 'If the text did not copy automatically, try pasting it manually after the redirect.'
         );
       }
     } catch (startError) {
