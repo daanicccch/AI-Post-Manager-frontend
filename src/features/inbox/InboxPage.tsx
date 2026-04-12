@@ -2,11 +2,17 @@ import { useEffect, useMemo, useState, useTransition } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FeedListSkeleton } from '../../components/LoadingSkeleton';
 import { SelectField } from '../../components/SelectField';
+import { TelegramRichTextPreview } from '../../components/TelegramRichTextPreview';
 import { api, getMediaPreviewUrl, type InboxItem, type Profile } from '../../lib/api';
 import { useAppLocale } from '../../lib/appLocale';
-import { formatCompactPostMeta, isImagePath, stripHtml, summarizeRichText } from '../../lib/formatters';
+import { formatCompactPostMeta, isImagePath, stripHtml } from '../../lib/formatters';
 
 const ACTIVE_INBOX_STATUSES = new Set(['editing', 'scheduled', 'publishing']);
+const CUSTOM_EMOJI_HTML_PATTERN = /<tg-emoji\b[^>]*emoji-id="\d+"[^>]*>/i;
+
+function hasCustomEmojiMarkup(value: string | null | undefined) {
+  return CUSTOM_EMOJI_HTML_PATTERN.test(String(value || ''));
+}
 
 export function InboxPage() {
   const { language } = useAppLocale();
@@ -104,6 +110,78 @@ export function InboxPage() {
       isCancelled = true;
     };
   }, [profileId, status]);
+
+  useEffect(() => {
+    const draftsNeedingEmojiPreview = drafts.filter(
+      (item) => !Array.isArray(item.customEmojiPreviews) || item.customEmojiPreviews.length === 0
+    );
+
+    if (draftsNeedingEmojiPreview.length === 0) {
+      return;
+    }
+
+    let cancelled = false;
+
+    void Promise.all(
+      draftsNeedingEmojiPreview.map(async (item) => {
+        const customEmojiPreviews = await api.getDraftCustomEmojiPreviews(item.id).catch(() => []);
+        if (customEmojiPreviews.length === 0) {
+          return null;
+        }
+
+        if (hasCustomEmojiMarkup(item.text)) {
+          return {
+            id: item.id,
+            text: item.text,
+            customEmojiPreviews,
+          };
+        }
+
+        const detail = await api.getDraft(item.id).catch(() => null);
+        return {
+          id: item.id,
+          text: detail?.text || item.text,
+          customEmojiPreviews,
+        };
+      })
+    ).then((results) => {
+      if (cancelled) {
+        return;
+      }
+
+      const resolvedResults = results.filter((result): result is NonNullable<typeof result> => {
+        if (!result) {
+          return false;
+        }
+
+        return result.customEmojiPreviews.length > 0;
+      });
+      const previewsByDraftId = new Map(
+        resolvedResults.map((result) => [result.id, result])
+      );
+
+      if (previewsByDraftId.size === 0) {
+        return;
+      }
+
+      setDrafts((currentDrafts) =>
+        currentDrafts.map((item) => {
+          const nextPayload = previewsByDraftId.get(item.id);
+          return nextPayload
+            ? {
+                ...item,
+                text: nextPayload.text || item.text,
+                customEmojiPreviews: nextPayload.customEmojiPreviews,
+              }
+            : item;
+        })
+      );
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [drafts]);
 
   if (isLoading && drafts.length === 0) {
     return <FeedListSkeleton />;
@@ -206,7 +284,12 @@ export function InboxPage() {
                 <span>{formatCompactPostMeta(draft.scheduledFor || draft.updatedAt, draft.mediaCount, language)}</span>
               </div>
 
-              <p className="feed-card__excerpt">{summarizeRichText(draft.excerpt)}</p>
+              <div className="feed-card__excerpt feed-card__excerpt--rich">
+                <TelegramRichTextPreview
+                  customEmojiPreviews={draft.customEmojiPreviews || []}
+                  html={draft.text || draft.excerpt}
+                />
+              </div>
             </div>
           </article>
         ))}

@@ -150,7 +150,9 @@ export interface InboxItem {
   profileTitle: string;
   status: string;
   title: string | null;
+  text: string;
   excerpt: string;
+  customEmojiPreviews?: DraftCustomEmojiPreview[];
   mediaCount?: number;
   mediaPreviewPath?: string | null;
   mediaPreviewUrl?: string | null;
@@ -309,7 +311,9 @@ export interface HistoryItem {
   profileTitle: string;
   status: string;
   title: string | null;
+  text: string;
   excerpt: string;
+  customEmojiPreviews?: DraftCustomEmojiPreview[];
   mediaCount?: number;
   mediaPreviewPath?: string | null;
   mediaPreviewUrl?: string | null;

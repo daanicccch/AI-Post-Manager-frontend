@@ -826,13 +826,21 @@ function syncProfileStats(db: MockDb) {
 }
 
 function toInboxItem(draft: DraftDetail): InboxItem {
+  const customEmojiPreviews = Array.from(
+    new Set(
+      Array.from(String(draft.text || '').matchAll(/emoji-id="(\d+)"/g)).map((match) => match[1])
+    )
+  ).map((customEmojiId) => buildMockCustomEmojiPreview(customEmojiId));
+
   return {
     id: draft.id,
     profileId: draft.profileId,
     profileTitle: draft.profileTitle,
     status: draft.status,
     title: draft.title,
+    text: draft.text,
     excerpt: summarize(draft.text),
+    customEmojiPreviews,
     mediaCount: draft.media.length,
     mediaPreviewPath: draft.media[0]?.path || draft.sources[0]?.mediaPreviewPath || null,
     sources: draft.sources.map((source) => ({
@@ -851,13 +859,21 @@ function toInboxItem(draft: DraftDetail): InboxItem {
 }
 
 function toHistoryItem(draft: DraftDetail): HistoryItem {
+  const customEmojiPreviews = Array.from(
+    new Set(
+      Array.from(String(draft.text || '').matchAll(/emoji-id="(\d+)"/g)).map((match) => match[1])
+    )
+  ).map((customEmojiId) => buildMockCustomEmojiPreview(customEmojiId));
+
   return {
     id: draft.id,
     profileId: draft.profileId,
     profileTitle: draft.profileTitle,
     status: draft.status,
     title: draft.title,
+    text: draft.text,
     excerpt: summarize(draft.text),
+    customEmojiPreviews,
     mediaCount: draft.media.length,
     mediaPreviewPath: draft.media[0]?.path || draft.sources[0]?.mediaPreviewPath || null,
     versionCount: draft.versions.length,

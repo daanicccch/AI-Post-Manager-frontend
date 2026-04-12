@@ -4470,6 +4470,30 @@ textarea:focus {
   overflow-wrap: anywhere;
 }
 
+.feed-card__excerpt--rich {
+  display: block;
+  max-height: 4.35rem;
+  overflow: hidden;
+}
+
+.feed-card__excerpt--rich .telegram-render {
+  display: block;
+  line-height: 1.45;
+}
+
+.feed-card__excerpt--rich .telegram-render > * {
+  display: inline;
+  margin: 0;
+}
+
+.feed-card__excerpt--rich .telegram-render > * + *::before {
+  content: ' ';
+}
+
+.feed-card__excerpt--rich .telegram-render br {
+  display: none;
+}
+
 .feed-card__meta {
   display: flex;
   flex-wrap: wrap;
