@@ -6,10 +6,12 @@ import Link from '@tiptap/extension-link';
 import Underline from '@tiptap/extension-underline';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import type { DraftCustomEmojiPreview } from '../lib/api';
 import { normalizeRichTextHtml, richTextToEditorHtml } from '../lib/richText';
 
 interface RichTextEditorProps {
   ariaLabel: string;
+  customEmojiPreviews?: DraftCustomEmojiPreview[];
   isRu: boolean;
   onChange: (value: string) => void;
   placeholder: string;
@@ -142,6 +144,7 @@ function ToolbarButton({
 
 export function RichTextEditor({
   ariaLabel,
+  customEmojiPreviews = [],
   isRu,
   onChange,
   placeholder,
@@ -217,6 +220,61 @@ export function RichTextEditor({
 
     editor.commands.setContent(editorHtml, { emitUpdate: false });
   }, [editor, editorHtml, normalizedValue]);
+
+  useEffect(() => {
+    if (!editor) {
+      return;
+    }
+
+    const previewMap = new Map(customEmojiPreviews.map((preview) => [preview.customEmojiId, preview]));
+    const root = editor.view.dom;
+    const customEmojiNodes = Array.from(root.querySelectorAll('tg-emoji'));
+
+    for (const node of customEmojiNodes) {
+      const emojiId = String(node.getAttribute('emoji-id') || '').trim();
+      const preview = previewMap.get(emojiId);
+      const fallbackText = String(node.getAttribute('data-fallback-text') || node.textContent || '');
+
+      node.setAttribute('data-fallback-text', fallbackText);
+
+      if (!preview?.previewUrl) {
+        node.classList.remove('telegram-custom-emoji');
+        node.textContent = fallbackText;
+        continue;
+      }
+
+      node.classList.add('telegram-custom-emoji');
+
+      const assetContainer = document.createElement('span');
+      assetContainer.className = 'telegram-custom-emoji__inner';
+
+      if (preview.previewKind === 'video') {
+        const video = document.createElement('video');
+        video.autoplay = true;
+        video.className = 'telegram-custom-emoji__asset';
+        video.loop = true;
+        video.muted = true;
+        video.playsInline = true;
+        video.src = preview.previewUrl;
+        assetContainer.append(video);
+      } else {
+        const image = document.createElement('img');
+        image.alt = preview.altText || fallbackText || 'premium emoji';
+        image.className = 'telegram-custom-emoji__asset';
+        image.decoding = 'async';
+        image.loading = 'lazy';
+        image.src = preview.previewUrl;
+        assetContainer.append(image);
+      }
+
+      const accessibleFallback = document.createElement('span');
+      accessibleFallback.className = 'telegram-custom-emoji__fallback';
+      accessibleFallback.textContent = fallbackText || preview.altText || 'premium emoji';
+      assetContainer.append(accessibleFallback);
+
+      node.replaceChildren(assetContainer);
+    }
+  }, [customEmojiPreviews, editor, normalizedValue]);
 
   useEffect(() => {
     if (!linkDialog) {

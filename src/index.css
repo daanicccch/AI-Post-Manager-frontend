@@ -1946,7 +1946,8 @@ textarea:focus {
   white-space: nowrap;
 }
 
-.telegram-render tg-emoji.telegram-custom-emoji {
+.telegram-render tg-emoji.telegram-custom-emoji,
+.rich-text-editor__content tg-emoji.telegram-custom-emoji {
   display: inline-flex;
   vertical-align: -0.18em;
 }

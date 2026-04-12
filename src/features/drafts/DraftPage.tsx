@@ -666,6 +666,7 @@ export function DraftPage() {
               <Suspense fallback={<EditorComposerSkeleton />}>
                 <RichTextEditor
                   ariaLabel={isRu ? 'Текст поста' : 'Draft text'}
+                  customEmojiPreviews={customEmojiPreviews}
                   isRu={isRu}
                   placeholder={isRu ? 'Напиши пост и выделяй важные места кнопками сверху.' : 'Write the post and use the buttons above for emphasis.'}
                   readOnly={isLocked}
