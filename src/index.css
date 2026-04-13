@@ -1976,6 +1976,16 @@ textarea:focus {
     drop-shadow(0 0.04em 0.08em rgba(22, 32, 51, 0.24));
 }
 
+.telegram-render tg-emoji.telegram-custom-emoji .telegram-custom-emoji__inner {
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.telegram-render tg-emoji.telegram-custom-emoji .telegram-custom-emoji__asset {
+  filter: drop-shadow(0 0.05em 0.12em rgba(43, 57, 84, 0.18));
+}
+
 .telegram-custom-emoji__fallback {
   position: absolute;
   width: 1px;
@@ -4218,8 +4228,8 @@ textarea:focus {
 
 .telegram-phone__screen {
   background:
-    radial-gradient(circle at top, rgba(102, 114, 255, 0.1), transparent 12rem),
-    linear-gradient(180deg, #f7f9ff 0%, #eef3fb 100%);
+    radial-gradient(circle at top, rgba(102, 114, 255, 0.08), transparent 12rem),
+    linear-gradient(180deg, #f1f4f8 0%, #e7edf5 100%);
 }
 
 .telegram-day-pill {
@@ -4228,9 +4238,9 @@ textarea:focus {
 }
 
 .telegram-post {
-  background: #ffffff;
-  border: 1px solid rgba(24, 39, 75, 0.08);
-  box-shadow: 0 18px 38px rgba(52, 72, 117, 0.12);
+  background: linear-gradient(180deg, #f6f8fc 0%, #eef3f9 100%);
+  border: 1px solid rgba(24, 39, 75, 0.06);
+  box-shadow: 0 16px 32px rgba(52, 72, 117, 0.1);
 }
 
 .telegram-post__avatar {
@@ -6909,6 +6919,27 @@ body.app-lightbox-open .workspace-main {
   padding-top: 0.72rem;
 }
 
+.profile-style-drawer {
+  border-color: rgba(121, 131, 171, 0.14);
+  background: linear-gradient(180deg, rgba(250, 252, 255, 0.98), rgba(245, 248, 255, 0.98));
+}
+
+.profile-style-drawer .create-filter-drawer__summary {
+  min-height: 3.2rem;
+}
+
+.profile-style-drawer .create-filter-drawer__summary small {
+  margin-left: auto;
+}
+
+.profile-style-drawer__content {
+  padding-top: 0.72rem;
+}
+
+.profile-style-drawer--busy {
+  opacity: 0.82;
+}
+
 .queue-control-card--profile .select-field select {
   min-height: 2.45rem;
   padding: 0.58rem 0.78rem;
@@ -6988,6 +7019,30 @@ body.app-lightbox-open .workspace-main {
   justify-content: flex-start;
   flex-wrap: wrap;
   gap: 0.5rem;
+}
+
+.editor-panel--profile .profile-actions-row {
+  max-height: 0;
+  margin: 0;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+  transform: translateY(-0.45rem);
+  transition:
+    max-height 220ms ease,
+    opacity 180ms ease,
+    transform 220ms ease,
+    margin 220ms ease;
+  visibility: hidden;
+}
+
+.editor-panel--profile:has(.profile-style-drawer[open]) .profile-actions-row {
+  max-height: 6rem;
+  margin: 0 0 0.08rem;
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+  visibility: visible;
 }
 
 .profile-actions-row .primary-button,
@@ -7102,8 +7157,8 @@ body.app-lightbox-open .workspace-main {
 }
 
 .editor-panel--profile .profile-style-editor {
-  min-height: 70vh;
-  height: 70vh;
+  min-height: 20rem;
+  height: min(58vh, 30rem);
 }
 
 .page-stack--profile .editor-panel--profile .profile-style-editor {

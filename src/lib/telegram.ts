@@ -5,10 +5,18 @@ declare global {
         ready?: () => void;
         expand?: () => void;
         requestFullscreen?: () => void;
+        exitFullscreen?: () => void;
         close?: () => void;
         openTelegramLink?: (url: string) => void;
         disableVerticalSwipes?: () => void;
         enableVerticalSwipes?: () => void;
+        BackButton?: {
+          show?: () => void;
+          hide?: () => void;
+          onClick?: (callback: () => void) => void;
+          offClick?: (callback: () => void) => void;
+          isVisible?: boolean;
+        };
         onEvent?: (eventType: string, eventHandler: () => void) => void;
         offEvent?: (eventType: string, eventHandler: () => void) => void;
         colorScheme?: 'light' | 'dark';
@@ -128,6 +136,17 @@ function safelyCallTelegramMethod(methodName: string, action?: () => void) {
   }
 }
 
+function syncDesktopWindowMode(
+  webApp: NonNullable<NonNullable<Window['Telegram']>['WebApp']>,
+  shouldUseImmersiveMode: boolean
+) {
+  if (shouldUseImmersiveMode || !webApp.isFullscreen) {
+    return;
+  }
+
+  safelyCallTelegramMethod('exitFullscreen', webApp.exitFullscreen);
+}
+
 function shouldUseTelegramImmersiveMode(webApp: NonNullable<Window['Telegram']>['WebApp']) {
   const platform = String(webApp?.platform || '').trim().toLowerCase();
 
@@ -148,11 +167,12 @@ export function initTelegramWebApp() {
     return () => {};
   }
 
+  const shouldUseImmersiveMode = shouldUseTelegramImmersiveMode(webApp);
   const sync = () => {
+    syncDesktopWindowMode(webApp, shouldUseImmersiveMode);
     syncTelegramViewportVars();
     syncTelegramThemeVars();
   };
-  const shouldUseImmersiveMode = shouldUseTelegramImmersiveMode(webApp);
 
   sync();
   safelyCallTelegramMethod('ready', webApp.ready);
@@ -177,6 +197,40 @@ export function initTelegramWebApp() {
     webApp.offEvent?.('viewportChanged', sync);
     webApp.offEvent?.('fullscreenChanged', sync);
     webApp.offEvent?.('themeChanged', sync);
+  };
+}
+
+export function configureTelegramBackButton(onClick?: () => void) {
+  const backButton = window.Telegram?.WebApp?.BackButton;
+  if (!backButton) {
+    return () => {};
+  }
+
+  if (typeof onClick !== 'function') {
+    safelyCallTelegramMethod('BackButton.hide', backButton.hide);
+    return () => {};
+  }
+
+  safelyCallTelegramMethod('BackButton.show', backButton.show);
+
+  try {
+    backButton.onClick?.(onClick);
+  } catch (error) {
+    if (import.meta.env.DEV) {
+      console.warn('[telegram] BackButton.onClick is unavailable in this environment', error);
+    }
+  }
+
+  return () => {
+    try {
+      backButton.offClick?.(onClick);
+    } catch (error) {
+      if (import.meta.env.DEV) {
+        console.warn('[telegram] BackButton.offClick is unavailable in this environment', error);
+      }
+    }
+
+    safelyCallTelegramMethod('BackButton.hide', backButton.hide);
   };
 }
 

@@ -110,6 +110,14 @@ export function ProfilePage() {
       })),
     [profiles]
   );
+  const channelStyleLabel = useMemo(
+    () => (isRu ? '\u0421\u0442\u0438\u043b\u044c \u043a\u0430\u043d\u0430\u043b\u0430' : 'Channel style'),
+    [isRu]
+  );
+  const styleSummary = useMemo(() => {
+    const wordCount = styleDraft.trim() ? styleDraft.trim().split(/\s+/).length : 0;
+    return wordCount > 0 ? `${wordCount} · Markdown` : 'Markdown';
+  }, [styleDraft]);
   const languageOptions = useMemo(
     () => [
       { value: 'ru', label: 'Русский' },
@@ -409,7 +417,7 @@ export function ProfilePage() {
   return (
     <section className="page-stack page-stack--profile">
       <section className="queue-control-card queue-control-card--profile">
-        <details className="create-filter-drawer queue-filter-drawer" open>
+        <details className="create-filter-drawer queue-filter-drawer">
           <summary className="create-filter-drawer__summary">
             <span>{isRu ? 'Профиль' : 'Profile'}</span>
             <small>{activeProfile?.title || (isRu ? 'Профиль' : 'Profile')}</small>
@@ -495,11 +503,15 @@ export function ProfilePage() {
               </div>
             )}
 
-            <div
-              className={`context-section context-section--tight profile-editor-surface${isRegenerating ? ' profile-editor-surface--busy' : ''}`}
-            >
-              <div className="editor-meta editor-meta--profile">
-                <div>
+            <details className={`create-filter-drawer profile-style-drawer${isRegenerating ? ' profile-style-drawer--busy' : ''}`}>
+              <summary className="create-filter-drawer__summary">
+                <span>{channelStyleLabel}</span>
+                <small>{styleSummary}</small>
+              </summary>
+
+              <div className="create-filter-drawer__content profile-style-drawer__content">
+                <div className="editor-meta editor-meta--profile">
+                  <div>
                   <h4>{isRu ? 'Стиль канала' : 'Channel style'}</h4>
                   <p>
                     {isRu
@@ -522,7 +534,8 @@ export function ProfilePage() {
                 value={styleDraft}
                 onChange={(event) => setStyleDraft(event.target.value)}
               />
-            </div>
+              </div>
+            </details>
 
             <div className="context-section context-section--tight profile-editor-surface">
               <PostFooterLinksEditor

@@ -15,7 +15,67 @@ import { ProfilePage } from '../features/profiles/ProfilePage';
 import { SchedulePage } from '../features/schedule/SchedulePage';
 import { BusyOverlayProvider } from '../lib/busyOverlay';
 import { api } from '../lib/api';
-import { initTelegramWebApp } from '../lib/telegram';
+import { configureTelegramBackButton, initTelegramWebApp } from '../lib/telegram';
+
+function getTelegramBackTarget(pathname: string, search: string) {
+  if (pathname.startsWith('/drafts/')) {
+    return '/';
+  }
+
+  if (!pathname.startsWith('/onboarding')) {
+    return null;
+  }
+
+  const params = new URLSearchParams(search);
+  const profileId = String(params.get('profileId') || '').trim();
+  if (!profileId) {
+    return pathname === '/onboarding' ? null : '/onboarding';
+  }
+
+  if (pathname === '/onboarding/sources') {
+    return '/onboarding';
+  }
+
+  if (pathname === '/onboarding/style') {
+    return buildOnboardingUrl('sources', profileId);
+  }
+
+  if (pathname === '/onboarding/style-review') {
+    return buildOnboardingUrl('style', profileId);
+  }
+
+  if (pathname === '/onboarding/plan') {
+    return buildOnboardingUrl('style-review', profileId);
+  }
+
+  return null;
+}
+
+function TelegramBackButtonSync() {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fallbackTarget = getTelegramBackTarget(location.pathname, location.search);
+    if (!fallbackTarget) {
+      return configureTelegramBackButton();
+    }
+
+    const handleBack = () => {
+      const historyIndex = Number(window.history.state?.idx ?? 0);
+      if (historyIndex > 0) {
+        navigate(-1);
+        return;
+      }
+
+      navigate(fallbackTarget, { replace: true });
+    };
+
+    return configureTelegramBackButton(handleBack);
+  }, [location.pathname, location.search, navigate]);
+
+  return null;
+}
 
 function HomeEntry() {
   const location = useLocation();
@@ -97,6 +157,7 @@ export function App() {
   return (
     <BusyOverlayProvider>
       <AppShell>
+        <TelegramBackButtonSync />
         <DraftDeepLinkRedirect />
         <Routes>
           <Route path="/" element={<HomeEntry />} />
