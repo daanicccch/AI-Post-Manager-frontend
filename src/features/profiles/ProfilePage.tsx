@@ -75,9 +75,20 @@ function toEditableWebSources(profile: Profile | null): EditableWebSource[] {
 }
 
 function getProfileSourceMode(profile: Profile | null): SourceSettingsMode {
-  return String(getConfigValue(profile?.sourceChannelsConfig, 'mode') || '').trim() === 'custom'
-    ? 'custom'
-    : 'preset';
+  const configuredMode = String(getConfigValue(profile?.sourceChannelsConfig, 'mode') || '').trim();
+  if (configuredMode === 'custom') {
+    return 'custom';
+  }
+  if (configuredMode === 'preset') {
+    return 'preset';
+  }
+
+  const configuredPresetKey = String(getConfigValue(profile?.sourceChannelsConfig, 'presetKey') || '').trim();
+  const legacyCustomChannels = Array.isArray(getConfigValue(profile?.sourceChannelsConfig, 'channels'))
+    || toEditableSourceChannels(profile).length > 0
+    || toEditableWebSources(profile).length > 0;
+
+  return configuredPresetKey || !legacyCustomChannels ? 'preset' : 'custom';
 }
 
 function getProfilePresetKey(profile: Profile | null, fallbackPresetKey = '') {

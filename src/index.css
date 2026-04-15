@@ -7296,11 +7296,9 @@ body.app-lightbox-open .workspace-main {
 }
 
 .source-settings-editor__preset-menu {
-  position: absolute;
+  position: relative;
   z-index: 12;
-  top: calc(100% + 0.34rem);
-  left: 0;
-  right: 0;
+  margin-top: 0.34rem;
   display: grid;
   gap: 0.28rem;
   max-height: 16rem;
