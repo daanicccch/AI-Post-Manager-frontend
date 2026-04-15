@@ -91,6 +91,14 @@ export interface OnboardingState {
   sourcePickerUrl?: string | null;
 }
 
+export interface ProfileSourceSettings {
+  profile: Profile;
+  presets: SourcePreset[];
+  sourceChannelCatalog: SourceChannelOption[];
+  webSourceCatalog: WebSourceOption[];
+  sourcePickerUrl?: string | null;
+}
+
 export interface OnboardingSourcesResult {
   profile: Profile;
   sourceChannels: SourceChannelOption[];
@@ -485,6 +493,36 @@ export const api = {
   },
   getStatus: () => request<StatusSummary>('/status'),
   getPersonaGuide: (profileId: string) => request<PersonaGuideDetail>(`/profiles/${profileId}/persona-guide`),
+  getProfileSourceSettings: (profileId: string) =>
+    request<ProfileSourceSettings>(`/profiles/${profileId}/source-settings`),
+  applyProfileSourcePreset: (
+    profileId: string,
+    body: {
+      presetKey: string;
+      includeTargetChannel: boolean;
+    }
+  ) =>
+    request<OnboardingSourcesResult>(`/profiles/${profileId}/source-settings/preset`, {
+      method: 'PUT',
+      body: JSON.stringify(body)
+    }),
+  saveProfileSources: (
+    profileId: string,
+    body: {
+      channels: SourceChannelOption[];
+      webSources: WebSourceOption[];
+      includeTargetChannel: boolean;
+    }
+  ) =>
+    request<OnboardingSourcesResult>(`/profiles/${profileId}/source-settings`, {
+      method: 'PUT',
+      body: JSON.stringify(body)
+    }),
+  acknowledgeProfileSourcePickerReturn: (profileId: string) =>
+    request<{ ok: true }>(`/profiles/${profileId}/source-settings/source-picker-return`, {
+      method: 'POST',
+      body: JSON.stringify({})
+    }),
   generateDraft: (profileId: string, body: GenerateDraftFromPoolInput) =>
     request<DraftDetail>(`/profiles/${profileId}/generate`, {
       method: 'POST',

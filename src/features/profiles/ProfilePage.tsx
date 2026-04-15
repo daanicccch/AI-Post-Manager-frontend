@@ -2,8 +2,16 @@ import { startTransition, useEffect, useMemo, useState, useTransition } from 're
 import { ProfilePageSkeleton } from '../../components/LoadingSkeleton';
 import { PostFooterLinksEditor } from '../../components/PostFooterLinksEditor';
 import { SelectField } from '../../components/SelectField';
-import { api, type Profile } from '../../lib/api';
+import { api, type Profile, type ProfileSourceSettings } from '../../lib/api';
 import { useAppLocale } from '../../lib/appLocale';
+import { getConfigValue, normalizeSourceChannels, normalizeWebSources } from '../onboarding/onboardingShared';
+import {
+  buildSourceSettingsPayload,
+  SourceSettingsEditor,
+  type EditableSourceChannel,
+  type EditableWebSource,
+  type SourceSettingsMode,
+} from '../sources/SourceSettingsEditor';
 import {
   normalizePostFooterLinksConfig,
   serializePostFooterLinksConfig,
@@ -41,6 +49,61 @@ function storeProfileId(profileId: string) {
   window.localStorage.setItem(PROFILE_STORAGE_KEY, normalizedProfileId);
 }
 
+function getRequestedProfileId() {
+  if (typeof window === 'undefined') {
+    return '';
+  }
+
+  return String(new URLSearchParams(window.location.search).get('profileId') || '').trim();
+}
+
+function toEditableSourceChannels(profile: Profile | null): EditableSourceChannel[] {
+  return normalizeSourceChannels(profile?.sourceChannels)
+    .filter((item) => item.origin !== 'target')
+    .map((item) => ({
+      username: item.username,
+      title: item.title || item.username,
+    }));
+}
+
+function toEditableWebSources(profile: Profile | null): EditableWebSource[] {
+  return normalizeWebSources(profile?.webSources)
+    .map((item) => ({
+      url: item.url,
+      title: item.title || item.url,
+    }));
+}
+
+function getProfileSourceMode(profile: Profile | null): SourceSettingsMode {
+  return String(getConfigValue(profile?.sourceChannelsConfig, 'mode') || '').trim() === 'custom'
+    ? 'custom'
+    : 'preset';
+}
+
+function getProfilePresetKey(profile: Profile | null, fallbackPresetKey = '') {
+  return String(getConfigValue(profile?.sourceChannelsConfig, 'presetKey') || '').trim() || fallbackPresetKey;
+}
+
+function buildSourceSignature(
+  mode: SourceSettingsMode,
+  selectedPresetKey: string,
+  customChannels: EditableSourceChannel[],
+  customWebSources: EditableWebSource[],
+) {
+  return JSON.stringify({
+    mode,
+    presetKey: mode === 'preset' ? selectedPresetKey : '',
+    channels: customChannels.map((item) => ({
+      username: item.username,
+      title: item.title,
+    })),
+    webSources: customWebSources.map((item) => ({
+      url: item.url,
+      title: item.title,
+    })),
+  });
+}
+
 function normalizeStyleValue(rawValue: string | null | undefined) {
   const nextValue = String(rawValue || '');
   const suspiciousChunks = nextValue.match(/\?{3,}/g) || [];
@@ -57,8 +120,14 @@ export function ProfilePage() {
   const { language, setLanguage } = useAppLocale();
   const isRu = language === 'ru';
   const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [profileId, setProfileId] = useState(() => getStoredProfileId());
+  const [profileId, setProfileId] = useState(() => getRequestedProfileId() || getStoredProfileId());
   const [profileDetail, setProfileDetail] = useState<Profile | null>(null);
+  const [sourceSettings, setSourceSettings] = useState<ProfileSourceSettings | null>(null);
+  const [sourceMode, setSourceMode] = useState<SourceSettingsMode>('preset');
+  const [selectedSourcePresetKey, setSelectedSourcePresetKey] = useState('');
+  const [customSourceChannels, setCustomSourceChannels] = useState<EditableSourceChannel[]>([]);
+  const [customWebSources, setCustomWebSources] = useState<EditableWebSource[]>([]);
+  const [sourceBaselineSignature, setSourceBaselineSignature] = useState('');
   const [styleDraft, setStyleDraft] = useState('');
   const [postFooterLinksDraft, setPostFooterLinksDraft] = useState<PostFooterLinksConfig>(() =>
     normalizePostFooterLinksConfig(null)
@@ -66,6 +135,9 @@ export function ProfilePage() {
   const [isStyleCorrupted, setIsStyleCorrupted] = useState(false);
   const [isBootLoading, setIsBootLoading] = useState(true);
   const [isProfileLoading, setIsProfileLoading] = useState(false);
+  const [isSourceLoading, setIsSourceLoading] = useState(false);
+  const [isSourceSaving, setIsSourceSaving] = useState(false);
+  const [sourceNeedsStyleRefresh, setSourceNeedsStyleRefresh] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [regenProgress, setRegenProgress] = useState(0);
@@ -97,6 +169,16 @@ export function ProfilePage() {
     [savedPostFooterLinksValue]
   );
   const hasDirtyChanges = styleDraft !== savedStyleValue || postFooterLinksDraftSignature !== savedPostFooterLinksSignature;
+  const sourceCurrentSignature = useMemo(
+    () => buildSourceSignature(sourceMode, selectedSourcePresetKey, customSourceChannels, customWebSources),
+    [customSourceChannels, customWebSources, selectedSourcePresetKey, sourceMode]
+  );
+  const hasSourceDirtyChanges = sourceCurrentSignature !== sourceBaselineSignature;
+  const sourceChannelCount = normalizeSourceChannels(sourceSettings?.profile.sourceChannels).filter((item) => item.origin !== 'target').length;
+  const webSourceCount = normalizeWebSources(sourceSettings?.profile.webSources).length;
+  const sourceModeLabel = sourceMode === 'custom'
+    ? (isRu ? '\u0421\u0432\u043e\u0438' : 'Custom')
+    : (isRu ? '\u041f\u0440\u0435\u0441\u0435\u0442' : 'Preset');
   const regenRemainingMinutes = useMemo(() => {
     const remainingRatio = Math.max(0, 1 - regenProgress / 100);
     const estimatedSeconds = Math.max(15, Math.round(remainingRatio * 120));
@@ -139,6 +221,36 @@ export function ProfilePage() {
     );
   }
 
+  function applySourceSettings(nextSettings: ProfileSourceSettings) {
+    const nextProfile = nextSettings.profile;
+    const nextMode = getProfileSourceMode(nextProfile);
+    const nextPresetKey = getProfilePresetKey(nextProfile, nextSettings.presets[0]?.key || '');
+    const nextChannels = toEditableSourceChannels(nextProfile);
+    const nextWebSources = toEditableWebSources(nextProfile);
+
+    setSourceSettings(nextSettings);
+    setSourceMode(nextMode);
+    setSelectedSourcePresetKey(nextPresetKey);
+    setCustomSourceChannels(nextChannels);
+    setCustomWebSources(nextWebSources);
+    setSourceBaselineSignature(buildSourceSignature(nextMode, nextPresetKey, nextChannels, nextWebSources));
+  }
+
+  async function reloadSourceSettings(nextProfileId = profileId) {
+    if (!nextProfileId) {
+      return null;
+    }
+
+    setIsSourceLoading(true);
+    try {
+      const nextSettings = await api.getProfileSourceSettings(nextProfileId);
+      applySourceSettings(nextSettings);
+      return nextSettings;
+    } finally {
+      setIsSourceLoading(false);
+    }
+  }
+
   function getRegenerationErrorMessage(regenerateError: unknown) {
     if (regenerateError instanceof Error) {
       return regenerateError.message;
@@ -163,9 +275,11 @@ export function ProfilePage() {
 
         setProfiles(profileItems);
 
+        const requestedProfileId = getRequestedProfileId();
         const storedProfileId = getStoredProfileId();
         const preferredProfileId =
-          (storedProfileId && profileItems.some((profile) => profile.slug === storedProfileId) && storedProfileId)
+          (requestedProfileId && profileItems.some((profile) => profile.slug === requestedProfileId) && requestedProfileId)
+          || (storedProfileId && profileItems.some((profile) => profile.slug === storedProfileId) && storedProfileId)
           || (profileId && profileItems.some((profile) => profile.slug === profileId) && profileId)
           || profileItems[0]?.slug
           || '';
@@ -201,16 +315,20 @@ export function ProfilePage() {
 
     let cancelled = false;
     setIsProfileLoading(true);
+    setIsSourceLoading(true);
     setError(null);
 
-    api
-      .getProfile(profileId)
-      .then((profile) => {
+    Promise.all([
+      api.getProfile(profileId),
+      api.getProfileSourceSettings(profileId),
+    ])
+      .then(([profile, nextSourceSettings]) => {
         if (cancelled) {
           return;
         }
 
         applyProfileDetail(profile);
+        applySourceSettings(nextSourceSettings);
       })
       .catch((loadError: Error) => {
         if (!cancelled) {
@@ -220,6 +338,7 @@ export function ProfilePage() {
       .finally(() => {
         if (!cancelled) {
           setIsProfileLoading(false);
+          setIsSourceLoading(false);
         }
       });
 
@@ -227,6 +346,34 @@ export function ProfilePage() {
       cancelled = true;
     };
   }, [profileId]);
+
+  useEffect(() => {
+    if (!profileId || typeof window === 'undefined') {
+      return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('sourcePickerReturn') !== '1') {
+      return;
+    }
+
+    void api.acknowledgeProfileSourcePickerReturn(profileId)
+      .then(() => reloadSourceSettings(profileId))
+      .then(() => {
+        setSourceNeedsStyleRefresh(true);
+        setFeedback(isRu
+          ? '\u0418\u0441\u0442\u043e\u0447\u043d\u0438\u043a \u0434\u043e\u0431\u0430\u0432\u043b\u0435\u043d. \u041e\u0431\u043d\u043e\u0432\u0438 \u0441\u0442\u0438\u043b\u044c, \u0447\u0442\u043e\u0431\u044b \u0443\u0447\u0435\u0441\u0442\u044c \u0435\u0433\u043e.'
+          : 'Source added. Update the style to include it.');
+      })
+      .catch((returnError: Error) => {
+        setError(returnError.message);
+      })
+      .finally(() => {
+        params.delete('sourcePickerReturn');
+        const nextQuery = params.toString();
+        window.history.replaceState({}, '', `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ''}`);
+      });
+  }, [isRu, profileId]);
 
   useEffect(() => {
     if (!isRegenerating || !regenStartedAt) {
@@ -370,12 +517,57 @@ export function ProfilePage() {
       const job = await ensureProfileRegeneration(profileId, 'sources');
       storeProfileRegeneration(profileId, job.startedAt, job.jobId);
       setIsRegenerating(true);
+      setSourceNeedsStyleRefresh(false);
       setRegenStartedAt(job.startedAt ? new Date(job.startedAt).getTime() : Date.now());
       setRegenSyncNonce((currentNonce) => currentNonce + 1);
     } catch (regenerateError) {
       setIsRegenerating(false);
       setRegenStartedAt(null);
       setError(getRegenerationErrorMessage(regenerateError));
+    }
+  }
+
+  async function handleSaveSources() {
+    if (!profileId) {
+      return;
+    }
+
+    setFeedback(null);
+    setError(null);
+    setIsSourceSaving(true);
+
+    try {
+      if (sourceMode === 'preset') {
+        await api.applyProfileSourcePreset(profileId, {
+          presetKey: selectedSourcePresetKey,
+          includeTargetChannel: false,
+        });
+      } else {
+        const payload = buildSourceSettingsPayload(customSourceChannels, customWebSources);
+        await api.saveProfileSources(profileId, {
+          ...payload,
+          includeTargetChannel: false,
+        });
+      }
+
+      const nextSettings = await reloadSourceSettings(profileId);
+      if (nextSettings?.profile) {
+        applyProfileDetail(nextSettings.profile);
+      }
+      setSourceNeedsStyleRefresh(true);
+      setFeedback(isRu
+        ? '\u0418\u0441\u0442\u043e\u0447\u043d\u0438\u043a\u0438 \u0441\u043e\u0445\u0440\u0430\u043d\u0435\u043d\u044b. \u041e\u0431\u043d\u043e\u0432\u0438 \u0441\u0442\u0438\u043b\u044c, \u0447\u0442\u043e\u0431\u044b \u043d\u043e\u0432\u044b\u0435 \u043a\u0430\u043d\u0430\u043b\u044b \u0432\u043b\u0438\u044f\u043b\u0438 \u043d\u0430 \u043f\u043e\u0441\u0442\u044b.'
+        : 'Sources saved. Update the style so the new channels shape future posts.');
+    } catch (saveError) {
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : isRu
+            ? '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0441\u043e\u0445\u0440\u0430\u043d\u0438\u0442\u044c \u0438\u0441\u0442\u043e\u0447\u043d\u0438\u043a\u0438'
+            : 'Failed to save sources'
+      );
+    } finally {
+      setIsSourceSaving(false);
     }
   }
 
@@ -455,6 +647,60 @@ export function ProfilePage() {
       {activeProfile && profileDetail && (
         <div className="profile-layout profile-layout--single">
           <section className="editor-panel editor-panel--main editor-panel--profile">
+            <details className="create-filter-drawer profile-source-drawer">
+              <summary className="create-filter-drawer__summary">
+                <span>{isRu ? '\u0418\u0441\u0442\u043e\u0447\u043d\u0438\u043a\u0438' : 'Sources'}</span>
+              </summary>
+
+              <div className="create-filter-drawer__content profile-source-drawer__content">
+                {isSourceLoading && !sourceSettings ? (
+                  <div className="state-banner">{isRu ? '\u0417\u0430\u0433\u0440\u0443\u0436\u0430\u0435\u043c \u0438\u0441\u0442\u043e\u0447\u043d\u0438\u043a\u0438...' : 'Loading sources...'}</div>
+                ) : (
+                  <SourceSettingsEditor
+                    customChannels={customSourceChannels}
+                    customWebSources={customWebSources}
+                    disabled={isProfileLoading || isRegenerating}
+                    isRu={isRu}
+                    isSaving={isSourceSaving}
+                    mode={sourceMode}
+                    presets={sourceSettings?.presets || []}
+                    saveDisabled={!hasSourceDirtyChanges}
+                    saveLabel={isRu ? '\u0421\u043e\u0445\u0440\u0430\u043d\u0438\u0442\u044c \u0438\u0441\u0442\u043e\u0447\u043d\u0438\u043a\u0438' : 'Save sources'}
+                    savingLabel={isRu ? '\u0421\u043e\u0445\u0440\u0430\u043d\u044f\u0435\u043c...' : 'Saving...'}
+                    selectedPresetKey={selectedSourcePresetKey}
+                    sourcePickerUrl={sourceSettings?.sourcePickerUrl}
+                    onCustomChannelsChange={setCustomSourceChannels}
+                    onCustomWebSourcesChange={setCustomWebSources}
+                    onModeChange={setSourceMode}
+                    onSave={() => {
+                      void handleSaveSources();
+                    }}
+                    onSelectedPresetKeyChange={setSelectedSourcePresetKey}
+                  />
+                )}
+
+                {sourceNeedsStyleRefresh && !isRegenerating ? (
+                  <div className="state-banner state-banner--info profile-source-refresh">
+                    <span>
+                      {isRu
+                        ? '\u0418\u0441\u0442\u043e\u0447\u043d\u0438\u043a\u0438 \u0443\u0436\u0435 \u0441\u043e\u0445\u0440\u0430\u043d\u0435\u043d\u044b. \u041e\u0431\u043d\u043e\u0432\u0438 \u0441\u0442\u0438\u043b\u044c, \u0447\u0442\u043e\u0431\u044b AI \u0443\u0447\u0435\u043b \u043d\u043e\u0432\u0443\u044e \u043f\u043e\u0434\u0431\u043e\u0440\u043a\u0443.'
+                        : 'Sources are saved. Refresh the style so AI uses the new mix.'}
+                    </span>
+                    <button
+                      className="primary-button primary-button--profile"
+                      disabled={isProfileLoading || isRegenerating || isSaving}
+                      type="button"
+                      onClick={() => {
+                        void handleRegenerateStyle();
+                      }}
+                    >
+                      {isRu ? '\u041e\u0431\u043d\u043e\u0432\u0438\u0442\u044c \u0441\u0442\u0438\u043b\u044c' : 'Update style'}
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            </details>
+
             <div className="action-row action-row--wrap profile-actions-row">
               <button
                 className="secondary-button secondary-button--small"

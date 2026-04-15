@@ -1210,6 +1210,135 @@ export async function handleLocalMockRequest<T>(path: string, init?: RequestInit
     return clone(profile) as T;
   }
 
+  const profileSourceSettingsMatch = pathname.match(/^\/profiles\/([^/]+)\/source-settings$/);
+  if (method === 'GET' && profileSourceSettingsMatch) {
+    const profile = getProfileBySlug(db, decodeURIComponent(profileSourceSettingsMatch[1]));
+    return clone({
+      profile,
+      presets: MOCK_SOURCE_PRESETS,
+      sourceChannelCatalog: Array.from(
+        new Map(MOCK_SOURCE_PRESETS.flatMap((preset) => preset.channels).map((item) => [item.username, item])).values()
+      ),
+      webSourceCatalog: Array.from(
+        new Map(MOCK_SOURCE_PRESETS.flatMap((preset) => preset.webSources).map((item) => [item.url, item])).values()
+      ),
+      sourcePickerUrl: `mock://source-picker/${profile.slug}`,
+    }) as T;
+  }
+
+  const profileSourcePresetMatch = pathname.match(/^\/profiles\/([^/]+)\/source-settings\/preset$/);
+  if (method === 'PUT' && profileSourcePresetMatch) {
+    const profile = getProfileBySlug(db, decodeURIComponent(profileSourcePresetMatch[1]));
+    const body = parseBody(init);
+    const presetKey = String(body.presetKey || '').trim();
+    const includeTargetChannel = Boolean(body.includeTargetChannel);
+    const targetChannel = includeTargetChannel && profile.telegramChannelUsername
+      ? [{
+          username: String(profile.telegramChannelUsername).replace(/^@+/, ''),
+          title: profile.telegramChannelTitle || profile.title,
+          name: profile.telegramChannelTitle || profile.title,
+          origin: 'target',
+          usedForStyle: true,
+          usedForMonitoring: false,
+          is_check: false,
+        }]
+      : [];
+
+    profile.sourceChannels = [...clonePresetChannels(presetKey), ...targetChannel];
+    profile.webSources = clonePresetWebSources(presetKey);
+    profile.sourceChannelsConfig = {
+      mode: 'preset',
+      presetKey,
+      includeTargetChannel,
+    };
+    profile.webSourcesConfig = {
+      mode: 'preset',
+      presetKey,
+    };
+    profile.updatedAt = nowIso();
+    syncProfileStats(db);
+    saveDb(db);
+
+    const result: OnboardingSourcesResult = {
+      profile: clone(profile),
+      sourceChannels: clone(normalizeMockSourceChannels(profile.sourceChannels)),
+      webSources: clone(normalizeMockWebSources(profile.webSources)),
+    };
+    return result as T;
+  }
+
+  if (method === 'PUT' && profileSourceSettingsMatch) {
+    const profile = getProfileBySlug(db, decodeURIComponent(profileSourceSettingsMatch[1]));
+    const body = parseBody(init);
+    const includeTargetChannel = Boolean(body.includeTargetChannel);
+    const channels = Array.from(
+      new Map(
+        (Array.isArray(body.channels) ? body.channels : [])
+          .map((item) => ({
+            username: String((item as Record<string, unknown>).username || '').trim().replace(/^@+/, ''),
+            title: String((item as Record<string, unknown>).title || (item as Record<string, unknown>).name || '').trim(),
+            name: String((item as Record<string, unknown>).title || (item as Record<string, unknown>).name || '').trim(),
+            origin: 'custom',
+            usedForStyle: (item as Record<string, unknown>).usedForStyle !== false,
+            usedForMonitoring: (item as Record<string, unknown>).usedForMonitoring !== false,
+            is_check: (item as Record<string, unknown>).usedForMonitoring !== false,
+          }))
+          .filter((item) => item.username)
+          .map((item) => [item.username.toLowerCase(), item])
+      ).values()
+    );
+    const targetChannel = includeTargetChannel && profile.telegramChannelUsername
+      ? [{
+          username: String(profile.telegramChannelUsername).replace(/^@+/, ''),
+          title: profile.telegramChannelTitle || profile.title,
+          name: profile.telegramChannelTitle || profile.title,
+          origin: 'target',
+          usedForStyle: true,
+          usedForMonitoring: false,
+          is_check: false,
+        }]
+      : [];
+    const webSources = Array.from(
+      new Map(
+        (Array.isArray(body.webSources) ? body.webSources : [])
+          .map((item) => ({
+            url: String((item as Record<string, unknown>).url || '').trim(),
+            title: String((item as Record<string, unknown>).title || '').trim(),
+            sourceKind: String((item as Record<string, unknown>).sourceKind || 'website').trim() || 'website',
+            origin: 'custom',
+          }))
+          .filter((item) => item.url)
+          .map((item) => [item.url.toLowerCase(), item])
+      ).values()
+    );
+
+    profile.sourceChannels = [...channels, ...targetChannel];
+    profile.webSources = webSources;
+    profile.sourceChannelsConfig = {
+      mode: 'custom',
+      includeTargetChannel,
+    };
+    profile.webSourcesConfig = {
+      mode: 'custom',
+    };
+    profile.updatedAt = nowIso();
+    syncProfileStats(db);
+    saveDb(db);
+
+    const result: OnboardingSourcesResult = {
+      profile: clone(profile),
+      sourceChannels: clone(normalizeMockSourceChannels(profile.sourceChannels)),
+      webSources: clone(normalizeMockWebSources(profile.webSources)),
+    };
+    return result as T;
+  }
+
+  const profileSourcePickerReturnMatch = pathname.match(/^\/profiles\/([^/]+)\/source-settings\/source-picker-return$/);
+  if (method === 'POST' && profileSourcePickerReturnMatch) {
+    getProfileBySlug(db, decodeURIComponent(profileSourcePickerReturnMatch[1]));
+    return clone({ ok: true }) as T;
+  }
+
   const personaMatch = pathname.match(/^\/profiles\/([^/]+)\/persona-guide$/);
   if (method === 'GET' && personaMatch) {
     return buildPersonaGuide(getProfileBySlug(db, decodeURIComponent(personaMatch[1]))) as T;
