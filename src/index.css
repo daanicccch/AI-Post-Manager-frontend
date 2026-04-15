@@ -5202,9 +5202,14 @@ body.app-lightbox-open .workspace-main {
 }
 
 .create-filter-drawer__summary span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.8rem;
+  min-width: 0;
   font-size: 0.8rem;
   font-weight: 800;
   letter-spacing: 0.08em;
+  line-height: 1;
   text-transform: uppercase;
   color: #2f4be0;
 }
@@ -6980,9 +6985,27 @@ body.app-lightbox-open .workspace-main {
   gap: 0.58rem;
 }
 
+.page-stack--profile .create-filter-drawer__summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  min-height: 3.2rem;
+  padding-block: 0.68rem;
+}
+
+.page-stack--profile .create-filter-drawer__summary span {
+  align-self: center;
+}
+
+.page-stack--profile .create-filter-drawer__summary small {
+  align-self: center;
+  margin-left: 0;
+}
+
 .page-stack--profile .create-filter-drawer__summary::after {
   width: 1.5rem;
   height: 1.5rem;
+  align-self: center;
 }
 
 .queue-control-card--profile .create-filter-drawer__content {
@@ -6994,12 +7017,8 @@ body.app-lightbox-open .workspace-main {
   background: linear-gradient(180deg, rgba(250, 252, 255, 0.98), rgba(245, 248, 255, 0.98));
 }
 
-.profile-style-drawer .create-filter-drawer__summary {
-  min-height: 3.2rem;
-}
-
 .profile-style-drawer .create-filter-drawer__summary small {
-  margin-left: auto;
+  margin-left: 0;
 }
 
 .profile-style-drawer__content {
