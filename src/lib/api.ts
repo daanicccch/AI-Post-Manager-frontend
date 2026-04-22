@@ -11,6 +11,11 @@ export interface Profile {
   telegramChannelId: string | null;
   telegramChannelUsername?: string | null;
   telegramChannelTitle?: string | null;
+  avatarUrl?: string | null;
+  channelAvatarUrl?: string | null;
+  channelPhotoUrl?: string | null;
+  telegramChannelPhotoUrl?: string | null;
+  telegramChannelAvatarUrl?: string | null;
   writingLanguage: string;
   onboardingStatus?: string | null;
   editorRoleText: string | null;
@@ -28,6 +33,7 @@ export interface Profile {
   webSources?: unknown[];
   webSourcesConfig?: unknown;
   postFooterLinks?: PostFooterLinksConfig | null;
+  extraGenerationRules?: string[];
   sourcePostsCount?: number;
   recentSourcePosts72hCount?: number;
   sourcePostsWithMediaCount?: number;
@@ -540,6 +546,7 @@ export const api = {
     sourceChannelsConfig?: unknown;
     webSourcesConfig?: unknown;
     postFooterLinks?: PostFooterLinksConfig | null;
+    extraGenerationRules?: string[];
   }
   ) =>
     request<ProfileAssetsUpdateResult>(`/profiles/${profileId}/assets`, {
