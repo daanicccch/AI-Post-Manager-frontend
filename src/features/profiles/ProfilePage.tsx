@@ -176,7 +176,7 @@ function getProfileAvatarUrl(profile: Profile | null) {
 
 function getProfileHandle(profile: Profile | null) {
   const username = String(profile?.telegramChannelUsername || '').trim().replace(/^@+/, '');
-  return username ? `@${username}` : String(profile?.slug || '').trim();
+  return username ? `@${username}` : '';
 }
 
 function getProfileInitials(profile: Profile | null) {
