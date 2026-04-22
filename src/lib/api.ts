@@ -476,9 +476,26 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return normalizeBrokenEncoding(payload.data as T);
 }
 
+async function requestBlob(path: string, init?: RequestInit): Promise<Blob | null> {
+  if (USE_LOCAL_MOCK_API) {
+    return null;
+  }
+
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    ...init,
+    headers: {
+      ...buildTelegramAuthHeader(),
+      ...((init?.headers as Record<string, string> | undefined) || {})
+    },
+  });
+
+  return response.ok ? response.blob() : null;
+}
+
 export const api = {
   listProfiles: () => request<Profile[]>('/profiles'),
   getProfile: (profileId: string) => request<Profile>(`/profiles/${profileId}`),
+  getProfileAvatar: (profileId: string) => requestBlob(`/profiles/${profileId}/avatar`),
   listSourcePosts: (
     profileId: string,
     params: {

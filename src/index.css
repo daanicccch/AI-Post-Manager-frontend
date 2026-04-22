@@ -7596,6 +7596,7 @@ body.profile-subscreen-open .profile-mobile {
   padding-bottom: calc(5.2rem + var(--safe-bottom-resolved));
 }
 
+.profile-mobile--main,
 .profile-mobile--rules,
 .profile-mobile--style,
 .profile-mobile--sources,
@@ -7622,7 +7623,18 @@ body.profile-subscreen-open .profile-mobile {
 }
 
 .profile-mobile-card--hero {
+  position: relative;
+  z-index: 20;
   gap: 0.84rem;
+  overflow: visible;
+}
+
+.profile-mobile-card--hero .select-field {
+  z-index: 24;
+}
+
+.profile-mobile-card--hero .select-field__menu {
+  z-index: 90;
 }
 
 .profile-mobile-hero {
@@ -7730,6 +7742,8 @@ body.profile-subscreen-open .profile-mobile {
 }
 
 .profile-mobile-list {
+  position: relative;
+  z-index: 1;
   overflow: hidden;
 }
 
@@ -8332,9 +8346,8 @@ body.profile-subscreen-open .profile-mobile {
 }
 
 .profile-mobile-savebar {
-  position: sticky;
+  position: static;
   z-index: 20;
-  bottom: calc(var(--bottom-nav-overlay-height) + 0.45rem + var(--safe-bottom-resolved));
   display: grid;
   grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
   gap: 0.52rem;

@@ -167,7 +167,11 @@ function getProfileAvatarUrl(profile: Profile | null) {
     profileRecord?.telegramChannelPhotoUrl,
     profileRecord?.telegramChannelAvatarUrl,
   ];
-  return candidates.find((item): item is string => typeof item === 'string' && item.trim().length > 0)?.trim() || '';
+  const storedAvatarUrl = candidates.find((item): item is string => typeof item === 'string' && item.trim().length > 0)?.trim();
+  if (storedAvatarUrl) {
+    return storedAvatarUrl;
+  }
+  return '';
 }
 
 function getProfileHandle(profile: Profile | null) {
@@ -187,10 +191,47 @@ function getProfileInitials(profile: Profile | null) {
 function ProfileChannelAvatar({ profile }: { profile: Profile | null }) {
   const avatarUrl = getProfileAvatarUrl(profile);
   const initials = getProfileInitials(profile);
+  const profileSlug = String(profile?.slug || '').trim();
+  const [fetchedAvatarUrl, setFetchedAvatarUrl] = useState('');
+  const [failedAvatarUrl, setFailedAvatarUrl] = useState('');
+
+  useEffect(() => {
+    setFailedAvatarUrl('');
+  }, [avatarUrl]);
+
+  useEffect(() => {
+    if (avatarUrl || !profileSlug) {
+      setFetchedAvatarUrl('');
+      return undefined;
+    }
+
+    let objectUrl = '';
+    let cancelled = false;
+    void api.getProfileAvatar(profileSlug)
+      .then((blob) => {
+        if (cancelled || !blob || blob.size === 0) {
+          return;
+        }
+        objectUrl = URL.createObjectURL(blob);
+        setFetchedAvatarUrl(objectUrl);
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+      setFetchedAvatarUrl('');
+    };
+  }, [avatarUrl, profileSlug]);
+
+  const resolvedAvatarUrl = avatarUrl || fetchedAvatarUrl;
+  const shouldShowAvatar = resolvedAvatarUrl && failedAvatarUrl !== resolvedAvatarUrl;
 
   return (
     <span className="profile-mobile-avatar" aria-hidden="true">
-      {avatarUrl ? <img alt="" src={avatarUrl} /> : <span>{initials}</span>}
+      {shouldShowAvatar ? <img alt="" onError={() => setFailedAvatarUrl(resolvedAvatarUrl)} src={resolvedAvatarUrl} /> : <span>{initials}</span>}
     </span>
   );
 }
@@ -936,7 +977,7 @@ export function ProfilePage() {
   const mainTitle = isRu ? '\u041f\u0440\u043e\u0444\u0438\u043b\u044c' : 'Profile';
 
   function renderSaveBar() {
-    if (!hasDirtyChanges || activeSection === 'sources' || activeSection === 'rules') {
+    if (!hasDirtyChanges || activeSection === 'main' || activeSection === 'sources' || activeSection === 'rules') {
       return null;
     }
 
